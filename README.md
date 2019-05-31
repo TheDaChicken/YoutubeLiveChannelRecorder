@@ -1,9 +1,9 @@
 # YoutubeLiveChannelRecorder
   Records Youtube Livestreams for a certain channel until removed!
   
-        NOTE: This is a server program. You can use this program outside hosted area
+  NOTE: This is a server program. You can use this program outside hosted area
            (if port forward with specific port)
-        Also, to control this program, you need will need to use the client.
+  Also, to control this program, you need will need to use the client.
 
 ## INSTALL SERVER
   To use the server-side, you need the required packages:
