@@ -1,9 +1,9 @@
 # YoutubeLiveChannelRecorder
   Records Youtube Livestreams for a certain channel until removed!
   
-  NOTE: This is a server program. You can use this program outside hosted area
-           (if port forward with specific port)
-  Also, to control this program, you need will need to use the client.
+# NOTE
+  This is a server program. You will need to use the client in order to
+  control this program.
 
 ## INSTALL SERVER
   To use the server-side, you need the required packages:
@@ -20,6 +20,10 @@
   Download Latest Master [[Github]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
 
   Download Latest Release [[Github]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  
+  Download FFMPEG: [[WINDOWS/macOS]](https://ffmpeg.zeranoe.com/builds/) [[LINUX]](https://ffmpeg.org/download.html#build-linux)
+  
+  Add FFMPEG to path. How to: [[WINDOWS]](https://windowsloop.com/install-ffmpeg-windows-10/)
   
   Extract Server files.
   
