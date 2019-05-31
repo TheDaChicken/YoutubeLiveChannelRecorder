@@ -1,6 +1,7 @@
 # YoutubeLiveChannelRecorder
   Records Youtube Livestreams for a certain channel until removed!
-  NOTE: This is a server program. You can use this program outside hosted area 
+  
+  NOTE: This is a server program. You can use this program outside hosted area
            (if port forward with specific port)
 
 ## INSTALL SERVER
@@ -14,3 +15,23 @@
   flask: Web Server.
   gevent: Web Server.
   ```
+  
+  Download Latest Master [Github](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  Download Latest Release [Github](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  
+  Extract Server files.
+  
+  run __main__.py in the server files folder with argument -p <port_name> to specify port name.
+
+## INSTALL CLIENT
+  To use the client, you need the required packages:
+  ```
+  colorama: Used for color.
+  ```
+    
+  Download Latest Master [Github](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  Download Latest Release [Github](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  
+  Extract Client files.
+  
+  run channelarchiver_client.py in the client files folder. The client will then ask for ip and port.
