@@ -17,11 +17,12 @@
   ```
   
   Download Latest Master [Github](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+
   Download Latest Release [Github](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Extract Server files.
   
-  run __main__.py in the server files folder with argument -p <port_name> to specify port name.
+  run "__main__.py" in the server files folder with argument -p <port_name> to specify port name.
 
 ## INSTALL CLIENT
   To use the client, you need the required packages:
