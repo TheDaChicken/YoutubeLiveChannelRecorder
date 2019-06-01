@@ -20,7 +20,7 @@ def createDataFile():
                 'CategoryID': 20,
                 'description': [
                     'This is a automated description uploaded with "channelarchiver".',
-                    'Author of Program: TheDaChicken (Me).',
+                    'Author of Program: TheDaChicken.',
                     'Original Title: %TITLE%',
                     'Original Video Link: https://youtu.be/%VIDEO_ID%',
                     'The Original Video Link may be deleted.',
