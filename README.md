@@ -46,5 +46,5 @@
 ## CREDITS
   
   Thanks to people with [youtube-dl!](https://https://github.com/ytdl-org/youtube-dl/)
-  It helped me start working on this.
+  Youtube-dl helped me get a head start!
  
