@@ -4,6 +4,8 @@
 ## NOTE
   This is a server program. You will need to use the client in order to
   control this program.
+  
+  ALSO BOTH SERVER AND CLIENT ONLY WORKS ON PYTHON 3.
 
 ## INSTALL SERVER
   To use the server-side, you need the required packages:
@@ -17,9 +19,8 @@
   gevent: Web Server.
   ```
   
-  Download Latest Master [[Github]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
-
-  Download Latest Release [[Github]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  Download Files [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Download FFMPEG: [[WINDOWS/macOS]](https://ffmpeg.zeranoe.com/builds/) [[LINUX]](https://ffmpeg.org/download.html#build-linux)
   
@@ -34,10 +35,9 @@
   ```
   colorama: Used for color.
   ```
-    
-  Download Latest Master [[Github]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
   
-  Download Latest Release [[Github]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  Download Files [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Extract Client files.
   
