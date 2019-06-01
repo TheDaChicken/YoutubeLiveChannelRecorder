@@ -1,5 +1,4 @@
 from threading import Thread
-from time import sleep
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website
 
