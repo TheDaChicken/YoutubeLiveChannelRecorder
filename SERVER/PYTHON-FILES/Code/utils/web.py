@@ -53,15 +53,7 @@ def download_website(url, headers=None, data=None):
     elif "User-Agent" not in headers:
         headers.update({"User-Agent": UserAgent})
 
-    if headers or data:
-        if headers and data:
-            request = Request(url, headers=headers, data=data)
-        elif headers:
-            request = Request(url, headers=headers)
-        elif data:
-            request = Request(url, data=data)
-    else:
-        request = Request(url)
+    request = Request(url, headers=headers, data=data)
 
     try:
         response = opener.open(request)
