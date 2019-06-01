@@ -78,12 +78,12 @@ def getCommunityTabMessages(communityTabSectionRenderer):
     return None if len(messages) == 0 else messages
 
 
-def readCommunityPosts(channel_Class):
+def readCommunityPosts(channel_class):
     """
 
     Checks for unlisted youtube live stream links in sponsor only community tab.
 
-    :type channel_Class: ChannelInfo
+    :type channel_class: ChannelInfo
     """
 
     def isValidYoutubeLiveStream(video_url):
@@ -105,7 +105,7 @@ def readCommunityPosts(channel_Class):
             return False
 
     headers = {"DNT": 1, "upgrade-insecure-requests": 1}
-    url = 'https://www.youtube.com/channel/' + channel_Class.channel_id + '/community'
+    url = 'https://www.youtube.com/channel/' + channel_class.channel_id + '/community'
     website = download_website(
         url,
         headers=headers)
@@ -131,6 +131,6 @@ def readCommunityPosts(channel_Class):
         else:
             boolean = isValidYoutubeLiveStream('https://youtube.com/watch?v=' + video_id_array[0])
             if boolean:
-                channel_Class.video_id = video_id_array[0]
+                channel_class.video_id = video_id_array[0]
                 return True
             return False

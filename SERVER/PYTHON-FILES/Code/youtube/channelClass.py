@@ -6,7 +6,7 @@ from threading import Thread
 from time import sleep
 
 from .heatbeat import is_live
-from . import get_global_youtube_variables
+from . import set_global_youtube_variables
 from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note
 from ..utils.web import download_website, download_image
@@ -107,7 +107,8 @@ class ChannelInfo:
         # Which is needed for checking if channel's are live.
         # (I wish don't have to put them here but it's in the video link so..)
 
-        get_global_youtube_variables(html_code=html)
+        if not self.privateStream:
+            set_global_youtube_variables(html_code=html)
 
         return [True, "OK"]
 
