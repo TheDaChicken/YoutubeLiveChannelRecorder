@@ -197,14 +197,14 @@ class ChannelInfo:
         self.TestUpload = TestUpload
         first_time = True
         while True:
-            boolean_live = is_live(self, first_time=first_time)  # Checks if stream is live.
+            boolean_live = self.is_live(first_time=first_time)  # Checks if stream is live.
             self.live_streaming = boolean_live
             if not boolean_live:
                 first_time = False
                 if self.sponsor_on_channel:
                     verbose("Reading Community Posts on " + self.channel_name + ".")
                     # NOTE readCommunityPosts edits VIDEO_ID when finds Live Stream.
-                    boolean_live = readCommunityPosts(self)
+                    boolean_live = self.readCommunityPosts()
                     if not boolean_live:
                         info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
                         info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
@@ -232,6 +232,12 @@ class ChannelInfo:
             if boolean_live is None:
                 warning("Internet Offline. :/")
                 sleep(10)
+
+    def is_live(self, first_time=False):
+        return is_live(self, first_time=first_time)
+
+    def readCommunityPosts(self):
+        return readCommunityPosts(self)
 
     def create_filename(self, video_id):
         now = datetime.now()
