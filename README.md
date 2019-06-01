@@ -19,8 +19,8 @@
   gevent: Web Server.
   ```
   
-  Download Files [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
-  [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  Download Versions [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  OR [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Download FFMPEG: [[WINDOWS/macOS]](https://ffmpeg.zeranoe.com/builds/) [[LINUX]](https://ffmpeg.org/download.html#build-linux)
   
@@ -36,8 +36,8 @@
   colorama: Used for color.
   ```
   
-  Download Files [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
-  [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
+  Download Versions [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  OR [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Extract Client files.
   
