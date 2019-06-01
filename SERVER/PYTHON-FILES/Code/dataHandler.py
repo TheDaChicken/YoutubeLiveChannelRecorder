@@ -12,7 +12,7 @@ def createDataFile():
     data = {
         'channel_ids': [],
         'DownloadThumbnail': True,
-        'recordingHeight': 720,
+        'recordingHeight': 'original',
         'UploadLiveStreams': False,
         'UploadThumbnail': False,
         'UploadSettings': {
@@ -33,7 +33,6 @@ def createDataFile():
                 'title': '%CHANNEL_NAME% %VIDEO_ID% %DATE_MONTH%/%DATE_DAY%/%DATE_YEAR%'
             }
         },
-        'recordingHeight': 'original',
     }
     if os.path.exists(data_yml_dir) is False:
         os.mkdir(data_yml_dir)
