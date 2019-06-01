@@ -5,6 +5,9 @@ from .log import verbose, info, EncoderLog, warning
 
 class Encoder:
     """
+    
+    FFmpeg Handler Class.
+    
     :type video_url: str
     :type video_location: str
     :type crashFunction: function
