@@ -1,7 +1,7 @@
 # YoutubeLiveChannelRecorder
   Records Youtube Livestreams for a certain channel until removed!
   
-# NOTE
+## NOTE
   This is a server program. You will need to use the client in order to
   control this program.
 
@@ -42,3 +42,9 @@
   Extract Client files.
   
   run channelarchiver_client.py in the client files folder. The client will then ask for ip and port.
+
+## CREDITS
+  
+  Thanks to people with [youtube-dl!](https://https://github.com/ytdl-org/youtube-dl/)
+  It helped me start working on this.
+ 
