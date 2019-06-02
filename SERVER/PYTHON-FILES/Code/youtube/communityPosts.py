@@ -87,22 +87,26 @@ def readCommunityPosts(channel_class):
     """
 
     def isValidYoutubeLiveStream(video_url):
-        video_website = download_website(url)
-        if video_url is None:
+        video_website = download_website(video_url)
+        if video_website is None:
             warning("Internet Offline. :/")
             return None
-        elif video_url is 404:
+        elif video_website is 404:
             warning("Found a video id or something but it returned a 404. What?")
             return False
         elif type(url) is str:
             yt_player_config = get_yt_player_config(video_website)
-            if 'args' in yt_player_config:
-                if "live_playback" in yt_player_config['args']:
-                    return True
+            if yt_player_config:
+                if 'args' in yt_player_config:
+                    if "live_playback" in yt_player_config['args']:
+                        return True
+                    return False
+                warning("Found Youtube Player Config but it didn't contain anything needed "
+                        "to check if it's a valid Youtube Live Stream.")
                 return False
-            warning("Found Youtube Player Config but it didn't contain anything needed "
-                    "to check if it's a valid Youtube Live Stream.")
-            return False
+            else:
+                warning("Unable to find YT Player Config.")
+                return False
 
     headers = {"DNT": 1, "upgrade-insecure-requests": 1}
     url = 'https://www.youtube.com/channel/' + channel_class.channel_id + '/community'
@@ -129,9 +133,14 @@ def readCommunityPosts(channel_class):
         if video_id_array is None or len(video_id_array) == 0:
             return False
         else:
-            video_id = video_id_array[0]
-            boolean = isValidYoutubeLiveStream('https://youtube.com/watch?v=' + video_id)
-            if boolean:
-                channel_class.video_id = video_id
-                return True
+            video_id = None
+            for id_ in video_id_array[0]:
+                if id_ != '':
+                    video_id = id_
+            if video_id:
+                boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
+                if boolean:
+                    channel_class.video_id = video_id
+                    return True
+                return False
             return False
