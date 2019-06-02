@@ -100,7 +100,7 @@ def get_poll_delay_ms(heart_beat_json, channel_Class):
             if 'pollDelayMs' in heart_beat_json['liveStreamability']['liveStreamabilityRenderer']:
                 return int(heart_beat_json['liveStreamability']['liveStreamabilityRenderer']['pollDelayMs'])
     if channel_Class.pollDelayMs is None:
-        return 14000
+        return 900000
     else:
         return channel_Class.pollDelayMs
 

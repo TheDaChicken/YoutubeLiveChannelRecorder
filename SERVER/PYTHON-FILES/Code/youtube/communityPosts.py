@@ -129,8 +129,9 @@ def readCommunityPosts(channel_class):
         if video_id_array is None or len(video_id_array) == 0:
             return False
         else:
-            boolean = isValidYoutubeLiveStream('https://youtube.com/watch?v=' + video_id_array[0])
+            video_id = video_id_array[0]
+            boolean = isValidYoutubeLiveStream('https://youtube.com/watch?v=' + video_id)
             if boolean:
-                channel_class.video_id = video_id_array[0]
+                channel_class.video_id = video_id
                 return True
             return False
