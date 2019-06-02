@@ -1,4 +1,6 @@
 from threading import Thread
+from time import sleep
+
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website
 
@@ -74,10 +76,18 @@ def google_account_login(username, password):
     return login(username, password)
 
 
+def google_account_logout():
+    download_website("https://www.youtube.com/logout")
+    sleep(1)
+    if is_google_account_login_in() is True:
+        return [False, "Failed to logout. :/"]
+    return [True, "OK"]
+
+
 def is_google_account_login_in():
     from .utils.web import cj
     cookie = [cookies for cookies in cj if 'SSID' in cookies.name]
-    if cookie is None:
+    if cookie is None or len(cookie) is 0:
         return False
     return True
 

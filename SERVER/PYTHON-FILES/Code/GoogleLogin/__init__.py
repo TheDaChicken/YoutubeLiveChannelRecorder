@@ -116,7 +116,9 @@ def login(username, password):
     login_res = try_get(challenge_results, lambda x: x[0][5], list)
     if login_res:
         login_msg = try_get(login_res, lambda x: x[5], str)
-        message = 'Unable to login: %s' % 'Invalid password' if login_msg == 'INCORRECT_ANSWER_ENTERED' else login_msg
+        message = 'Google replied: Invalid password.\n' \
+                  'This isn\'t always the case, ' \
+                  'please try again in the next 24 hours!' if login_msg == 'INCORRECT_ANSWER_ENTERED' else login_msg
         return [False, message]
 
     res = try_get(challenge_results, lambda x: x[0][-1], list)

@@ -68,3 +68,20 @@ def test_upload(ip, port, channel_id):
     if "OK" in html_reply:
         return [True, html_reply]
     return [False, html_reply]
+
+
+def youtube_fully_login(ip, port, username, password):
+    html_reply = download_website("http://" + ip + ":" + port + "/youtubeLOGIN?username=" + username +
+                                  '&password=' + password,
+                                  Headers=DefaultHeaders)
+    if "OK" in html_reply:
+        return [True, html_reply]
+    return [False, html_reply]
+
+
+def youtube_fully_logout(ip, port):
+    html_reply = download_website("http://" + ip + ":" + port + "/youtubeLOGout",
+                                  Headers=DefaultHeaders)
+    if "OK" in html_reply:
+        return [True, html_reply]
+    return [False, html_reply]

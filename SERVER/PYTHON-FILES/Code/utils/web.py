@@ -67,6 +67,8 @@ def download_website(url, headers=None, data=None):
             return None
         return None
     cj.save()  # Saves Cookies
+    cj.clear_expired_cookies()
+    cj.clear_session_cookies()
     website_bytes = response.read()
     return website_bytes.decode('utf-8')
 

@@ -5,7 +5,8 @@ from flask import Response
 from flask import Flask
 from flask import request
 
-from . import run_channel, channel_main_array, upload_test_run, google_account_login
+from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
+    google_account_logout
 from .utils.other import terminate_thread
 from .utils.windowsNotification import show_windows_toast_notification
 from .dataHandler import add_channel_config, DownloadThumbnail, loadData, saveData, UploadVideos, save_username, \
@@ -129,6 +130,7 @@ class _FlaskClass:
     def channelInfo():
         from flask import jsonify
         json = {
+            'YoutubeLogin': is_google_account_login_in(),
             'channels': [],
             'channel': {}
         }
@@ -285,6 +287,16 @@ class _FlaskClass:
             return Response("OK", mimetype='text/plain')
         else:
             return Response(message, mimetype='text/plain', status=500)
+
+    @staticmethod
+    @app.route('/youtubeLOGout')
+    def Youtube_Logout_FULLY():
+        ok, message = google_account_logout()
+        if ok:
+            return Response("OK", mimetype='text/plain')
+        else:
+            return Response(message, mimetype='text/plain', status=500)
+        return Response("OK", mimetype='text/plain')
 
 
 def run_server(port):

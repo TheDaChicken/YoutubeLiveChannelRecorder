@@ -5,7 +5,8 @@ from time import sleep
 from log import info, stopped, warning
 from colorama import Fore
 from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, get_settings, swap_settings, \
-    get_youtube_settings, get_youtube_info, youtube_login, youtube_logout, test_upload
+    get_youtube_settings, get_youtube_info, youtube_login, youtube_logout, test_upload, youtube_fully_login, \
+    youtube_fully_logout
 
 serverIP = None
 serverPort = None
@@ -92,7 +93,8 @@ if __name__ == '__main__':
                                     print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
                                           channelInfo[
                                               'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + "[SPONSOR MODE (CHECKS "
-                                                                                           "COMMUNITY TAB)]")
+                                                                                           "COMMUNITY TAB FOR "
+                                                                                           "SPONSOR ONLY STREAMS)]")
                                 else:
                                     print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
                                         'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + Fore.WHITE + " ")
@@ -109,6 +111,11 @@ if __name__ == '__main__':
                 print(" 2) Add Channel")
                 print(" 3) Remove Channel")
                 print(" 4) Change Settings")
+                if 'YoutubeLogin' in channel_info and channel_info['YoutubeLogin'] is False:
+                    print(" 5) " + Fore.LIGHTRED_EX + "Login to Youtube (FOR SPONSOR ONLY STREAMS) [VERY BUGGY] "
+                                                      "")
+                else:
+                    print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
                 if toaster is not None and 'localhost' not in serverIP:
                     print("N: Holds console, shows Windows 10 Toast Notification every time a stream goes live.")
                 print("   Type a specific number to do the specific action. - ")
@@ -164,6 +171,54 @@ if __name__ == '__main__':
                     Screen = "Settings"
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
                     Screen = "NotificationHold"
+                elif option is "5":
+                    if channel_info['YoutubeLogin'] is False:
+                        print("")
+                        print("")
+                        print("")
+                        username_google = input("Username/Email: ")
+                        print("")
+                        print("")
+                        password_google = input("Password: ")
+                        print("")
+                        print("")
+                        sleep(.4)
+                        print("")
+                        print(Fore.LIGHTRED_EX + "Logging in...")
+                        sleep(.3)
+                        print("")
+                        ok, reply = youtube_fully_login(serverIP, serverPort, username_google, password_google)
+                        if not ok:
+                            if not ok:
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        else:
+                            print(Fore.LIGHTGREEN_EX + "Login Successful!")
+                        print("")
+                        print("")
+                        sleep(.1)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                        print("")
+                        if check_server(serverIP, serverPort) is False:
+                            stopped("Lost Connection of the Server!")
+                        info("Getting Server Info.")
+                        server_info = get_channel_info(serverIP, serverPort)
+                    elif channel_info['YoutubeLogin'] is True:
+                        print("")
+                        print("")
+                        print("")
+                        print("")
+                        print(Fore.LIGHTRED_EX + "Logging out...")
+                        ok, reply = youtube_fully_logout(serverIP, serverPort)
+                        if not ok:
+                            if not ok:
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        else:
+                            print(Fore.LIGHTGREEN_EX + "Logout Successful!")
+                        print("")
+                        print("")
+                        input("Press enter to go back to Selection.")
+                        print("")
             elif Screen is "Settings":
                 print("")
                 print("1) Upload Settings")
