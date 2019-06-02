@@ -70,7 +70,7 @@ def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
                                     + YoutubeStream['stream_resolution'] +
                                     ("\n[SPONSOR STREAM]" if channelClass.privateStream else ''))
 
-    if DownloadThumbnail() is True:
+    if DownloadThumbnail() is True and channelClass.privateStream is not True:
         thread = Thread(target=channelClass.download_thumbnail, name=channelClass.channel_name)
         thread.daemon = True  # needed control+C to work.
         thread.start()
