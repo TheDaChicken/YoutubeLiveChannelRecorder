@@ -99,9 +99,9 @@ class ChannelInfo:
             if self.privateStream is not True:
                 return [False, "Unable to find video id. Both fallback login and fallback private "
                                "didn't currently work. Please report this!"]
-        from .. import is_google_account_login_in
-        if is_google_account_login_in():
-            self.sponsor_on_channel = self.get_sponsor_channel(html_code=html)
+
+        # ONLY WORKS IF LOGGED IN
+        self.sponsor_on_channel = self.get_sponsor_channel(html_code=html)
 
         # Stuff for getting Youtube web stuff like Heartbeat.
         # Which is needed for checking if channel's are live.
@@ -182,15 +182,18 @@ class ChannelInfo:
                 return None
 
     def get_sponsor_channel(self, html_code=None):
-        verbose("Checking if account sponsored " + self.channel_name + ".")
-        if html_code is None:
-            html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+        from .. import is_google_account_login_in
+        if is_google_account_login_in():
+            verbose("Checking if account sponsored " + self.channel_name + ".")
             if html_code is None:
-                return None
-        html_code = str(html_code)
-        array = re.findall('/channel/' + self.channel_id + '/membership', html_code)
-        if array:
-            return True
+                html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+                if html_code is None:
+                    return None
+            html_code = str(html_code)
+            array = re.findall('/channel/' + self.channel_id + '/membership', html_code)
+            if array:
+                return True
+            return False
         return False
 
     def check_streaming_thread(self, TestUpload=False):
