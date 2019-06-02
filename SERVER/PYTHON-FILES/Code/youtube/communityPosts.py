@@ -23,7 +23,7 @@ def getCommunityTabInfo(tabList):
     return None
 
 
-def getCommunityTabMessages(communityTabSectionRenderer):
+def getCommunityTabListMessages(communityTabSectionRenderer):
     """
 
     Simplifies a list of all Community Tab Messages information to a simple list.
@@ -34,12 +34,12 @@ def getCommunityTabMessages(communityTabSectionRenderer):
     def getMessage(communityTabMessageInfo):
         """
 
-        Get full string message from backstagePostRenderer (Message Holder for community Messages).
+        Gets full string message from backstagePostRenderer (Message Holder for community Messages).
 
         :type communityTabMessageInfo: dict
         """
-
         communityMessage = ""
+        communityURL = []
 
         textHolder = try_get(communityTabMessageInfo, lambda x: x['contentText'], dict)
         if textHolder:
@@ -54,12 +54,16 @@ def getCommunityTabMessages(communityTabSectionRenderer):
                             fullUrl = try_get(textHolder, lambda x: x['navigationEndpoint'][
                                 'urlEndpoint']['url'], str)
                             if fullUrl:
-                                communityMessage += fullUrl
+                                communityURL.append(fullUrl)
                         else:
                             partMessage = try_get(textHolder, lambda x: x['text'], str)
                             if partMessage:
                                 communityMessage += partMessage
-        return None if communityMessage == "" else communityMessage
+        community = {
+            'communityMessage': communityMessage,
+            'URLs': communityURL
+        }
+        return community
 
     messages = []
 
@@ -125,22 +129,24 @@ def readCommunityPosts(channel_class):
     communityTab = getCommunityTabInfo(tabs)
     itemSectionRenderer = try_get(communityTab, lambda x: x['content']['sectionListRenderer']['contents'][
         0]['itemSectionRenderer']['contents'], list)
-    communityTabMessages = getCommunityTabMessages(itemSectionRenderer)
+    communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
     for communityTabMessage in communityTabMessages:
-        message = communityTabMessage['contentText']
+        dict_text = communityTabMessage['contentText']
         # FIND ANY VIDEO ID IN MESSAGE
-        video_id_array = re.findall(r'youtube.com\/watch\?v=(.+)|youtu.be\/(.+)', message)
-        if video_id_array is None or len(video_id_array) == 0:
-            return False
-        else:
-            video_id = None
-            for id_ in video_id_array[0]:
-                if id_ != '':
-                    video_id = id_
-            if video_id:
-                boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
-                if boolean:
-                    channel_class.video_id = video_id
-                    return True
-                return False
-            return False
+        if dict_text['URLs']:
+            for url in dict_text['URLs']:
+                video_id_array = re.findall(r'youtube.com\/watch\?v=(.+)|youtu.be\/(.+)', url)
+                if video_id_array is None or len(video_id_array) == 0:
+                    return False
+                else:
+                    video_id = None
+                    for id_ in video_id_array[0]:
+                        if id_ != '':
+                            video_id = id_
+                    if video_id:
+                        boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
+                        if boolean:
+                            channel_class.video_id = video_id
+                            return True
+                        return False
+                    return False
