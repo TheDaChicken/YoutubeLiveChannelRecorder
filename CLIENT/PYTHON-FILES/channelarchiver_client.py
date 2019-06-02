@@ -195,14 +195,14 @@ if __name__ == '__main__':
                             print(Fore.LIGHTGREEN_EX + "Login Successful!")
                         print("")
                         print("")
-                        sleep(.1)
+                        sleep(.3)
                         print("")
                         input("Press enter to go back to Selection.")
                         print("")
                         if check_server(serverIP, serverPort) is False:
                             stopped("Lost Connection of the Server!")
                         info("Getting Server Info.")
-                        server_info = get_channel_info(serverIP, serverPort)
+                        channel_info = get_channel_info(serverIP, serverPort)
                     elif channel_info['YoutubeLogin'] is True:
                         print("")
                         print("")
@@ -219,6 +219,10 @@ if __name__ == '__main__':
                         print("")
                         input("Press enter to go back to Selection.")
                         print("")
+                        if check_server(serverIP, serverPort) is False:
+                            stopped("Lost Connection of the Server!")
+                        info("Getting Server Info.")
+                        channel_info = get_channel_info(serverIP, serverPort)
             elif Screen is "Settings":
                 print("")
                 print("1) Upload Settings")
