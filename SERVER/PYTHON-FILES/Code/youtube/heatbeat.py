@@ -2,7 +2,7 @@ from time import sleep
 
 from ..log import warning, YoutubeReply
 from ..utils.other import get_highest_thumbnail
-from ..utils.web import download_json
+from ..utils.web import download_json, download_website
 from ..dataHandler import DownloadThumbnail
 
 
@@ -19,7 +19,11 @@ def is_live(channel_Class, first_time=False):
     if channel_Class.video_id is None:
         if channel_Class.privateStream is True:
             if first_time is False:
-                channel_Class.video_id = channel_Class.get_video_id()
+                html = download_website("https://www.youtube.com/channel/" + channel_Class.channel_id + "/live")
+                if html is None:
+                    return None
+                channel_Class.video_id = channel_Class.get_video_id(html_code=html)
+                channel_Class.sponsor_on_channel = channel_Class.get_sponsor_channel(html_code=html)
             if channel_Class.pollDelayMs is None:
                 channel_Class.pollDelayMs = get_poll_delay_ms({}, channel_Class)
             return False
