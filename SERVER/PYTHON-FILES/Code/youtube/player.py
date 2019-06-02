@@ -65,9 +65,10 @@ def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
     channelClass.recording_status = "Recording."
 
     show_windows_toast_notification("Live Recording Notifications", channelClass.channel_name + " is live and is now "
-                                                                                                "recording. \n "
+                                                                                                "recording. \n"
                                                                                                 "Recording at "
-                                    + YoutubeStream['stream_resolution'])
+                                    + YoutubeStream['stream_resolution'] +
+                                    ("\n[SPONSOR STREAM]" if channelClass.privateStream else ''))
 
     if DownloadThumbnail() is True:
         thread = Thread(target=channelClass.download_thumbnail, name=channelClass.channel_name)
