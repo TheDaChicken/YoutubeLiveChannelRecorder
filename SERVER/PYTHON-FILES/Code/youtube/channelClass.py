@@ -53,6 +53,7 @@ class ChannelInfo:
     channel_name = None
 
     # User
+    sponsor_only_stream = False
     sponsor_on_channel = False
 
     # Data about the stream. (THIS IS USED TO SHOW THE VARIABLES IN THIS CLASS)
@@ -212,12 +213,17 @@ class ChannelInfo:
                         info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
                         info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
                         sleep(self.pollDelayMs / 1000)
-                elif not self.privateStream:
-                    info(self.channel_name + " is not live!")
-                    sleep(self.pollDelayMs / 1000)
+                    if boolean_live:
+                        self.sponsor_only_stream = True
                 else:
-                    info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
-                    sleep(self.pollDelayMs / 1000)
+                    if self.sponsor_only_stream:
+                        self.sponsor_only_stream = False
+                    if not self.privateStream:
+                        info(self.channel_name + " is not live!")
+                        sleep(self.pollDelayMs / 1000)
+                    else:
+                        info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
+                        sleep(self.pollDelayMs / 1000)
             if boolean_live:
                 if first_time is True:
                     info(self.channel_name + " is already Live!")

@@ -1,7 +1,7 @@
 import re
 
 from ..utils.web import download_website
-from ..utils.youtube import get_yt_initial_data, get_yt_player_config
+from ..utils.youtube import get_yt_initial_data, get_yt_player_config, get_yt_initial_player_response
 from ..utils.other import try_get
 from ..log import warning
 
@@ -148,5 +148,4 @@ def readCommunityPosts(channel_class):
                         if boolean:
                             channel_class.video_id = video_id
                             return True
-                        return False
-                    return False
+        return False

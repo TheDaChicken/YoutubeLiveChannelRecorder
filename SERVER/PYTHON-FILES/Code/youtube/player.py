@@ -68,7 +68,7 @@ def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
                                                                                                 "recording. \n"
                                                                                                 "Recording at "
                                     + YoutubeStream['stream_resolution'] +
-                                    ("\n[SPONSOR STREAM]" if channelClass.privateStream else ''))
+                                    ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
 
     if DownloadThumbnail() is True and channelClass.privateStream is not True:
         thread = Thread(target=channelClass.download_thumbnail, name=channelClass.channel_name)
