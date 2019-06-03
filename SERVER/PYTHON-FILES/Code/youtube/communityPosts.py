@@ -1,5 +1,7 @@
 import re
 
+from typing import List, Any
+
 from ..utils.web import download_website
 from ..utils.youtube import get_yt_initial_data, get_yt_player_config
 from ..utils.other import try_get
@@ -136,14 +138,12 @@ def readCommunityPosts(channel_class):
         # FIND ANY VIDEO ID IN MESSAGE
         if dict_text['URLs']:
             for url in dict_text['URLs']:
-                video_id_array = re.findall(r'youtube.com\/watch\?v=(.+)|youtu.be\/(.+)', url)
+                video_id_array = re.findall(r'youtu.be\/(.+)|youtube.com\/watch\?v=(.+)', url)
                 if video_id_array is None or len(video_id_array) == 0:
                     return False
                 else:
-                    video_id = None
-                    for id_ in video_id_array[0]:
-                        if id_ != '':
-                            video_id = id_
+                    video_id_tuple = video_id_array[0]
+                    video_id = [video_id_ for video_id_ in video_id_tuple if video_id_ != ''][0]
                     if video_id:
                         boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
                         if boolean:
