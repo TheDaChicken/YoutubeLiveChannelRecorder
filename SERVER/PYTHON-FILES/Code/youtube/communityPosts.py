@@ -1,7 +1,7 @@
 import re
 
 from ..utils.web import download_website
-from ..utils.youtube import get_yt_initial_data, get_yt_player_config, get_yt_initial_player_response
+from ..utils.youtube import get_yt_initial_data, get_yt_player_config
 from ..utils.other import try_get
 from ..log import warning
 
