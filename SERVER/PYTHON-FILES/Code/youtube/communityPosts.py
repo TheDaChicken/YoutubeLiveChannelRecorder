@@ -138,10 +138,10 @@ def readCommunityPosts(channel_class):
         0]['itemSectionRenderer']['contents'], list)
     communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
     for communityTabMessage in communityTabMessages:
-        dict_text = communityTabMessage['contentText']
+        dict_urls = communityTabMessage['URLs']
         # FIND ANY VIDEO ID IN MESSAGE
-        if dict_text['URLs']:
-            for url in dict_text['URLs']:
+        if dict_urls:
+            for url in dict_urls:
                 video_id_object = re.search(r'youtu.be\/(.+)|youtube.com\/watch\?v=(.+)', url)
                 if video_id_object:
                     video_id_tuple = video_id_object.groups()
