@@ -84,6 +84,9 @@ def getCommunityTabListMessages(communityTabSectionRenderer):
     return None if len(messages) == 0 else messages
 
 
+already_checked_video_ids = []
+
+
 def readCommunityPosts(channel_class):
     """
 
@@ -144,10 +147,12 @@ def readCommunityPosts(channel_class):
                     video_id_tuple = video_id_object.groups()
                     video_id = next(x for x in video_id_tuple if x is not None)
                     if video_id:
-                        boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
-                        if boolean:
-                            channel_class.video_id = video_id
-                            return True
+                        if video_id not in already_checked_video_ids:
+                            already_checked_video_ids.append(video_id)
+                            boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
+                            if boolean:
+                                channel_class.video_id = video_id
+                                return True
                 else:
                     return False
         return False
