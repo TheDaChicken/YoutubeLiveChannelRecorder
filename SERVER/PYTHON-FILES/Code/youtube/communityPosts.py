@@ -153,6 +153,10 @@ def readCommunityPosts(channel_class):
                             if boolean:
                                 channel_class.video_id = video_id
                                 return True
+                        # IF ALREADY CHECK IS TOO BIG
+                        if len(already_checked_video_ids) is 5:
+                            for video_id in already_checked_video_ids:
+                                already_checked_video_ids.remove(video_id)
                 else:
                     return False
         return False
