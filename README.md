@@ -17,6 +17,7 @@
   PyYAML: data handling.
   flask: Web Server.
   gevent: Web Server.
+  win10toast: Windows Toast Notifications [ONLY NEEDED IF ON WINDOWS]
   ```
   
   Download Versions [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
@@ -34,6 +35,8 @@
   To use the client, you need the required packages:
   ```
   colorama: Used for color.
+  httplib2: Web.
+  win10toast: Windows Toast Notifications [ONLY NEEDED IF ON WINDOWS]
   ```
   
   Download Versions [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
