@@ -86,6 +86,7 @@ def readCommunityPosts(channel_class):
     """
 
     Checks for unlisted youtube live stream links in sponsor only community tab.
+    This is to record "sponsor only" streams. Really, it's just a unlisted stream.
 
     :type channel_class: ChannelInfo
     """
