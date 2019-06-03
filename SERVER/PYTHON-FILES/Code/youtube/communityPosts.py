@@ -125,7 +125,8 @@ def readCommunityPosts(channel_class):
 
     youtubeInitialData = get_yt_initial_data(website)
     if youtubeInitialData is None:
-        return None
+        warning("Unable to find Initial Data.")
+        return False
     twoColumnBrowseResultsRenderer = try_get(youtubeInitialData, lambda x: x['contents'][
         'twoColumnBrowseResultsRenderer'], dict)
     tabs = try_get(twoColumnBrowseResultsRenderer, lambda x: x['tabs'], list)
@@ -138,16 +139,15 @@ def readCommunityPosts(channel_class):
         # FIND ANY VIDEO ID IN MESSAGE
         if dict_text['URLs']:
             for url in dict_text['URLs']:
-                video_id_array = re.findall(r'youtu.be\/(.+)|youtube.com\/watch\?v=(.+)', url)
-                if video_id_array is None or len(video_id_array) == 0:
-                    return False
-                else:
-                    video_id_tuple = video_id_array[0]
-                    video_id_array = [video_id_ for video_id_ in video_id_tuple if video_id_ != '']
-                    video_id = video_id_array[0]
+                video_id_object = re.search(r'youtu.be\/(.+)|youtube.com\/watch\?v=(.+)', url)
+                if video_id_object:
+                    video_id_tuple = video_id_object.groups()
+                    video_id = next(x for x in video_id_tuple if x is not None)
                     if video_id:
                         boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
                         if boolean:
                             channel_class.video_id = video_id
                             return True
+                else:
+                    return False
         return False
