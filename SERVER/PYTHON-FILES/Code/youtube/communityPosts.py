@@ -138,7 +138,7 @@ def readCommunityPosts(channel_class):
         0]['itemSectionRenderer']['contents'], list)
     communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
     for communityTabMessage in communityTabMessages:
-        dict_urls = communityTabMessage['URLs']
+        dict_urls = communityTabMessage['contentText']['URLs']
         # FIND ANY VIDEO ID IN MESSAGE
         if dict_urls:
             for url in dict_urls:
