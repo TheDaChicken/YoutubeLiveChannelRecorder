@@ -20,7 +20,7 @@
   win10toast: Windows Toast Notifications [ONLY NEEDED IF ON WINDOWS]
   ```
   
-  Download Versions [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  Download Youtube Live Chanenl Recorder [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
   OR [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Download FFMPEG: [[WINDOWS/macOS]](https://ffmpeg.zeranoe.com/builds/) [[LINUX]](https://ffmpeg.org/download.html#build-linux)
@@ -29,7 +29,7 @@
   
   Extract Server files.
   
-  run __main__.py in the server files folder with argument -p <port_name> to specify port name.
+  run __main__.py in the server files folder with argument -p <port_name> to specify port.
 
 ## INSTALL CLIENT
   To use the client, you need the required packages:
@@ -39,7 +39,7 @@
   win10toast: Windows Toast Notifications [ONLY NEEDED IF ON WINDOWS]
   ```
   
-  Download Versions [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
+  Download Youtube Live Chanenl Recorder [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
   OR [[RELEASES]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/releases)
   
   Extract Client files.
@@ -50,4 +50,8 @@
   
   Thanks to people with [youtube-dl!](https://https://github.com/ytdl-org/youtube-dl/)
   Youtube-dl helped me get a head start!
- 
+
+## Inspiration
+  
+  This idea came from when I was wanted to record livestreams from [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
+  When he ends his livestreams, his deletes the recording. Meaning if I miss the livestream or want to watch and look back on it. I can't. Since I was unable to record them fast enough when I got the notification when he was live, I made the program to record it!
