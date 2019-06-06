@@ -53,7 +53,6 @@ class ChannelInfo:
     channel_name = None
 
     # User
-    sponsor_only_stream = False
     sponsor_on_channel = False
 
     # Data about the stream. (THIS IS USED TO SHOW THE VARIABLES IN THIS CLASS)
@@ -62,12 +61,15 @@ class ChannelInfo:
     description = None
     start_date = None
     privateStream = False
+    sponsor_only_stream = False
 
     # USED FOR RECORDING
     EncoderClass = None
 
     # USED FOR UPLOADING
     video_location = None
+
+    # THUMBNAIL
     thumbnail_location = None
     thumbnail_url = None
 
