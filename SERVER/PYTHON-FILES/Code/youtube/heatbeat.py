@@ -1,7 +1,7 @@
 from time import sleep
 
 from ..log import warning, YoutubeReply
-from ..utils.other import get_highest_thumbnail
+from ..utils.other import get_highest_thumbnail, try_get
 from ..utils.web import download_json, download_website
 from ..dataHandler import DownloadThumbnail
 
@@ -71,10 +71,13 @@ def is_live(channel_Class, first_time=False):
     YoutubeReply('FROM YOUTUBE -> ' + "{}".format(json))
 
     # SETTING VARIABLES
-    channel_Class.thumbnail_url = get_thumbnail(json, channel_Class)
-    channel_Class.pollDelayMs = get_poll_delay_ms(json, channel_Class)
-    channel_Class.live_scheduled = is_scheduled(json)
-    channel_Class.broadcastId = get_broadcast_id(json)
+    liveStreamAbilityRenderer = try_get(json, lambda x: x['liveStreamability']['liveStreamabilityRenderer'], dict)
+    if liveStreamAbilityRenderer:
+        channel_Class.thumbnail_url = get_thumbnail(liveStreamAbilityRenderer, channel_Class)
+        channel_Class.pollDelayMs = get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class)
+        channel_Class.live_scheduled = is_scheduled(liveStreamAbilityRenderer)
+        channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
+
     if channel_Class.live_scheduled is True:
         channel_Class.live_scheduled_time = get_schedule_time(json)
     if 'stop_heartbeat' in json:
@@ -98,58 +101,45 @@ def is_live(channel_Class, first_time=False):
 
 
 # Getting Poll Delay from Heartbeat Json
-def get_poll_delay_ms(heart_beat_json, channel_Class):
-    if 'liveStreamability' in heart_beat_json:
-        if 'liveStreamabilityRenderer' in heart_beat_json['liveStreamability']:
-            if 'pollDelayMs' in heart_beat_json['liveStreamability']['liveStreamabilityRenderer']:
-                return int(heart_beat_json['liveStreamability']['liveStreamabilityRenderer']['pollDelayMs'])
-    if channel_Class.pollDelayMs is None:
-        return 9500
-    else:
+def get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class):
+    pollDelayMs = try_get(liveStreamAbilityRenderer, lambda x: x['pollDelayMs'], str)
+    if pollDelayMs:
+        return int(pollDelayMs)
+    elif channel_Class.pollDelayMs:
         return channel_Class.pollDelayMs
+    else:
+        return 9500
 
 
 # Getting Thumbnails from Heartbeat Json
-def get_thumbnail(heart_beat_json, channel_Class):
+def get_thumbnail(liveStreamAbilityRenderer, channel_Class):
     if DownloadThumbnail() is not True:
         return None
-    if 'liveStreamability' in heart_beat_json:
-        live_stream_ability = heart_beat_json['liveStreamability']
-        if 'liveStreamabilityRenderer' in live_stream_ability:
-            if 'offlineSlate' in live_stream_ability['liveStreamabilityRenderer']:
-                offline_slate = live_stream_ability['liveStreamabilityRenderer']['offlineSlate']
-                if 'liveStreamOfflineSlateRenderer' in offline_slate:
-                    return get_highest_thumbnail(
-                        offline_slate['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'])
+    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
+    thumbnail_list = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'])
+    if thumbnail_list:
+        return get_highest_thumbnail(
+            offlineSlate['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'])
     return 'https://i.ytimg.com/vi/{}/maxresdefault.jpg'.format(channel_Class.video_id)
 
 
 # Checking if live stream is scheduled from Heartbeat Json
-def is_scheduled(heart_beat_json):
-    if 'liveStreamability' in heart_beat_json and 'liveStreamabilityRenderer' in heart_beat_json[
-        'liveStreamability'] and 'offlineSlate' in heart_beat_json[
-        'liveStreamability']['liveStreamabilityRenderer'] and 'liveStreamOfflineSlateRenderer' in heart_beat_json[
-        'liveStreamability']['liveStreamabilityRenderer']['offlineSlate']:
-        return 'scheduledStartTime' in heart_beat_json['liveStreamability']['liveStreamabilityRenderer'][
-            'offlineSlate']['liveStreamOfflineSlateRenderer']
+def is_scheduled(liveStreamAbilityRenderer):
+    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
+    liveStreamOfflineSlateRenderer = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer'], dict)
+    if liveStreamOfflineSlateRenderer:
+        return 'scheduledStartTime' in liveStreamOfflineSlateRenderer
     return False
 
 
-def get_schedule_time(heart_beat_json):
-    if 'liveStreamability' in heart_beat_json and 'liveStreamabilityRenderer' in heart_beat_json[
-        'liveStreamability'] and 'offlineSlate' in heart_beat_json[
-        'liveStreamability']['liveStreamabilityRenderer']:
-        return heart_beat_json['liveStreamability']['liveStreamabilityRenderer'][
-            'offlineSlate']['liveStreamOfflineSlateRenderer']['subtitleText']['simpleText']
+def get_schedule_time(liveStreamAbilityRenderer):
+    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
+    liveStreamOfflineSlateRenderer = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer'], dict)
+    if liveStreamOfflineSlateRenderer:
+        return try_get(liveStreamOfflineSlateRenderer, lambda x: x['subtitleText']['simpleText'], str)
     return None
 
 
-def get_broadcast_id(heart_beat_json):
-    if 'liveStreamability' in heart_beat_json and 'liveStreamabilityRenderer' in heart_beat_json[
-        'liveStreamability'] and 'broadcastId' in heart_beat_json[
-        'liveStreamability']['liveStreamabilityRenderer']:
-        return heart_beat_json[
-            'liveStreamability']['liveStreamabilityRenderer']['broadcastId']
-    return None
-
-
+def get_broadcast_id(liveStreamAbilityRenderer):
+    broadcastId = try_get(liveStreamAbilityRenderer, lambda x: x['broadcastId'], str)
+    return broadcastId
