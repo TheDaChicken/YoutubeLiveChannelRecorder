@@ -5,7 +5,7 @@ from time import sleep
 from ..utils.web import download_website, download_m3u8_formats
 from ..utils.parser import parse_json
 from ..utils.youtube import get_yt_player_config
-from ..utils.other import get_format_from_data
+from ..utils.other import get_format_from_data, try_get
 from ..utils.windowsNotification import show_windows_toast_notification
 from ..dataHandler import DownloadThumbnail
 from ..log import stopped, warning, info
@@ -139,26 +139,30 @@ def getYoutubeStreamInfo(channelInfo, alreadyLIVE=None, recordingHeight=None):
         if video_info_website is None:
             return video_info_website
         video_info = parse_qs(video_info_website)
-        player_response = parse_json(video_info.get('player_response')[0])
+        player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
     else:
         video_website = download_website('https://www.youtube.com/channel/{0}/live'.format(channelInfo.channel_id))
-        video_info = get_yt_player_config(video_website)['args']
-        player_response = parse_json(video_info.get('player_response'))
-    if player_response is None or "streamingData" not in player_response or "hlsManifestUrl" \
-            not in player_response['streamingData']:
-        warning("No StreamingData, Youtube bugged out!")
-        return None
-    manifest_url = str(player_response['streamingData']['hlsManifestUrl'])
-    formats = download_m3u8_formats(manifest_url)
-    if formats is None or len(formats) is 0:
-        warning("There were no formats found! Even when the streamer is live.")
-        return None
+        video_info = try_get(get_yt_player_config(video_website), lambda x: x['args'], dict)
+        player_response = parse_json(try_get(video_info, lambda x: x['player_response'], str))
 
-    f = get_format_from_data(formats, recordingHeight)
-    youtube_stream_info = {
-        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-        'url': f['url'],
-        'title': video_info['title'],
-        'description': player_response['videoDetails']['shortDescription'],
-    }
-    return youtube_stream_info
+    if player_response:
+        if "streamingData" not in player_response:
+            warning("No StreamingData, Youtube bugged out!")
+            return None
+        manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+        if not manifest_url:
+            warning("Unable to find Manifest URL.")
+            return None
+        formats = download_m3u8_formats(manifest_url)
+        if formats is None or len(formats) is 0:
+            warning("There were no formats found! Even when the streamer is live.")
+            return None
+        f = get_format_from_data(formats, recordingHeight)
+        youtube_stream_info = {
+            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+            'url': f['url'],
+            'title': video_info['title'],
+            'description': player_response['videoDetails']['shortDescription'],
+        }
+        return youtube_stream_info
+    return None
