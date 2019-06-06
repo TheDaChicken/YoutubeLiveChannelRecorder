@@ -247,8 +247,8 @@ class ChannelInfo:
     def is_live(self, first_time=False):
         return is_live(self, first_time=first_time)
 
-    def readCommunityPosts(self):
-        return readCommunityPosts(self)
+    def is_live_sponsor_only_streams(self):
+        return is_live_sponsor_only_streams(self)
 
     def create_filename(self, video_id):
         now = datetime.now()
