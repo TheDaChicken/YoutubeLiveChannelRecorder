@@ -12,7 +12,7 @@ from ..log import verbose, stopped, warning, info, note
 from ..utils.web import download_website, download_image
 from ..utils.youtube import get_yt_player_config
 from .player import openStream
-from .communityPosts import readCommunityPosts
+from .communityPosts import is_live_sponsor_only_streams
 
 
 class ChannelInfo:
@@ -209,8 +209,8 @@ class ChannelInfo:
                 first_time = False
                 if self.sponsor_on_channel:
                     verbose("Reading Community Posts on " + self.channel_name + ".")
-                    # NOTE readCommunityPosts edits VIDEO_ID when finds Live Stream.
-                    boolean_live = self.readCommunityPosts()
+                    # NOTE this edits THE video id when finds stream.
+                    boolean_live = self.is_live_sponsor_only_streams()
                     if not boolean_live:
                         info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
                         info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")

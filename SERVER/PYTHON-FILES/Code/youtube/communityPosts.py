@@ -5,87 +5,10 @@ from ..utils.youtube import get_yt_initial_data, get_yt_player_config
 from ..utils.other import try_get
 from ..log import warning
 
-
-def getCommunityTabInfo(tabList):
-    """
-
-    Gets Community Tab information from a list of all the Youtube Channel Tabs.
-    For Example, Youtube Channel featured tab.
-
-    :type tabList: list
-    """
-    for tab in tabList:
-        tab = try_get(tab, lambda x: x['tabRenderer'], dict)
-        if tab:
-            title = try_get(tab, lambda x: x['title'], str)
-            if title is not None and 'Community' in title:
-                return tab
-    return None
-
-
-def getCommunityTabListMessages(communityTabSectionRenderer):
-    """
-
-    Simplifies a list of all Community Tab Messages information to a simple list.
-
-    :type communityTabSectionRenderer: list
-    """
-
-    def getMessage(communityTabMessageInfo):
-        """
-
-        Gets full string message from backstagePostRenderer (Message Holder for community Messages).
-
-        :type communityTabMessageInfo: dict
-        """
-        communityMessage = ""
-        communityURL = []
-
-        textHolder = try_get(communityTabMessageInfo, lambda x: x['contentText'], dict)
-        if textHolder:
-            if 'simpleText' in textHolder:
-                communityMessage += try_get(textHolder, lambda x: x['simpleText'], str)
-            else:
-                textListHolder = try_get(textHolder, lambda x: x['runs'], list)
-                if textListHolder:
-                    for textHolder in textListHolder:
-                        if 'navigationEndpoint' in textHolder:
-                            # Due to Youtube simplifying URLS. This is used to grab all of the url.
-                            fullUrl = try_get(textHolder, lambda x: x['navigationEndpoint'][
-                                'urlEndpoint']['url'], str)
-                            if fullUrl:
-                                communityURL.append(fullUrl)
-                        else:
-                            partMessage = try_get(textHolder, lambda x: x['text'], str)
-                            if partMessage:
-                                communityMessage += partMessage
-        community = {
-            'communityMessage': communityMessage,
-            'URLs': communityURL
-        }
-        return community
-
-    messages = []
-
-    for communityMessageInfo in communityTabSectionRenderer:
-        communityMessageInfo = try_get(communityMessageInfo, lambda x: x['backstagePostThreadRenderer'][
-            'post']['backstagePostRenderer'], dict)
-        if communityMessageInfo:
-            message = {
-                'postID': try_get(communityMessageInfo, lambda x: x['postId'], str),
-                'authorText': try_get(communityMessageInfo, lambda x: x['authorText']['simpleText'], str),
-                'contentText': getMessage(communityMessageInfo),
-            }
-            if message['contentText'] is not None:
-                messages.append(message)
-
-    return None if len(messages) == 0 else messages
-
-
 already_checked_video_ids = []
 
 
-def readCommunityPosts(channel_class):
+def is_live_sponsor_only_streams(channel_class):
     """
 
     Checks for unlisted youtube live stream links in sponsor only community tab.
@@ -116,26 +39,7 @@ def readCommunityPosts(channel_class):
                 warning("Unable to find YT Player Config.")
                 return False
 
-    headers = {"DNT": 1, "upgrade-insecure-requests": 1}
-    url = 'https://www.youtube.com/channel/' + channel_class.channel_id + '/community'
-    website = download_website(
-        url,
-        headers=headers)
-    if type(website) is bool or website is None:
-        return None
-
-    youtubeInitialData = get_yt_initial_data(website)
-    if youtubeInitialData is None:
-        warning("Unable to find Initial Data.")
-        return False
-    twoColumnBrowseResultsRenderer = try_get(youtubeInitialData, lambda x: x['contents'][
-        'twoColumnBrowseResultsRenderer'], dict)
-    tabs = try_get(twoColumnBrowseResultsRenderer, lambda x: x['tabs'], list)
-    communityTab = getCommunityTabInfo(tabs)
-    itemSectionRenderer = try_get(communityTab, lambda x: x['content']['sectionListRenderer']['contents'][
-        0]['itemSectionRenderer']['contents'], list)
-    communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
-    for communityTabMessage in communityTabMessages:
+    for communityTabMessage in readCommunityPosts(channel_class):
         dict_urls = communityTabMessage['contentText']['URLs']
         # FIND ANY VIDEO ID IN MESSAGE
         if dict_urls:
@@ -158,3 +62,100 @@ def readCommunityPosts(channel_class):
                 else:
                     return False
         return False
+
+
+def readCommunityPosts(channel_class):
+    def getCommunityTabInfo(tabList):
+        """
+
+        Gets Community Tab information from a list of all the Youtube Channel Tabs.
+        For Example, Youtube Channel featured tab.
+
+        :type tabList: list
+        """
+        for tab in tabList:
+            tab = try_get(tab, lambda x: x['tabRenderer'], dict)
+            if tab:
+                title = try_get(tab, lambda x: x['title'], str)
+                if title is not None and 'Community' in title:
+                    return tab
+        return None
+
+    def getCommunityTabListMessages(communityTabSectionRenderer):
+        """
+
+        Simplifies a list of all Community Tab Messages information to a simple dict.
+
+        :type communityTabSectionRenderer: list
+        """
+
+        def getMessage(communityTabMessageInfo):
+            """
+
+            Gets full string message from backstagePostRenderer (Message Holder for community Messages).
+
+            :type communityTabMessageInfo: dict
+            """
+            communityMessage = ""
+            communityURL = []
+
+            textHolder = try_get(communityTabMessageInfo, lambda x: x['contentText'], dict)
+            if textHolder:
+                if 'simpleText' in textHolder:
+                    communityMessage += try_get(textHolder, lambda x: x['simpleText'], str)
+                else:
+                    textListHolder = try_get(textHolder, lambda x: x['runs'], list)
+                    if textListHolder:
+                        for textHolder in textListHolder:
+                            if 'navigationEndpoint' in textHolder:
+                                # Due to Youtube simplifying URLS. This is used to grab all of the url.
+                                fullUrl = try_get(textHolder, lambda x: x['navigationEndpoint'][
+                                    'urlEndpoint']['url'], str)
+                                if fullUrl:
+                                    communityURL.append(fullUrl)
+                            else:
+                                partMessage = try_get(textHolder, lambda x: x['text'], str)
+                                if partMessage:
+                                    communityMessage += partMessage
+            community = {
+                'communityMessage': communityMessage,
+                'URLs': communityURL
+            }
+            return community
+
+        messages = []
+
+        for communityMessageInfo in communityTabSectionRenderer:
+            communityMessageInfo = try_get(communityMessageInfo, lambda x: x['backstagePostThreadRenderer'][
+                'post']['backstagePostRenderer'], dict)
+            if communityMessageInfo:
+                message = {
+                    'postID': try_get(communityMessageInfo, lambda x: x['postId'], str),
+                    'authorText': try_get(communityMessageInfo, lambda x: x['authorText']['simpleText'], str),
+                    'contentText': getMessage(communityMessageInfo),
+                }
+                if message['contentText'] is not None:
+                    messages.append(message)
+
+        return None if len(messages) == 0 else messages
+
+    headers = {"DNT": 1, "upgrade-insecure-requests": 1}
+    url = 'https://www.youtube.com/channel/' + channel_class.channel_id + '/community'
+    website = download_website(
+        url,
+        headers=headers)
+    if type(website) is bool or website is None:
+        return None
+
+    youtubeInitialData = get_yt_initial_data(website)
+    if youtubeInitialData is None:
+        warning("Unable to find Initial Data.")
+        return False
+    twoColumnBrowseResultsRenderer = try_get(youtubeInitialData, lambda x: x['contents'][
+        'twoColumnBrowseResultsRenderer'], dict)
+    tabs = try_get(twoColumnBrowseResultsRenderer, lambda x: x['tabs'], list)
+    communityTab = getCommunityTabInfo(tabs)
+    itemSectionRenderer = try_get(communityTab, lambda x: x['content']['sectionListRenderer']['contents'][
+        0]['itemSectionRenderer']['contents'], list)
+    communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
+    return communityTabMessages
