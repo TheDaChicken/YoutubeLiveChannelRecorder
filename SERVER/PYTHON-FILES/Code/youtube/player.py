@@ -99,7 +99,6 @@ def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
                 warning("- Turning off Recording -")
             sleep(channelClass.pollDelayMs / 1000)
         elif array is True:
-            sleep(channelClass.pollDelayMs / 1000)
             if offline is True:
                 offline = False
                 # Starts the recording back if internet was offline.
@@ -107,6 +106,7 @@ def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
                                                                                      channelClass.create_filename(
                                                                                          channelClass.video_id)
                                                                                      + '.mp4'))
+            sleep(channelClass.pollDelayMs / 1000)
         elif array is False:
             sleep(channelClass.pollDelayMs / 1000 / 2)
             channelClass.EncoderClass.stop_recording()
