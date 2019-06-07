@@ -26,7 +26,7 @@ def run_channel(channel_id, returnMessage=False):
         del ok_bool
         del error_message
         channel_holder_class.registerCloseEvent()
-        check_streaming_channel_thread = Thread(target=channel_holder_class.start_heartbeat_thread,
+        check_streaming_channel_thread = Thread(target=channel_holder_class.start_heartbeat_loop,
                                                 name=channel_holder_class.channel_name + " - Checking Live Thread")
         check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
@@ -54,7 +54,7 @@ def upload_test_run(channel_id, returnMessage=False):
             return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
 
         channel_holder_class.registerCloseEvent()
-        check_streaming_channel_thread = Thread(target=channel_holder_class.start_heartbeat_thread,
+        check_streaming_channel_thread = Thread(target=channel_holder_class.start_heartbeat_loop,
                                                 name=channel_holder_class.channel_name, args=(True,))
         check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()

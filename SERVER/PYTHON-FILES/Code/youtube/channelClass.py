@@ -244,7 +244,7 @@ class ChannelInfo:
             return False
         return False
 
-    def start_heartbeat_thread(self, TestUpload=False):
+    def start_heartbeat_loop(self, TestUpload=False):
         """
 
         Checks for streams, records them if live.
