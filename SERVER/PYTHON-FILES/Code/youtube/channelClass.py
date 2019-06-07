@@ -9,9 +9,11 @@ from .heatbeat import is_live
 from . import set_global_youtube_variables
 from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note
-from ..utils.web import download_website, download_image
+from ..utils.other import try_get, get_format_from_data
+from ..utils.parser import parse_json
+from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.youtube import get_yt_player_config
-from .player import openStream
+from .player import openStream, getYoutubeStreamInfo
 from .communityPosts import is_live_sponsor_only_streams
 
 
@@ -22,7 +24,7 @@ class ChannelInfo:
 
     :type channel_id: str
     :type channel_name: str
-    :type video_id: str
+    :type video_id: str, None
     :type title: str
     :type start_date: datetime.datetime
     :type thumbnail_url: str
@@ -62,6 +64,7 @@ class ChannelInfo:
     start_date = None
     privateStream = False
     sponsor_only_stream = False
+    YoutubeStream = None  # DICT THAT HOLDS STREAM URLS
 
     # USED FOR RECORDING
     EncoderClass = None
@@ -83,7 +86,6 @@ class ChannelInfo:
     def __init__(self, channel_id):
         self.channel_id = channel_id
 
-    # Loads the Youtube Channel Data.
     def loadYoutubeData(self):
         html = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
         if html is None:
@@ -92,26 +94,98 @@ class ChannelInfo:
         if html == 404:
             return [False, "Failed getting Youtube Data! \"" +
                     self.channel_id + "\" doesn't exist as a channel id!"]
+        ok, message = self.loadChannelData(html=html)
+        if not ok:
+            return [ok, message]
+        ok, message = self.loadVideoData(html=html)
+        if not ok:
+            return [ok, message]
+        return [True, "OK"]
+
+    # Loads the Youtube Channel Data.
+    def loadChannelData(self, html=None):
+        if not html:
+            html = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+            if html is None:
+                return [False, "Failed getting Channel Data from the internet! "
+                               "This means there is no good internet available!"]
+            if html == 404:
+                return [False, "Failed getting Channel Data! \"" +
+                        self.channel_id + "\" doesn't exist as a channel id!"]
         if type(html) is int:
             warning("" + str(html))
         self.channel_name = self.get_channel_name(html_code=html)
         if self.channel_name is None:
             return [False, "Failed Getting " + self.channel_id + " channel_name."]
-        self.video_id = self.get_video_id(html_code=html)
-        if self.video_id is None:
-            if self.privateStream is not True:
-                return [False, "Unable to find video id. Both fallback login and fallback private "
-                               "didn't currently work. Please report this!"]
+        return [True, "OK"]
 
-        # ONLY WORKS IF LOGGED IN
-        self.sponsor_on_channel = self.get_sponsor_channel(html_code=html)
+    def loadVideoData(self, html=None):
+        """
 
-        # Stuff for getting Youtube web stuff like Heartbeat.
-        # Which is needed for checking if channel's are live.
-        # (I wish don't have to put them here but it's in the video link so..)
+        This is used to grab video info from the Youtube site, like video_id, to check if already live,
+        and the stream url if already live.
+        Everything else would use heartbeat and get video info url.
+
+        :return: Nothing. It edits the class.
+        """
+        verbose("Getting Video ID.")
+        if not html:
+            html = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+            if html is None:
+                return [False, "Failed getting Video Data from the internet! "
+                               "This means there is no good internet available!"]
+            if html == 404:
+                return [False, "Failed getting Video Data! \"" +
+                        self.channel_id + "\" doesn't exist as a channel id!"]
+        yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        if yt_player_config:
+            if "live_playback" not in yt_player_config:
+                self.video_id = None
+                self.privateStream = True
+                return None
+            else:
+                self.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
+                self.privateStream = False
+                if not self.video_id:
+                    return [False, "Unable to find video id in the YouTube player config!"]
+        else:
+            array = re.findall('property="og:title" content="(.+?)"', html)
+            if array:
+                self.privateStream = True
+            else:
+                return [False, "Unable to find video id or check if private stream"]
+
+        if not self.privateStream:
+            # TO AVOID REPEATING REQUESTS.
+            player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+            if player_response:
+                # playabilityStatus is legit heartbeat all over again..
+                playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
+                if playabilityStatus is None or "LIVE_STREAM_OFFLINE" not in playabilityStatus['status']:
+                    if "streamingData" not in player_response:
+                        warning("No StreamingData, Youtube bugged out!")
+                        return None
+                    manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+                    if not manifest_url:
+                        warning("Unable to find Manifest URL.")
+                        return None
+                    formats = download_m3u8_formats(manifest_url)
+                    if formats is None or len(formats) is 0:
+                        warning("There were no formats found! Even when the streamer is live.")
+                        return None
+                    f = get_format_from_data(formats, None)
+                    self.YoutubeStream = {
+                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                        'url': f['url'],
+                        'title': yt_player_config['title'],
+                        'description': player_response['videoDetails']['shortDescription'],
+                    }
 
         if not self.privateStream:
             set_global_youtube_variables(html_code=html)
+
+        # ONLY WORKS IF LOGGED IN
+        self.sponsor_on_channel = self.get_sponsor_channel(html_code=html)
 
         return [True, "OK"]
 
@@ -155,35 +229,6 @@ class ChannelInfo:
             stopped("Failed getting Channel Name! Please report this!")
             return None
 
-    def get_video_id(self, html_code=None):
-        verbose("Getting Video ID.")
-        if html_code is None:
-            html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
-            if html_code is None:
-                return None
-        html_code = str(html_code)
-        # This is a good check to see if the channel live is private.
-        yt_player_config = get_yt_player_config(html_code)
-        if yt_player_config:
-            if 'args' not in yt_player_config:
-                warning("Something happened when finding the video-id. There is no args in yt_player_config!")
-                return None
-            if "live_playback" not in yt_player_config['args']:
-                self.privateStream = True
-                return None
-            if 'video_id' not in yt_player_config['args']:
-                warning("Something happened when finding the video-id. Unable to find video id in yt player config.")
-                return None
-            return yt_player_config['args']['video_id']
-        else:
-            # PRIVATE LOGIN FALLBACK
-            array = re.findall('property="og:title" content="(.+?)"', html_code)
-            if array:
-                self.privateStream = True
-                return None
-            else:
-                return None
-
     def get_sponsor_channel(self, html_code=None):
         from .. import is_google_account_login_in
         if is_google_account_login_in():
@@ -199,14 +244,19 @@ class ChannelInfo:
             return False
         return False
 
-    def check_streaming_thread(self, TestUpload=False):
+    def start_heartbeat_thread(self, TestUpload=False):
+        """
+
+        Checks for streams, records them if live.
+        Best under a thread to allow multiple channels.
+
+        """
+        alreadyChecked = True
         self.TestUpload = TestUpload
-        first_time = True
         while True:
-            boolean_live = self.is_live(first_time=first_time)  # Checks if stream is live.
-            self.live_streaming = boolean_live
+            # LOOP
+            boolean_live = self.is_live(alreadyChecked=alreadyChecked)
             if not boolean_live:
-                first_time = False
                 if self.sponsor_on_channel:
                     verbose("Reading Community Posts on " + self.channel_name + ".")
                     # NOTE this edits THE video id when finds stream.
@@ -227,28 +277,40 @@ class ChannelInfo:
                         info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
                         sleep(self.pollDelayMs / 1000)
             if boolean_live:
-                if first_time is True:
-                    info(self.channel_name + " is already Live!")
-                else:
-                    info(self.channel_name + " is now Live!")
-                fully_recorded = openStream(self, None, alreadyLIVE=first_time)
-                if fully_recorded:
-                    thread = Thread(target=self.start_upload, name=self.channel_name)
-                    thread.daemon = True  # needed control+C to work.
-                    thread.start()
-                    if self.TestUpload:
-                        thread.join()
-                        stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
-                sleep(2.5)
+                if not self.YoutubeStream:
+                    self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
+                if self.YoutubeStream:
+                    fully_recorded = self.openStream(self.YoutubeStream)
+                    if fully_recorded:
+                        thread = Thread(target=self.start_upload, name=self.channel_name)
+                        thread.daemon = True  # needed control+C to work.
+                        thread.start()
+                        if self.TestUpload:
+                            thread.join()
+                            stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
+                    sleep(2.5)
+                sleep(self.pollDelayMs / 1000)
             if boolean_live is None:
                 warning("Internet Offline. :/")
                 sleep(10)
+            if alreadyChecked:
+                alreadyChecked = False
 
-    def is_live(self, first_time=False):
-        return is_live(self, first_time=first_time)
+            # REPEAT (END OF LOOP)
+
+    def is_live(self, alreadyChecked=False):
+        boolean_live = is_live(self, alreadyChecked=alreadyChecked)
+        self.live_streaming = boolean_live
+        return boolean_live
 
     def is_live_sponsor_only_streams(self):
         return is_live_sponsor_only_streams(self)
+
+    def openStream(self, YoutubeStream):
+        return openStream(self, YoutubeStream)
+
+    def getYoutubeStreamInfo(self, recordingHeight=None):
+        return getYoutubeStreamInfo(self, recordingHeight=recordingHeight)
 
     def create_filename(self, video_id):
         now = datetime.now()

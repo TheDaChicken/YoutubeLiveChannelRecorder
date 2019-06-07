@@ -4,7 +4,6 @@ from time import sleep
 
 from ..utils.web import download_website, download_m3u8_formats
 from ..utils.parser import parse_json
-from ..utils.youtube import get_yt_player_config
 from ..utils.other import get_format_from_data, try_get
 from ..utils.windowsNotification import show_windows_toast_notification
 from ..dataHandler import DownloadThumbnail
@@ -15,18 +14,15 @@ from ..encoder import Encoder
 # from .channelClass import ChannelInfo
 
 
-def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
+def openStream(channelClass, YoutubeStream):
     """
 
     Records Youtube Live Stream. This holds until live stream is over.
     Note: ChannelClass is meant to be self in ChannelInfo class.
 
-    :type alreadyLIVE: bool
-    :type recordingHeight: str, int, None
+    :type YoutubeStream: dict
     :type channelClass: ChannelInfo
     """
-
-    YoutubeStream = getYoutubeStreamInfo(channelClass, alreadyLIVE=alreadyLIVE, recordingHeight=recordingHeight)
 
     channelClass.title = YoutubeStream['title']
     channelClass.description = YoutubeStream['description']
@@ -114,7 +110,7 @@ def openStream(channelClass, recordingHeight=None, alreadyLIVE=False):
             return True
 
 
-def getYoutubeStreamInfo(channelInfo, alreadyLIVE=None, recordingHeight=None):
+def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
     """
 
     Gets the stream info from channelClass.
@@ -123,7 +119,6 @@ def getYoutubeStreamInfo(channelInfo, alreadyLIVE=None, recordingHeight=None):
     https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/youtube.py#L1675
 
     :type recordingHeight: str, int, None
-    :type alreadyLIVE: bool
     :type channelInfo: ChannelInfo
     """
     try:
@@ -133,17 +128,12 @@ def getYoutubeStreamInfo(channelInfo, alreadyLIVE=None, recordingHeight=None):
         parse_qs = None  # Fixes a random PyCharm warning.
         stopped("Unsupported version of Python. You need Version 3 :<")
 
-    if alreadyLIVE is False:
-        video_info_website = download_website(
-            'https://www.youtube.com/get_video_info?video_id={0}'.format(channelInfo.video_id))
-        if video_info_website is None:
-            return video_info_website
-        video_info = parse_qs(video_info_website)
-        player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
-    else:
-        video_website = download_website('https://www.youtube.com/channel/{0}/live'.format(channelInfo.channel_id))
-        video_info = try_get(get_yt_player_config(video_website), lambda x: x['args'], dict)
-        player_response = parse_json(try_get(video_info, lambda x: x['player_response'], str))
+    video_info_website = download_website(
+        'https://www.youtube.com/get_video_info?video_id={0}'.format(channelInfo.video_id))
+    if video_info_website is None:
+        return video_info_website
+    video_info = parse_qs(video_info_website)
+    player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
 
     if player_response:
         if "streamingData" not in player_response:

@@ -2,31 +2,27 @@ from time import sleep
 
 from ..log import warning, YoutubeReply
 from ..utils.other import get_highest_thumbnail, try_get
-from ..utils.web import download_json, download_website
+from ..utils.web import download_json
 from ..dataHandler import DownloadThumbnail
 
 
-def is_live(channel_Class, first_time=False):
+def is_live(channel_Class, alreadyChecked=False):
     """
 
     Checks if channel is live using the normal Youtube heartbeat.
     Also sets heartbeat related variables.
 
     :type channel_Class: ChannelInfo
-    :type first_time: bool
+    :type alreadyChecked: bool
     """
 
-    if channel_Class.video_id is None:
-        if channel_Class.privateStream is True:
-            if first_time is False:
-                html = download_website("https://www.youtube.com/channel/" + channel_Class.channel_id + "/live")
-                if html is None:
-                    return None
-                channel_Class.video_id = channel_Class.get_video_id(html_code=html)
-                channel_Class.sponsor_on_channel = channel_Class.get_sponsor_channel(html_code=html)
-            if channel_Class.pollDelayMs is None:
-                channel_Class.pollDelayMs = get_poll_delay_ms({}, channel_Class)
-            return False
+    if channel_Class.privateStream is True:
+        if alreadyChecked is False:
+            channel_Class.loadVideoData()
+        if channel_Class.pollDelayMs is None:
+            channel_Class.pollDelayMs = get_poll_delay_ms({}, channel_Class)
+        return False
+
     from . import account_playback_token, page_build_label, page_cl, variants_checksum, utf_offset, client_version, \
         client_name
     referer_url = 'https://www.youtube.com/channel/{0}/live'.format(channel_Class.channel_id)
