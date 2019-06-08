@@ -351,17 +351,20 @@ class ChannelInfo:
             verbose("Starting Upload Thread ...")
             note("Closing the python script stops the upload.")
             settings = get_upload_settings(self.channel_name)
-            upload_video_id = initialize_upload(youtube_client, self.video_location,
-                                                self._replace_variables(settings['title']),
-                                                self._replace_variables('\n'.join(settings['description'])),
-                                                self._replace_variables(settings['tags']),
-                                                settings['CategoryID'], settings['privacyStatus'])
-            if UploadThumbnail() is True:
-                info("Uploading Thumbnail for " + self.channel_name)
-                sleep(1.5)
-                upload_thumbnail(youtube_client, upload_video_id,
-                                 self.thumbnail_location)
-                info("Thumbnail Done Uploading!")
+            try:
+                upload_video_id = initialize_upload(youtube_client, self.video_location,
+                                                    self._replace_variables(settings['title']),
+                                                    self._replace_variables('\n'.join(settings['description'])),
+                                                    self._replace_variables(settings['tags']),
+                                                    settings['CategoryID'], settings['privacyStatus'])
+                if UploadThumbnail() is True:
+                    info("Uploading Thumbnail for " + self.channel_name)
+                    sleep(1.5)
+                    upload_thumbnail(youtube_client, upload_video_id,
+                                     self.thumbnail_location)
+                    info("Thumbnail Done Uploading!")
+            except Exception:
+                warning("Unable to upload stream to Youtube.")
 
     def _replace_variables(self, text):
         if text is None or text is False or text is True:
