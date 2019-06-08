@@ -161,7 +161,7 @@ class ChannelInfo:
             if player_response:
                 # playabilityStatus is legit heartbeat all over again..
                 playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-                if playabilityStatus is None or "LIVE_STREAM_OFFLINE" not in playabilityStatus['status']:
+                if playabilityStatus is not None and "OK" in playabilityStatus['status']:
                     if "streamingData" not in player_response:
                         warning("No StreamingData, Youtube bugged out!")
                         return None
@@ -260,12 +260,14 @@ class ChannelInfo:
                 if self.sponsor_on_channel:
                     verbose("Reading Community Posts on " + self.channel_name + ".")
                     # NOTE this edits THE video id when finds stream.
-                    boolean_live = self.is_live_sponsor_only_streams()
-                    if not boolean_live:
+                    boolean_found = self.is_live_sponsor_only_streams()
+                    if not boolean_found:
                         info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
                         info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
                         sleep(self.pollDelayMs / 1000)
-                    if boolean_live:
+                    if boolean_found:
+                        self.sequence_number = 0
+                        boolean_live = self.is_live(alreadyChecked=alreadyChecked)
                         self.sponsor_only_stream = True
                 else:
                     if self.sponsor_only_stream:
@@ -281,6 +283,7 @@ class ChannelInfo:
                     self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
                 if self.YoutubeStream:
                     fully_recorded = self.openStream(self.YoutubeStream)
+                    self.YoutubeStream = None
                     if fully_recorded:
                         thread = Thread(target=self.start_upload, name=self.channel_name)
                         thread.daemon = True  # needed control+C to work.

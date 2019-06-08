@@ -1,8 +1,9 @@
 import re
 
-from ..utils.web import download_website
+from ..utils.web import download_website, download_m3u8_formats
+from ..utils.parser import parse_json
 from ..utils.youtube import get_yt_initial_data, get_yt_player_config
-from ..utils.other import try_get
+from ..utils.other import try_get, get_format_from_data
 from ..log import warning
 
 already_checked_video_ids = []
@@ -17,27 +18,57 @@ def is_live_sponsor_only_streams(channel_class):
     :type channel_class: ChannelInfo
     """
 
-    def isValidYoutubeLiveStream(video_url):
-        video_website = download_website(video_url)
-        if video_website is None:
-            warning("Internet Offline. :/")
-            return None
-        elif video_website is 404:
-            warning("Found a video id or something but it returned a 404. What?")
-            return False
-        elif type(url) is str:
-            yt_player_config = get_yt_player_config(video_website)
-            if yt_player_config:
-                if 'args' in yt_player_config:
-                    if "live_playback" in yt_player_config['args']:
-                        return True
-                    return False
-                warning("Found Youtube Player Config but it didn't contain anything needed "
-                        "to check if it's a valid Youtube Live Stream.")
-                return False
+    def loadVideoData():
+        """
+
+        This is used to grab video info from the Youtube site, like video_id, to check if already live,
+        and the stream url if already live.
+        Everything else would use heartbeat and get video info url.
+
+        :return: Nothing. It edits the class.
+        """
+        html = download_website('https://www.youtube.com/watch?v=' + video_id)
+        if html is None:
+            return [False, "Failed getting Video Data from the internet! "
+                           "This means there is no good internet available!"]
+        if html == 404:
+            return [False, "Failed getting Video Data! \"" +
+                    video_id + "\" doesn't exist as a video id!"]
+        yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        if yt_player_config:
+            if "live_playback" not in yt_player_config:
+                return [False, "Found a Non-Valid Youtube Live Stream."]
             else:
-                warning("Unable to find YT Player Config.")
-                return False
+                channel_class.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
+                if not channel_class.video_id:
+                    return [False, "Unable to find video id in the YouTube player config!"]
+        else:
+            return [False, "Unable to find YT Player Config."]
+
+        # TO AVOID REPEATING REQUESTS.
+        player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+        if player_response:
+            # playabilityStatus is legit heartbeat all over again..
+            playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
+            if playabilityStatus is not None and "OK" in playabilityStatus['status']:
+                if "streamingData" not in player_response:
+                    warning("No StreamingData, Youtube bugged out!")
+                    return None
+                manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+                if not manifest_url:
+                    warning("Unable to find Manifest URL.")
+                    return None
+                formats = download_m3u8_formats(manifest_url)
+                if formats is None or len(formats) is 0:
+                    warning("There were no formats found! Even when the streamer is live.")
+                    return None
+                f = get_format_from_data(formats, None)
+                channel_class.YoutubeStream = {
+                    'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                    'url': f['url'],
+                    'title': yt_player_config['title'],
+                    'description': player_response['videoDetails']['shortDescription'],
+                }
 
     for communityTabMessage in readCommunityPosts(channel_class):
         dict_urls = communityTabMessage['contentText']['URLs']
@@ -51,10 +82,10 @@ def is_live_sponsor_only_streams(channel_class):
                     if video_id:
                         if video_id not in already_checked_video_ids:
                             already_checked_video_ids.append(video_id)
-                            boolean = isValidYoutubeLiveStream('https://www.youtube.com/watch?v=' + video_id)
-                            if boolean:
-                                channel_class.video_id = video_id
-                                return True
+                            ok, message = loadVideoData()
+                            if not ok:
+                                warning(message)
+                            return True
                         # IF ALREADY CHECK IS TOO BIG
                         if len(already_checked_video_ids) is 5:
                             for video_id in already_checked_video_ids:
