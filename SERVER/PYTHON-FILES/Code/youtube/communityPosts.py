@@ -85,14 +85,13 @@ def is_live_sponsor_only_streams(channel_class):
                             ok, message = loadVideoData()
                             if not ok:
                                 warning(message)
-                            return True
+                            else:
+                                return True
                         # IF ALREADY CHECK IS TOO BIG
                         if len(already_checked_video_ids) is 5:
                             for video_id in already_checked_video_ids:
                                 already_checked_video_ids.remove(video_id)
-                else:
-                    return False
-        return False
+    return False
 
 
 def readCommunityPosts(channel_class):
