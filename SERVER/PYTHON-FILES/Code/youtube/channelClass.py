@@ -342,8 +342,8 @@ class ChannelInfo:
     def download_thumbnail(self):
         info("Starting Download of Live Stream Thumbnail.")
         if self.thumbnail_url:
-            downloaded = download_image(self.thumbnail_url, self.thumbnail_location)
-        if downloaded:
+            ok = download_image(self.thumbnail_url, self.thumbnail_location)
+        if ok:
             info("Done Downloading Thumbnail!")
         else:
             info("Not able to download thumbnail!")
