@@ -69,7 +69,9 @@ def is_live(channel_Class, alreadyChecked=False):
     # SETTING VARIABLES
     liveStreamAbilityRenderer = try_get(json, lambda x: x['liveStreamability']['liveStreamabilityRenderer'], dict)
     if liveStreamAbilityRenderer:
-        channel_Class.thumbnail_url = get_thumbnail(liveStreamAbilityRenderer, channel_Class)
+        thumbnail = get_thumbnail(liveStreamAbilityRenderer)
+        if thumbnail:
+            channel_Class.thumbnail_url = thumbnail
         channel_Class.pollDelayMs = get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class)
         channel_Class.live_scheduled = is_scheduled(liveStreamAbilityRenderer)
         channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
@@ -108,7 +110,7 @@ def get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class):
 
 
 # Getting Thumbnails from Heartbeat Json
-def get_thumbnail(liveStreamAbilityRenderer, channel_Class):
+def get_thumbnail(liveStreamAbilityRenderer):
     if DownloadThumbnail() is not True:
         return None
     offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
@@ -116,7 +118,7 @@ def get_thumbnail(liveStreamAbilityRenderer, channel_Class):
     if thumbnail_list:
         return get_highest_thumbnail(
             offlineSlate['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'])
-    return 'https://i.ytimg.com/vi/{}/maxresdefault.jpg'.format(channel_Class.video_id)
+    return None
 
 
 # Checking if live stream is scheduled from Heartbeat Json

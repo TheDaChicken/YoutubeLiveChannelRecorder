@@ -3,7 +3,7 @@ import re
 from ..utils.web import download_website, download_m3u8_formats
 from ..utils.parser import parse_json
 from ..utils.youtube import get_yt_initial_data, get_yt_player_config
-from ..utils.other import try_get, get_format_from_data
+from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail
 from ..log import warning
 
 already_checked_video_ids = []
@@ -63,11 +63,15 @@ def is_live_sponsor_only_streams(channel_class):
                     warning("There were no formats found! Even when the streamer is live.")
                     return None
                 f = get_format_from_data(formats, None)
+                videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
+                if thumbnails:
+                    channel_class.thumbnail_url = get_highest_thumbnail(thumbnails)
                 channel_class.YoutubeStream = {
                     'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
                     'url': f['url'],
-                    'title': yt_player_config['title'],
-                    'description': player_response['videoDetails']['shortDescription'],
+                    'title': videoDetails['title'],
+                    'description': videoDetails['shortDescription'],
                 }
 
     for communityTabMessage in readCommunityPosts(channel_class):

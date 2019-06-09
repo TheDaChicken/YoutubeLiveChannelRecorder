@@ -9,7 +9,7 @@ from .heatbeat import is_live
 from . import set_global_youtube_variables
 from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note
-from ..utils.other import try_get, get_format_from_data
+from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.youtube import get_yt_player_config
@@ -161,25 +161,30 @@ class ChannelInfo:
             if player_response:
                 # playabilityStatus is legit heartbeat all over again..
                 playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-                if playabilityStatus is not None and "OK" in playabilityStatus['status']:
-                    if "streamingData" not in player_response:
-                        warning("No StreamingData, Youtube bugged out!")
-                        return None
-                    manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
-                    if not manifest_url:
-                        warning("Unable to find Manifest URL.")
-                        return None
-                    formats = download_m3u8_formats(manifest_url)
-                    if formats is None or len(formats) is 0:
-                        warning("There were no formats found! Even when the streamer is live.")
-                        return None
-                    f = get_format_from_data(formats, None)
-                    self.YoutubeStream = {
-                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                        'url': f['url'],
-                        'title': yt_player_config['title'],
-                        'description': player_response['videoDetails']['shortDescription'],
-                    }
+                if playabilityStatus:
+                    if "OK" in playabilityStatus['status']:
+                        if "streamingData" not in player_response:
+                            warning("No StreamingData, Youtube bugged out!")
+                            return None
+                        manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+                        if not manifest_url:
+                            warning("Unable to find Manifest URL.")
+                            return None
+                        formats = download_m3u8_formats(manifest_url)
+                        if formats is None or len(formats) is 0:
+                            warning("There were no formats found! Even when the streamer is live.")
+                            return None
+                        f = get_format_from_data(formats, None)
+                        videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                        thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
+                        if thumbnails:
+                            self.thumbnail_url = get_highest_thumbnail(thumbnails)
+                        self.YoutubeStream = {
+                            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                            'url': f['url'],
+                            'title': videoDetails['title'],
+                            'description': videoDetails['shortDescription'],
+                        }
 
         if not self.privateStream:
             set_global_youtube_variables(html_code=html)
@@ -270,7 +275,7 @@ class ChannelInfo:
                         boolean_live = self.is_live(alreadyChecked=alreadyChecked)
                         self.sponsor_only_stream = True
                 else:
-                    if self.sponsor_only_stream:
+                    if self.sponsor_only_stream is True:
                         self.sponsor_only_stream = False
                     if not self.privateStream:
                         info(self.channel_name + " is not live!")
@@ -336,7 +341,8 @@ class ChannelInfo:
 
     def download_thumbnail(self):
         info("Starting Download of Live Stream Thumbnail.")
-        downloaded = download_image(self.thumbnail_url, self.thumbnail_location)
+        if self.thumbnail_url:
+            downloaded = download_image(self.thumbnail_url, self.thumbnail_location)
         if downloaded:
             info("Done Downloading Thumbnail!")
         else:
