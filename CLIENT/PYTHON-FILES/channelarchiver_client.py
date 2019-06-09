@@ -15,6 +15,7 @@ serverPort = None
 if platform.release() is '10':
     try:
         from win10toast import ToastNotifier
+
         toaster = ToastNotifier()
     except ImportError:
         warning("win10toast isn't installed!"
@@ -33,6 +34,11 @@ else:
 #
 #
 #
+
+def setTitle(title):
+    if platform.release() is '10':
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleTitleW(title)
 
 
 def clearScreen():
@@ -55,6 +61,7 @@ if __name__ == '__main__':
     if not check_server(serverIP, serverPort):
         stopped("Server is not running! Try checking again.")
     else:
+        setTitle('YoutubeLiveChannelRecorder [Connected to Server: ' + serverIP + " Port: " + serverPort + "]")
         info("Server Running.")
         info("Getting Server Info.")
         channel_info = get_channel_info(serverIP, serverPort)
@@ -101,8 +108,9 @@ if __name__ == '__main__':
                                                                                            "COMMUNITY TAB FOR "
                                                                                            "SPONSOR ONLY STREAMS)]")
                                 else:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                        'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + Fore.WHITE + " ")
+                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                          channelInfo[
+                                              'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + Fore.WHITE + " ")
                             elif channelInfo['live_scheduled'] is True:
                                 print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
                                     'name'] + Fore.LIGHTGREEN_EX + " [SCHEDULED AT " +
