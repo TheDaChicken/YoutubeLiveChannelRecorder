@@ -5,7 +5,8 @@
   This is a server program. You will need to use the client in order to
   control this program.
   
-  ALSO BOTH SERVER AND CLIENT DOESN'T WORK ON PYTHON VERSION 2.
+  ALSO BOTH SERVER AND CLIENT WON'T WORK ON PYTHON VERSION 2.
+  
   THIS PROGRAM IS TESTED AND WORKS BEST ON PYTHON VERSION 3.7.2.
 
 ## SETUP SERVER
