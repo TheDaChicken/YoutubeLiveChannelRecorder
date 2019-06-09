@@ -371,7 +371,8 @@ class ChannelInfo:
                     upload_thumbnail(youtube_client, upload_video_id,
                                      self.thumbnail_location)
                     info("Thumbnail Done Uploading!")
-            except Exception:
+            except Exception as e:
+                warning(e.message)
                 warning("Unable to upload stream to Youtube.")
 
     def _replace_variables(self, text):
