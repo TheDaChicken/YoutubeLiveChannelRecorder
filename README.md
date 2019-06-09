@@ -5,9 +5,10 @@
   This is a server program. You will need to use the client in order to
   control this program.
   
-  ALSO BOTH SERVER AND CLIENT ONLY WORKS ON PYTHON 3.
+  ALSO BOTH SERVER AND CLIENT DOESN'T WORK ON PYTHON VERSION 2.
+  THIS PROGRAM IS TESTED AND WORKS BEST ON PYTHON VERSION 3.7.2.
 
-## INSTALL SERVER
+## SETUP SERVER
   To use the server-side, you need the required packages:
   ```
   colorama: Used for color.
@@ -31,7 +32,7 @@
   
   run __main__.py in the server files folder with argument -p <port_name> to specify port.
 
-## INSTALL CLIENT
+## SETUP CLIENT
   To use the client, you need the required packages:
   ```
   colorama: Used for color.
