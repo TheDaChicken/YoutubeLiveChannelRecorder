@@ -262,14 +262,22 @@ class ChannelInfo:
             # LOOP
             boolean_live = self.is_live(alreadyChecked=alreadyChecked)
             if not boolean_live:
-                if self.sponsor_on_channel:
+                # HEARTBEAT INTERNET OFFLINE.
+                if boolean_live is None:
+                    warning("INTERNET OFFLINE")
+                    sleep(2.4)
+                elif self.sponsor_on_channel:
                     verbose("Reading Community Posts on " + self.channel_name + ".")
                     # NOTE this edits THE video id when finds stream.
                     boolean_found = self.is_live_sponsor_only_streams()
                     if not boolean_found:
-                        info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
-                        info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
-                        sleep(self.pollDelayMs / 1000)
+                        if boolean_found is None:
+                            warning("INTERNET OFFLINE")
+                            sleep(2.52)
+                        else:
+                            info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
+                            info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
+                            sleep(self.pollDelayMs / 1000)
                     if boolean_found:
                         self.sequence_number = 0
                         boolean_live = self.is_live(alreadyChecked=alreadyChecked)
@@ -298,9 +306,6 @@ class ChannelInfo:
                             stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
                     sleep(2.5)
                 sleep(self.pollDelayMs / 1000)
-            if boolean_live is None:
-                warning("Internet Offline. :/")
-                sleep(10)
             if alreadyChecked:
                 alreadyChecked = False
 
@@ -308,11 +313,13 @@ class ChannelInfo:
 
     def is_live(self, alreadyChecked=False):
         boolean_live = is_live(self, alreadyChecked=alreadyChecked)
-        self.live_streaming = boolean_live
+        self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
 
     def is_live_sponsor_only_streams(self):
-        return is_live_sponsor_only_streams(self)
+        boolean_live = is_live_sponsor_only_streams(self)
+        self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
+        return boolean_live
 
     def openStream(self, YoutubeStream):
         return openStream(self, YoutubeStream)
@@ -372,7 +379,7 @@ class ChannelInfo:
                                      self.thumbnail_location)
                     info("Thumbnail Done Uploading!")
             except Exception as e:
-                warning(e)
+                warning(str(e))
                 warning("Unable to upload stream to Youtube.")
 
     def _replace_variables(self, text):

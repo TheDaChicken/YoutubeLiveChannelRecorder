@@ -74,27 +74,31 @@ def is_live_sponsor_only_streams(channel_class):
                     'description': videoDetails['shortDescription'],
                 }
 
-    for communityTabMessage in readCommunityPosts(channel_class):
-        dict_urls = communityTabMessage['contentText']['URLs']
-        # FIND ANY VIDEO ID IN MESSAGE
-        if dict_urls:
-            for url in dict_urls:
-                video_id_object = re.search(r'youtu.be\/(.+)|youtube.com\/watch\?v=(.+)', url)
-                if video_id_object:
-                    video_id_tuple = video_id_object.groups()
-                    video_id = next(x for x in video_id_tuple if x is not None)
-                    if video_id:
-                        if video_id not in already_checked_video_ids:
-                            already_checked_video_ids.append(video_id)
-                            ok, message = loadVideoData()
-                            if not ok:
-                                warning(message)
-                            else:
-                                return True
-                        # IF ALREADY CHECK IS TOO BIG
-                        if len(already_checked_video_ids) is 5:
-                            for video_id in already_checked_video_ids:
-                                already_checked_video_ids.remove(video_id)
+    CommunityPosts = readCommunityPosts(channel_class)
+    if CommunityPosts:
+        for communityTabMessage in CommunityPosts:
+            dict_urls = communityTabMessage['contentText']['URLs']
+            # FIND ANY VIDEO ID IN MESSAGE
+            if dict_urls:
+                for url in dict_urls:
+                    video_id_object = re.search(r'youtu.be\/(.+)|youtube.com\/watch\?v=(.+)', url)
+                    if video_id_object:
+                        video_id_tuple = video_id_object.groups()
+                        video_id = next(x for x in video_id_tuple if x is not None)
+                        if video_id:
+                            if video_id not in already_checked_video_ids:
+                                already_checked_video_ids.append(video_id)
+                                ok, message = loadVideoData()
+                                if not ok:
+                                    warning(message)
+                                else:
+                                    return True
+                            # IF ALREADY CHECK IS TOO BIG
+                            if len(already_checked_video_ids) is 5:
+                                for video_id in already_checked_video_ids:
+                                    already_checked_video_ids.remove(video_id)
+    elif CommunityPosts is None:
+        return None
     return False
 
 

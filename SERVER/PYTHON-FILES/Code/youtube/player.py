@@ -45,18 +45,18 @@ def openStream(channelClass, YoutubeStream):
         while True:
             info("Holding until Stream is over.")
             array = channelClass.is_live()
-            channelClass.live_streaming = array
-            if array is None:
-                warning("Internet Offline. :/")
+            if array:
                 sleep(channelClass.pollDelayMs / 1000)
-            elif array is True:
-                sleep(channelClass.pollDelayMs / 1000)
-            elif array is False:
-                warning("Recording failed, so it is unneeded for the recording to stop.")
-                sleep(channelClass.pollDelayMs / 1000 / 2)
-                channelClass.EncoderClass = None
-                channelClass.recording_status = None
-                return False
+            elif not array:
+                if array is None:
+                    warning("Internet Offline. :/")
+                    sleep(channelClass.pollDelayMs / 1000)
+                else:
+                    warning("Recording failed, so it is unneeded for the recording to stop.")
+                    sleep(channelClass.pollDelayMs / 1000 / 2)
+                    channelClass.EncoderClass = None
+                    channelClass.recording_status = None
+                    return False
 
     channelClass.recording_status = "Recording."
 
@@ -77,16 +77,18 @@ def openStream(channelClass, YoutubeStream):
         channelClass.EncoderClass.stop_recording()
         channelClass.EncoderClass = None
         return True
+
     offline = False
     while True:
-        if channelClass.EncoderClass.running is False:
+        if not channelClass.EncoderClass.running:
             channelClass.recording_status = "Crashed."
             show_windows_toast_notification("Live Recording Notifications", "FFMPEG CRASHED ON " +
                                             channelClass.channel_name + " live stream! Retrying ...")
             info("FFmpeg crashed. Restarting ... Uploading part that was recorded (if uploading is on).")
             return False
+
         array = channelClass.is_live()
-        channelClass.live_streaming = array
+
         if array is None:
             if offline is not True:
                 offline = True

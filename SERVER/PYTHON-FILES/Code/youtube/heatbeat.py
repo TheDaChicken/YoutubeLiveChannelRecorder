@@ -18,9 +18,9 @@ def is_live(channel_Class, alreadyChecked=False):
 
     if channel_Class.privateStream is True:
         if alreadyChecked is False:
-            channel_Class.loadVideoData()
-        if channel_Class.pollDelayMs is None:
-            channel_Class.pollDelayMs = get_poll_delay_ms({}, channel_Class)
+            ok, message = channel_Class.loadVideoData()
+            if not ok:
+                warning(message)
         return False
 
     from . import account_playback_token, page_build_label, page_cl, variants_checksum, utf_offset, client_version, \

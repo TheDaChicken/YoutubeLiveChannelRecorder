@@ -71,9 +71,14 @@ def download_website(url, headers=None, data=None):
         cj.clear_expired_cookies()
         cj.clear_session_cookies()
     except Exception as e:
-        warning("Error: " + e)
+        warning("Error: " + str(e))
         warning("Unable to save cookies.")
-    website_bytes = response.read()
+    try:
+        website_bytes = response.read()
+    except OSError as e:
+        warning("Error: " + str(e))
+        warning("Unable to read website bytes.")
+        return None
     return website_bytes.decode('utf-8')
 
 
