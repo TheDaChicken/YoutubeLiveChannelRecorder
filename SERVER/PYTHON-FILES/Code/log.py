@@ -8,16 +8,16 @@ init(autoreset=True)
 
 
 def info(text):
-    print(Fore.LIGHTCYAN_EX + "[INFO] " + "{}".format(text))
+    sys.stdout.write(Fore.LIGHTCYAN_EX + "[INFO] " + "{}".format(text) + "\n")
 
 
 def verbose(text):
     if Verbose is True:
-        print(Fore.LIGHTRED_EX + "[VERBOSE] " + "{}".format(text))
+        sys.stdout.write(Fore.LIGHTRED_EX + "[VERBOSE] " + "{}".format(text) + "\n")
 
 
 def warning(text):
-    print(Fore.LIGHTRED_EX + "[WARNING] " + "{}".format(text))
+    sys.stdout.write(Fore.LIGHTRED_EX + "[WARNING] " + "{}".format(text) + "\n")
 
 
 def disable_youtube_reply():
@@ -27,19 +27,19 @@ def disable_youtube_reply():
 
 def YoutubeReply(text):
     if Reply is True:
-        print(Fore.LIGHTMAGENTA_EX + "[REPLY] " + "{}".format(text))
+        sys.stdout.write(Fore.LIGHTMAGENTA_EX + "[REPLY] " + "{}".format(text) + "\n")
 
 
 def EncoderLog(text):
-    print(Fore.LIGHTGREEN_EX + "[ENCODER] " + Fore.RESET + "{}".format(text))
+    sys.stdout.write(Fore.LIGHTGREEN_EX + "[ENCODER] " + Fore.RESET + "{}".format(text) + "\n")
 
 
 def stopped(text):
-    print(Fore.LIGHTRED_EX + "{}".format(text))
+    sys.stdout.write(Fore.LIGHTRED_EX + "{}".format(text) + "\n")
     from time import sleep
     sleep(10)
     sys.exit(1)
 
 
 def note(text):
-    print(Fore.LIGHTCYAN_EX + "[NOTE] " + "{}".format(text))
+    sys.stdout.write(Fore.LIGHTCYAN_EX + "[NOTE] " + "{}".format(text) + "\n")
