@@ -111,6 +111,12 @@ def openStream(channelClass, YoutubeStream):
                                                                                              channelClass.video_id)
                                                                                          + '.mp4'))
                     channelClass.recording_status = "Recording."
+                    show_windows_toast_notification("Live Recording Notifications",
+                                                    channelClass.channel_name + " is live and is now "
+                                                                                "recording. \n"
+                                                                                "Recording at "
+                                                    + YoutubeStream['stream_resolution'] +
+                                                    ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
                 else:
                     channelClass.recording_status = "Crashed."
                     show_windows_toast_notification("Live Recording Notifications", "FFMPEG CRASHED ON " +
