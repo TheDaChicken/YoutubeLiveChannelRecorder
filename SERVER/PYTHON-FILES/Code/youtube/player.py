@@ -81,7 +81,6 @@ def openStream(channelClass, YoutubeStream):
     offline = False
     while True:
         array = channelClass.is_live()
-        warning(array)
         if not array:
             if array is None:
                 if offline is not True:
@@ -93,8 +92,8 @@ def openStream(channelClass, YoutubeStream):
                         warning("- Turning off Recording -")
                     else:
                         warning("- Recording Crashed -")
-                show_windows_toast_notification("Live Recording Notifications", "INTERNET WHEN OFFLINE DURING " +
-                                                channelClass.channel_name + "'s live stream!")
+                    show_windows_toast_notification("Live Recording Notifications", "INTERNET WHEN OFFLINE DURING " +
+                                                    channelClass.channel_name + "'s live stream!")
                 sleep(channelClass.pollDelayMs / 1000)
             else:
                 sleep(channelClass.pollDelayMs / 1000 / 2)
