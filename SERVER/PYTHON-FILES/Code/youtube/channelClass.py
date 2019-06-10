@@ -142,7 +142,7 @@ class ChannelInfo:
             if "live_playback" not in yt_player_config:
                 self.video_id = None
                 self.privateStream = True
-                return None
+                return [True, "OK"]
             else:
                 self.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
                 self.privateStream = False
