@@ -43,8 +43,10 @@ def download_website(url, headers=None, data=None):
     """
     try:
         from urllib.request import urlopen, Request
+        from urllib.error import URLError
     except ImportError:
         Request = None
+        URLError = None
         stopped("Unsupported version of Python. You need Version 3 :<")
 
     from .. import UserAgent
@@ -57,7 +59,7 @@ def download_website(url, headers=None, data=None):
 
     try:
         response = opener.open(request)
-    except (urllib.error.URLError, httplib2.ServerNotFoundError, TimeoutError, OSError) as e:
+    except (URLError, httplib2.ServerNotFoundError, TimeoutError, OSError) as e:
         try:
             if e.code == 404:
                 return 404
@@ -87,6 +89,8 @@ def download_image(image_url, file_name):
         from urllib.request import urlretrieve
         from urllib.error import URLError
     except ImportError:
+        URLError = None
+        urlretrieve = None
         stopped("Unsupported version of Python. You need Version 3 :<")
     try:
         urlretrieve(image_url, file_name)
