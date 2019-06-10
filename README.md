@@ -56,4 +56,4 @@
 ## Inspiration
   
   This idea came from when I wanted to record livestreams from [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
-  When he ends his livestreams, his deletes the recording. Meaning if were to miss a livestream or want to watch and look back on it. I can't. Since I was unable to record them fast enough when I got the notification when he was live, I made the program to record it automatically!
+  When he ends his livestreams, his deletes the recording. Meaning if I were to miss a livestream or want to watch and look back on it. I can't. Since I was unable to record them fast enough when I got the notification when he was live, I made the program to record it automatically!
