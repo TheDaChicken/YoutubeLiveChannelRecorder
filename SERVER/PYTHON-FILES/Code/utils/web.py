@@ -85,12 +85,13 @@ def download_website(url, headers=None, data=None):
 def download_image(image_url, file_name):
     try:
         from urllib.request import urlretrieve
+        from urllib.error import URLError
     except ImportError:
         stopped("Unsupported version of Python. You need Version 3 :<")
     try:
         urlretrieve(image_url, file_name)
         return True
-    except (httplib2.ServerNotFoundError, TimeoutError):
+    except (httplib2.ServerNotFoundError, TimeoutError, URLError):
         return False
 
 
