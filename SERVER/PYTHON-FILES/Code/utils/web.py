@@ -66,9 +66,13 @@ def download_website(url, headers=None, data=None):
         except AttributeError:
             return None
         return None
-    cj.save()  # Saves Cookies
-    cj.clear_expired_cookies()
-    cj.clear_session_cookies()
+    try:
+        cj.save()  # Saves Cookies
+        cj.clear_expired_cookies()
+        cj.clear_session_cookies()
+    except Exception as e:
+        warning("Error: " + e)
+        warning("Unable to save cookies.")
     website_bytes = response.read()
     return website_bytes.decode('utf-8')
 
