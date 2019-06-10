@@ -88,15 +88,20 @@ def openStream(channelClass, YoutubeStream):
             return False
 
         array = channelClass.is_live()
-
-        if array is None:
-            if offline is not True:
-                offline = True
+        if not array:
+            if array is None:
+                if offline is not True:
+                    offline = True
+                    channelClass.EncoderClass.stop_recording()
+                    warning("Internet Offline. :/")
+                    warning("- Turning off Recording -")
+                sleep(channelClass.pollDelayMs / 1000)
+            else:
+                sleep(channelClass.pollDelayMs / 1000 / 2)
                 channelClass.EncoderClass.stop_recording()
-                warning("Internet Offline. :/")
-                warning("- Turning off Recording -")
-            sleep(channelClass.pollDelayMs / 1000)
-        elif array is True:
+                channelClass.EncoderClass = None
+                return True
+        elif array:
             if offline is True:
                 offline = False
                 # Starts the recording back if internet was offline.
@@ -105,11 +110,6 @@ def openStream(channelClass, YoutubeStream):
                                                                                          channelClass.video_id)
                                                                                      + '.mp4'))
             sleep(channelClass.pollDelayMs / 1000)
-        elif array is False:
-            sleep(channelClass.pollDelayMs / 1000 / 2)
-            channelClass.EncoderClass.stop_recording()
-            channelClass.EncoderClass = None
-            return True
 
 
 def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
