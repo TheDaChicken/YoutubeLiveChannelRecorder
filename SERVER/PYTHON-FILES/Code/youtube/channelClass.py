@@ -46,7 +46,7 @@ class ChannelInfo:
     stop_thread = False
 
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
-    pollDelayMs = None
+    pollDelayMs = 8000
     sequence_number = 0
     broadcastId = None
 
