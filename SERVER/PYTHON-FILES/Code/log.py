@@ -7,6 +7,8 @@ Reply = True
 init(autoreset=True)
 
 
+# Sys.stdout.write is used to fix overlapping in printing.
+
 def info(text):
     sys.stdout.write(Fore.LIGHTCYAN_EX + "[INFO] " + "{}".format(text) + "\n")
 
