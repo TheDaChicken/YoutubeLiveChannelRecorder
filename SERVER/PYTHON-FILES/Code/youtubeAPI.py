@@ -124,8 +124,13 @@ def credentials_build(credentials):
     credentials = Credentials(**credentials)
 
     if build is not None:
-        b = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-                  credentials=credentials)
+        try:
+            b = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
+                      credentials=credentials)
+        except Exception as e:
+            warning(str(e))
+            warning("Unable to build Youtube API Client.")
+            return None
     return b
 
 

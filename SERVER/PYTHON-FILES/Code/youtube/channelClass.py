@@ -362,7 +362,7 @@ class ChannelInfo:
         # Allows to get the most updated client without saving it, since it might change.
         from ..youtubeAPI import get_youtube_client, initialize_upload, upload_thumbnail
         youtube_client = get_youtube_client(ignoreConfig=self.TestUpload)
-        if youtube_client is not None:
+        if youtube_client:
             verbose("Starting Upload Thread ...")
             note("Closing the python script stops the upload.")
             settings = get_upload_settings(self.channel_name)
