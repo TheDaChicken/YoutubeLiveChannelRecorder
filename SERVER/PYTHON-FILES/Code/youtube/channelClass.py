@@ -49,6 +49,7 @@ class ChannelInfo:
     pollDelayMs = 8000
     sequence_number = 0
     broadcastId = None
+    last_heartbeat = None
 
     # Channel Data
     channel_id = None
@@ -312,6 +313,9 @@ class ChannelInfo:
             # REPEAT (END OF LOOP)
 
     def is_live(self, alreadyChecked=False):
+        from .. import DebugMode
+        if DebugMode:
+            self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live

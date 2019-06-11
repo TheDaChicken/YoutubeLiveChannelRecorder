@@ -149,6 +149,8 @@ class _FlaskClass:
                     'live_scheduled_time': channel_class.live_scheduled_time,
                     'broadcastId': channel_class.broadcastId,
                     'sponsor_on_channel': channel_class.sponsor_on_channel,
+                    'last_heartbeat': channel_class.last_heartbeat.strftime("%I:%M %p")
+                    if channel_class.last_heartbeat is not None else None,
                 }
             })
             if 'error' in channel:

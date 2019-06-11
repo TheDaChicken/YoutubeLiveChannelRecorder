@@ -116,8 +116,13 @@ if __name__ == '__main__':
                                     'name'] + Fore.LIGHTGREEN_EX + " [SCHEDULED AT " +
                                       channelInfo['live_scheduled_time'] + " (AT SERVER\'S TIMEZONE)]")
                             else:
-                                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                    'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]")
+                                if channelInfo['last_heartbeat'] is not None:
+                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                            'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]" + Fore.LIGHTYELLOW_EX +
+                                          " [LAST HEARTBEAT: " + channelInfo['last_heartbeat'] + "] ")
+                                else:
+                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                        'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]")
                         loopNumber += 1
                 print("")
                 print(" 1) Refresh Channel List.")

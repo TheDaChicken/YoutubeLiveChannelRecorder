@@ -1,6 +1,6 @@
 import argparse
 from time import sleep
-from Code import run_channel, check_internet, google_account_login
+from Code import run_channel, check_internet, enable_debug
 from Code.log import stopped, warning, disable_youtube_reply
 from Code.serverHandler import run_server
 from Code.dataHandler import createDataFile, loadData, doesDataExist
@@ -12,6 +12,7 @@ if __name__ == '__main__':
     # noinspection PyTypeChecker
     parser.add_argument('-p', '--port', type=int, help='Port number', required=True, nargs='+', default=None)
     parser.add_argument('-r', '--disable-reply', action='store_true')
+    parser.add_argument('-d', '--enable-debug', action='store_true')
 
     parser_args = parser.parse_args()
 
@@ -31,6 +32,9 @@ if __name__ == '__main__':
 
     if parser_args.disable_reply:
         disable_youtube_reply()
+
+    if parser_args.enable_debug:
+        enable_debug()
 
     for channel_id in channel_ids:
         run_channel(channel_id)

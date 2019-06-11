@@ -17,6 +17,7 @@ UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 
 channel_main_array = []
 ServerClass = None
+DebugMode = False
 
 
 def run_channel(channel_id, returnMessage=False):
@@ -96,3 +97,8 @@ def check_internet():
     verbose("Checking Internet Connection.")
     youtube = download_website("https://www.youtube.com")
     return youtube is not None
+
+
+def enable_debug():
+    global DebugMode
+    DebugMode = True
