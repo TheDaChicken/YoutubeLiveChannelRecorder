@@ -21,16 +21,19 @@ def createDataFile():
                 'description': [
                     'This is a automated description uploaded with "channelarchiver".',
                     'Author of Program: TheDaChicken.',
-                    'Original Title: %TITLE%',
-                    'Original Video Link: https://youtu.be/%VIDEO_ID%',
+                    'Original Title: %VIDEO_ID%',
+                    'Original Video Link: https://youtu.be/{VIDEO_ID}',
                     'The Original Video Link may be deleted.',
                     'NOTE: When a streamer goes offline, and comes back online, 2 videos will uploaded.',
+                    '',
+                    '',
                     'Original Description:',
-                    '%DESCRIPTION%'
+                    '',
+                    '{DESCRIPTION}'
                 ],
                 'privacyStatus': 'unlisted',
                 'tags': None,
-                'title': '%CHANNEL_NAME% %VIDEO_ID% %DATE_MONTH%/%DATE_DAY%/%DATE_YEAR%'
+                'title': '{CHANNEL_NAME} {VIDEO_ID} {START_DATE_MONTH}/{START_DATE_DAY}/{START_DATE_YEAR}'
             }
         },
     }

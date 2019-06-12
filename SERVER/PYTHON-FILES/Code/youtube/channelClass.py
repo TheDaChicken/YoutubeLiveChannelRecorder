@@ -9,7 +9,7 @@ from .heatbeat import is_live
 from . import set_global_youtube_variables
 from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note
-from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail
+from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.youtube import get_yt_player_config
@@ -167,7 +167,8 @@ class ChannelInfo:
                         if "streamingData" not in player_response:
                             warning("No StreamingData, Youtube bugged out!")
                             return None
-                        manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+                        manifest_url = str(
+                            try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
                         if not manifest_url:
                             warning("Unable to find Manifest URL.")
                             return None
@@ -333,7 +334,6 @@ class ChannelInfo:
 
     def create_filename(self, video_id):
         now = datetime.now()
-        self.start_date = now
         # Used to handle lots of names by creating new names and add numbers!
         amount = 1
         while True:
@@ -387,30 +387,51 @@ class ChannelInfo:
                 warning("Unable to upload stream to Youtube.")
 
     def _replace_variables(self, text):
+        class DataDict(dict):
+            """
+                Taken from and
+                have been edited: https://stackoverflow.com/a/11023271
+            """
+            default_value = ''
+
+            def __init__(self, placeholders, *args, **kwargs):
+                self.placeholders = placeholders
+                self.update(dict.fromkeys(self.placeholders, self.default_value))
+                dict.__init__(self, *args, **kwargs)
+
         if text is None or text is False or text is True:
             return None
-        if "%VIDEO_ID%" in text:
-            text = text.replace("%VIDEO_ID%", self.video_id)
-        if "%FILENAME%" in text:
-            text = text.replace("%FILENAME%", self.video_location)
-        if "%CHANNEL_ID%" in text:
-            text = text.replace("%CHANNEL_ID%", self.channel_id)
-        if "%CHANNEL_NAME%" in text:
-            text = text.replace("%CHANNEL_NAME%", self.channel_name)
-        if "%DATE_MONTH%" in text:
-            now = self.start_date
-            text = text.replace("%DATE_MONTH%", str(now.month))
-        if "%DATE_DAY%" in text:
-            now = self.start_date
-            text = text.replace("%DATE_DAY%", str(now.day))
-        if "%DATE_YEAR%" in text:
-            now = self.start_date
-            text = text.replace("%DATE_YEAR%", str(now.year))
-        if "%DATE%" in text:
-            now = self.start_date
-            text = text.replace("%DATE%", "{0}-{1}-{2}".format(now.month, now.day, now.year))
-        if "%TITLE%" in text:
-            text = text.replace("%TITLE%", "{0}".format(self.title))
-        if '%DESCRIPTION%' in text:
-            text = text.replace("%DESCRIPTION%", "{0}".format(self.description))
+        now = self.start_date
+
+        placeholder = [
+            'VIDEO_ID',
+            'FILENAME',
+            'CHANNEL_ID'
+            'CHANNEL_NAME',
+            'DATE_MONTH',
+            'DATE_DAY',
+            'DATE_YEAR',
+            'DATE',
+            'TIMEZONE',
+            'TIME',
+            'TITLE',
+            'DESCRIPTION',
+        ]
+        timezone = getTimeZone()
+        text = text.format(
+            **DataDict(placeholders=placeholder,
+                       VIDEO_ID=self.video_id,
+                       FILENAME=self.video_location,
+                       CHANNEL_ID=self.channel_id,
+                       CHANNEL_NAME=self.channel_name,
+                       START_DATE_MONTH=str(now.month),
+                       START_DATE_DAY=str(now.day),
+                       START_DATE_YEAR=str(now.year),
+                       START_DATE="{0}/{1}/{2}".format(now.month, now.day, now.year),
+                       START_TIME=str(now.strftime("%I:%M %p")),
+                       TIMEZONE=timezone if timezone is not None else '',
+                       TITLE=self.title,
+                       DESCRIPTION=self.description
+                       ))
+
         return text

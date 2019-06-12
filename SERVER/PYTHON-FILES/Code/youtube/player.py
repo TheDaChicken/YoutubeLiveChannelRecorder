@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from threading import Thread
 from time import sleep
 
@@ -57,6 +58,8 @@ def openStream(channelClass, YoutubeStream):
                     channelClass.EncoderClass = None
                     channelClass.recording_status = None
                     return False
+
+    channelClass.start_date = datetime.now()
 
     channelClass.recording_status = "Recording."
 

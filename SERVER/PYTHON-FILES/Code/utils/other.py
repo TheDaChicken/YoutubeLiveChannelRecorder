@@ -74,3 +74,14 @@ def try_get(src, getter, expected_type=None):
         else:
             if expected_type is None or isinstance(v, expected_type):
                 return v
+
+
+def getTimeZone():
+    try:
+        import tzlocal as tzlocal
+    except ImportError:
+        tzlocal = None
+        warning("Unable to use TIMEZONE PLACEHOLDER IF TZLOCAL IS NOT INSTALLED.")
+    if tzlocal:
+        return tzlocal.get_localzone().zone
+    return None
