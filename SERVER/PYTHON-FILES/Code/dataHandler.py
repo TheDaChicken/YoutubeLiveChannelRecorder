@@ -50,7 +50,7 @@ def loadData():
         warning("Unable to find data.yml! Should have been created unless being ran remotely.")
         return None
     with open(data_yml_path, 'r') as stream:
-        yaml_config = yaml.load(stream)
+        yaml_config = yaml.load(stream, Loader=yaml.FullLoader)
     return yaml_config
 
 
