@@ -392,35 +392,15 @@ class ChannelInfo:
                 Taken from and
                 have been edited: https://stackoverflow.com/a/11023271
             """
-            default_value = ''
-
-            def __init__(self, placeholders, *args, **kwargs):
-                self.placeholders = placeholders
-                self.update(dict.fromkeys(self.placeholders, self.default_value))
-                dict.__init__(self, *args, **kwargs)
+            def __missing__(self, key):
+                return ''
 
         if text is None or text is False or text is True:
             return None
         now = self.start_date
-
-        placeholder = [
-            'VIDEO_ID',
-            'FILENAME',
-            'CHANNEL_ID'
-            'CHANNEL_NAME',
-            'START_DATE_MONTH',
-            'START_DATE_DAY',
-            'START_DATE_YEAR',
-            'START_DATE',
-            'TIMEZONE',
-            'TIME',
-            'TITLE',
-            'DESCRIPTION',
-        ]
         timezone = getTimeZone()
         text = text.format(
-            **DataDict(placeholders=placeholder,
-                       VIDEO_ID=self.video_id,
+            **DataDict(VIDEO_ID=self.video_id,
                        FILENAME=self.video_location,
                        CHANNEL_ID=self.channel_id,
                        CHANNEL_NAME=self.channel_name,
