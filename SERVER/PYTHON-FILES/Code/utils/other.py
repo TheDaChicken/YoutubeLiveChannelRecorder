@@ -83,5 +83,9 @@ def getTimeZone():
         tzlocal = None
         warning("Unable to use TIMEZONE PLACEHOLDER IF TZLOCAL IS NOT INSTALLED.")
     if tzlocal:
-        return tzlocal.get_localzone().zone
+        try:
+            return tzlocal.get_localzone().zone
+        except Exception as e:
+            warning(e)
+            return None
     return None
