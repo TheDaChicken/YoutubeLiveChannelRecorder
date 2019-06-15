@@ -1,6 +1,6 @@
 from time import sleep
 
-from ..log import warning, YoutubeReply
+from ..log import warning, YoutubeReply, stopped
 from ..utils.other import get_highest_thumbnail, try_get
 from ..utils.web import download_json
 from ..dataHandler import DownloadThumbnail
@@ -15,6 +15,11 @@ def is_live(channel_Class, alreadyChecked=False):
     :type channel_Class: ChannelInfo
     :type alreadyChecked: bool
     """
+
+    try:
+        from urllib.parse import urlencode
+    except ImportError:
+        stopped("Unsupported version of Python. You need Version 3 :<")
 
     if channel_Class.privateStream is True:
         if alreadyChecked is False:
@@ -58,8 +63,9 @@ def is_live(channel_Class, alreadyChecked=False):
         })
         url += "&cver=" + client_version
     if timezone is not None:
-        url += "&time_zone=" + timezone
+        url += "&" + urlencode({'time_zone': timezone})
 
+    print(url)
     json = download_json(
         url,
         headers=headers)
