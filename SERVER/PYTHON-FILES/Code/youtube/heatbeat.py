@@ -65,7 +65,6 @@ def is_live(channel_Class, alreadyChecked=False):
     if timezone is not None:
         url += "&" + urlencode({'time_zone': timezone})
 
-    print(url)
     json = download_json(
         url,
         headers=headers)
