@@ -2,7 +2,7 @@ import re
 
 from ..log import verbose, warning
 from ..utils.youtube import get_yt_player_config, get_yt_initial_data
-from ..utils.other import try_get
+from ..utils.other import try_get, getTimeZone
 
 # HOLDS GLOBAL YOUTUBE VARIABLES AND OTHER HEARTBEAT FUNCTIONS
 
@@ -15,6 +15,7 @@ variants_checksum = None
 account_playback_token = None
 client_version = None
 client_name = None
+timezone = None
 
 
 def set_global_youtube_variables(html_code=None):
@@ -25,6 +26,7 @@ def set_global_youtube_variables(html_code=None):
     global client_version
     global utf_offset
     global client_name
+    global timezone
 
     if not account_playback_token and not page_build_label and not page_cl and not variants_checksum and not \
             client_version and not utf_offset and not client_name:
@@ -37,7 +39,8 @@ def set_global_youtube_variables(html_code=None):
             warning("Unable to find Youtube Player Config. Cannot find all Youtube Variables.")
         else:
             verbose("Getting Playback Token. [GLOBAL YOUTUBE]")
-            account_playback_token = try_get(youtube_player_config, lambda x: x['args']['account_playback_token'][:-1], str)
+            account_playback_token = try_get(youtube_player_config, lambda x: x['args']['account_playback_token'][:-1],
+                                             str)
             if account_playback_token is None:
                 warning("Something happened when finding the account "
                         "playback Token.")
@@ -54,6 +57,7 @@ def set_global_youtube_variables(html_code=None):
             client_version = getSettingsValue(params, 'client.version', name="Client Version")
             utf_offset = get_utc_offset()
             client_name = getSettingsValue(params, 'client.name', name="Client Name")
+            timezone = get_time_zone()
 
 
 def getServiceSettings(serviceTrackingParamsList, service_nameLook):
@@ -85,3 +89,8 @@ def get_utc_offset():
     from datetime import datetime
     utc_offset = int((round((datetime.now() - datetime.utcnow()).total_seconds())) / 60)
     return utc_offset
+
+
+def get_time_zone():
+    verbose("Getting Time Zone. [GLOBAL YOUTUBE]")
+    return getTimeZone()

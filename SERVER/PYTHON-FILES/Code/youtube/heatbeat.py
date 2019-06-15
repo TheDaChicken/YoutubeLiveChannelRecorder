@@ -24,7 +24,7 @@ def is_live(channel_Class, alreadyChecked=False):
         return False
 
     from . import account_playback_token, page_build_label, page_cl, variants_checksum, utf_offset, client_version, \
-        client_name
+        client_name, timezone
     referer_url = 'https://www.youtube.com/channel/{0}/live'.format(channel_Class.channel_id)
     headers = {'Accept': "*/*", 'Accept-Language': 'en-US,en;q=0.9', 'Connection': 'keep-alive', 'dnt': 1,
                'referer': referer_url, 'x-youtube-client-name': 1}
@@ -57,6 +57,8 @@ def is_live(channel_Class, alreadyChecked=False):
             'x-youtube-client-version': client_version,
         })
         url += "&cver=" + client_version
+    if timezone is not None:
+        url += "&time_zone=" + timezone
 
     json = download_json(
         url,
