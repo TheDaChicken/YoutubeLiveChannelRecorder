@@ -40,9 +40,6 @@ def login(username, password):
     if login_website is None:
         return [False, "No Internet!"]
 
-    f = open("login_webpage.txt", "w+")
-    f.write(str(login_website.encode('utf-8')))
-
     login_form = _hidden_inputs(login_website)
 
     def req(url, f_req):
