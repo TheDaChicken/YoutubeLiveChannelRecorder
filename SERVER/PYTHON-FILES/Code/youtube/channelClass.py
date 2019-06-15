@@ -165,17 +165,14 @@ class ChannelInfo:
                 if playabilityStatus:
                     if "OK" in playabilityStatus['status']:
                         if "streamingData" not in player_response:
-                            warning("No StreamingData, Youtube bugged out!")
-                            return None
+                            return [False, "No StreamingData, Youtube bugged out!"]
                         manifest_url = str(
                             try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
                         if not manifest_url:
-                            warning("Unable to find Manifest URL.")
-                            return None
+                            return [False, "Unable to find Manifest URL."]
                         formats = download_m3u8_formats(manifest_url)
                         if formats is None or len(formats) is 0:
-                            warning("There were no formats found! Even when the streamer is live.")
-                            return None
+                            return [False, "There were no formats found! Even when the streamer is live."]
                         f = get_format_from_data(formats, None)
                         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                         thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
