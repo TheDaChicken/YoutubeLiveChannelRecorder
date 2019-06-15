@@ -121,10 +121,9 @@ def get_thumbnail(liveStreamAbilityRenderer):
     if DownloadThumbnail() is not True:
         return None
     offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
-    thumbnail_list = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'])
+    thumbnail_list = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'], list)
     if thumbnail_list:
-        return get_highest_thumbnail(
-            offlineSlate['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'])
+        return get_highest_thumbnail(thumbnail_list)
     return None
 
 
