@@ -41,7 +41,6 @@ def set_global_youtube_variables(html_code=None):
             if account_playback_token is None:
                 warning("Something happened when finding the account "
                         "playback Token.")
-                return None
 
         if not youtube_initial_data:
             warning("Unable to find Youtube Initial Data. Cannot find all Youtube Variables.")
