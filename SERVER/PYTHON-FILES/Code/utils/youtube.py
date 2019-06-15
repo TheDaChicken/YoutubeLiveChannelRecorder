@@ -39,6 +39,6 @@ def get_yt_config(website):
     from .parser import parse_json
     if type(website) is not str:
         return None
-    config = re.findall(r'ytcfg.set({.+?});', website)
+    config = re.findall(r'ytcfg\.set({.+?});', website)
     if config:
         return parse_json(config[0])
