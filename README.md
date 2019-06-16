@@ -9,15 +9,15 @@
   
   THIS PROGRAM IS TESTED AND WORKS BEST ON PYTHON VERSION 3.7.2.
 
-## CREDITS
-  
-  Thanks to people of [youtube-dl!](https://https://github.com/ytdl-org/youtube-dl/)
-  Youtube-dl helped me get a head start!
-
 ## Inspiration
   
   This idea came from when I wanted to record livestreams from [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
   When he ends his livestreams, his deletes the recording. Meaning if I were to miss a livestream or want to watch and look back on it. I can't. Since I was unable to record them fast enough when I got the notification when he was live, I made the program to record it automatically!
+
+## CREDITS
+  
+  Thanks to people of [youtube-dl!](https://https://github.com/ytdl-org/youtube-dl/)
+  Youtube-dl helped me get a head start!
 
 ## SETUP SERVER
   To use the server-side, you need the required packages:
