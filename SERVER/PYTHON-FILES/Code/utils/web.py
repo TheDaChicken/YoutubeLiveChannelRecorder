@@ -1,6 +1,5 @@
 import os
-import re
-import urllib
+from time import sleep
 
 from .parser import parse_json, parse_m3u8_formats
 
@@ -17,7 +16,7 @@ from urllib3.exceptions import TimeoutError
 
 try:
     from urllib.request import HTTPCookieProcessor, build_opener
-    from http.cookiejar import LWPCookieJar
+    from http.cookiejar import LWPCookieJar, LoadError
 except ImportError:
     LWPCookieJar = None
     HTTPCookieProcessor = None
@@ -26,7 +25,16 @@ except ImportError:
 cj = LWPCookieJar(filename="cookies.txt")
 
 if os.path.isfile("cookies.txt"):
-    cj.load()
+    try:
+        cj.load()
+    except LoadError as e:
+        if 'format file' in str(e):
+            print("")
+            warning("The Cookies File corrupted, deleting...")
+            os.remove("cookies.txt")
+            sleep(1)
+            print("")
+
 
 opener = build_opener(HTTPCookieProcessor(cj))
 
@@ -69,9 +77,7 @@ def download_website(url, headers=None, data=None):
             return None
         return None
     try:
-        cj.save()  # Saves Cookies
-        cj.clear_expired_cookies()
-        cj.clear_session_cookies()
+        cj.save(ignore_discard=True)  # Saves Cookies
     except Exception as e:
         warning("Error: " + str(e))
         warning("Unable to save cookies.")
