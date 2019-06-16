@@ -79,8 +79,11 @@ def download_website(url, headers=None, data=None):
     try:
         cj.save()  # Saves Cookies
     except Exception as e1:
-        warning("Error: " + str(e1))
-        warning("Unable to save cookies.")
+        if 'Permission denied' in str(e1):
+            stopped(str(e1))
+        else:
+            warning("Error: " + str(e1))
+            warning("Unable to save cookies.")
     try:
         website_bytes = response.read()
     except OSError as e2:
