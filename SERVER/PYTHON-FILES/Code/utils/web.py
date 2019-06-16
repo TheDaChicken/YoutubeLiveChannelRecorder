@@ -78,13 +78,13 @@ def download_website(url, headers=None, data=None):
         return None
     try:
         cj.save(ignore_discard=True)  # Saves Cookies
-    except Exception as e:
-        warning("Error: " + str(e))
+    except Exception as e1:
+        warning("Error: " + str(e1))
         warning("Unable to save cookies.")
     try:
         website_bytes = response.read()
-    except OSError as e:
-        warning("Error: " + str(e))
+    except OSError as e2:
+        warning("Error: " + str(e2))
         warning("Unable to read website bytes.")
         return None
     return website_bytes.decode('utf-8')
