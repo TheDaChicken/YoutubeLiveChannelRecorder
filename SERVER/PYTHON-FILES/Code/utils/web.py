@@ -77,7 +77,7 @@ def download_website(url, headers=None, data=None):
             return None
         return None
     try:
-        cj.save(ignore_discard=True)  # Saves Cookies
+        cj.save()  # Saves Cookies
     except Exception as e1:
         warning("Error: " + str(e1))
         warning("Unable to save cookies.")
