@@ -78,6 +78,7 @@ def download_website(url, headers=None, data=None):
         return None
     try:
         cj.save()  # Saves Cookies
+        cj.clear_expired_cookies()
     except Exception as e1:
         if 'Permission denied' in str(e1):
             print("")
