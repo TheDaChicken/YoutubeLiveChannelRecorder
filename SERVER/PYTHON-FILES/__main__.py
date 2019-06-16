@@ -1,6 +1,6 @@
 import argparse
 from time import sleep
-from Code import run_channel, check_internet, enable_debug
+from Code import run_channel, check_internet, enable_debug, setupStreamsFolder
 from Code.log import stopped, warning, disable_youtube_reply
 from Code.serverHandler import run_server
 from Code.dataHandler import createDataFile, loadData, doesDataExist
@@ -16,19 +16,14 @@ if __name__ == '__main__':
 
     parser_args = parser.parse_args()
 
-    channel_ids = []
+    setupStreamsFolder()
 
     if not doesDataExist():
         createDataFile()
-
-    data = loadData()
-    channel_ids.extend(data['channel_ids'])
-    del data
+    channel_ids = loadData()['channel_ids']
 
     if not check_internet():
         stopped("Not able to access the internet!")
-
-    sleep(.2)
 
     if parser_args.disable_reply:
         disable_youtube_reply()

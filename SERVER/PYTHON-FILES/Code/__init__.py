@@ -1,3 +1,4 @@
+import os
 from threading import Thread
 from time import sleep
 
@@ -102,3 +103,10 @@ def check_internet():
 def enable_debug():
     global DebugMode
     DebugMode = True
+
+
+def setupStreamsFolder():
+    # RecordedStreams
+    recorded_streams_dir = os.path.join(os.getcwd(), "RecordedStreams")
+    if os.path.exists(recorded_streams_dir) is False:
+        os.mkdir(recorded_streams_dir)
