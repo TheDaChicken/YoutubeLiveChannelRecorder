@@ -10,7 +10,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Downloads Live streams when Youtube channels are live!')
 
     # noinspection PyTypeChecker
-    parser.add_argument('-p', '--port', type=int, help='Port number', required=True, nargs='+', default=None)
+    parser.add_argument('-p', '--port', type=int, help='Port number', required=False, nargs='+', default=None)
     parser.add_argument('-r', '--disable-reply', action='store_true')
     parser.add_argument('-d', '--enable-debug', action='store_true')
 
@@ -31,13 +31,18 @@ if __name__ == '__main__':
     if parser_args.enable_debug:
         enable_debug()
 
+    if parser_args.port:
+        port = parser_args.port[0]
+    else:
+        port = 31311
+
     for channel_id in channel_ids:
         run_channel(channel_id)
         sleep(.41)
 
     sleep(1)
 
-    run_server(parser_args.port[0])
+    run_server(port)
 
     if len(channel_ids) is 0:
         warning("None channels found added into this program!")
