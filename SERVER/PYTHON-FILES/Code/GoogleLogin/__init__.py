@@ -107,7 +107,7 @@ def login(username, password):
     if challenge_results is None:
         return [False, "bb"]
 
-    if challenge_results is 400:
+    if challenge_results == 400:
         return [False, "Challenge returned as a Bad Request 400"]
 
     login_res = try_get(challenge_results, lambda x: x[0][5], list)

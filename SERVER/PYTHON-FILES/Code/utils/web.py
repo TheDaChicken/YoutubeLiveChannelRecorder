@@ -112,9 +112,9 @@ def download_image(image_url, file_name):
 
 def download_json(url, headers=None, data=None, transform_source=None):
     json_string = download_website(url, headers=headers, data=data)
-    if json_string is None:
-        return None
-    return parse_json(json_string, transform_source=transform_source)
+    if type(json_string) is str:
+        return parse_json(json_string, transform_source=transform_source)
+    return json_string
 
 
 def download_m3u8_formats(m3u8_url):

@@ -17,12 +17,14 @@ def parse_json(json_string, transform_source=None):
         https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/common.py#L895
 
     """
-    if transform_source:
-        json_string = transform_source(json_string)
-    try:
-        return json.loads(json_string)
-    except TypeError:
-        warning("Failed to parse JSON.")
+    if json_string:
+        if transform_source:
+            json_string = transform_source(json_string)
+        try:
+            return json.loads(json_string)
+        except TypeError:
+            warning("Failed to parse JSON.")
+        return None
     return None
 
 
