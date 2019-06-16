@@ -9,7 +9,7 @@
   
   THIS PROGRAM IS TESTED AND WORKS BEST ON PYTHON VERSION 3.7.2.
 
-## SETUP SERVER (if not using compiled py to exe in Releases)
+## SETUP SERVER
   To use the server-side, you need the required packages:
   ```
   colorama: Used for color.
@@ -34,7 +34,7 @@
   
   run __main__.py in the server files folder with argument -p <port_name> to specify port.
 
-## SETUP CLIENT (if not using compiled py to exe in Releases)
+## SETUP CLIENT
   To use the client, you need the required packages:
   ```
   colorama: Used for color.
