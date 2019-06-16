@@ -80,7 +80,9 @@ def download_website(url, headers=None, data=None):
         cj.save()  # Saves Cookies
     except Exception as e1:
         if 'Permission denied' in str(e1):
-            stopped(str(e1))
+            print("")
+            stopped("Permission denied Saving Cookies!\n"
+                    "You can allow access by running sudo if you are on Linux.")
         else:
             warning("Error: " + str(e1))
             warning("Unable to save cookies.")
