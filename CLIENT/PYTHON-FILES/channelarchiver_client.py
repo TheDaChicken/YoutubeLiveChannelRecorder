@@ -135,8 +135,8 @@ if __name__ == '__main__':
                 else:
                     print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
                 if toaster is not None and 'localhost' not in serverIP:
-                    print("N: Holds console, shows Windows 10 Toast Notification every time a stream goes live.")
-                print("   Type a specific number to do the specific action. - ")
+                    print(" N) Holds console, shows Windows 10 Toast Notification every time a stream goes live.")
+                print("  - Type a specific number to do the specific action. - ")
                 option = input(":")
                 if option is "1":  # Just Refresh
                     info("Getting Server Info.")
