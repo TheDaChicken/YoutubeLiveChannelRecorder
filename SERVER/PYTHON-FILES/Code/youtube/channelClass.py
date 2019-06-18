@@ -99,9 +99,7 @@ class ChannelInfo:
         if not ok:
             return [ok, message]
         ok, message = self.loadVideoData(html=html)
-        if not ok:
-            return [ok, message]
-        return [True, "OK"]
+        return [ok, message]
 
     # Loads the Youtube Channel Data.
     def loadChannelData(self, html=None):
