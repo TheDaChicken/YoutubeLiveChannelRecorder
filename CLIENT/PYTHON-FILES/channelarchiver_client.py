@@ -139,10 +139,12 @@ if __name__ == '__main__':
                 print("   Type a specific number to do the specific action. - ")
                 option = input(":")
                 if option is "1":  # Just Refresh
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     info("Getting Server Info.")
-                    channel_info = get_channel_info(serverIP, serverPort)
+                    temp_channel_info = get_channel_info(serverIP, serverPort)
+                    if temp_channel_info:
+                        channel_info = temp_channel_info
+                    else:
+                        stopped("Lost Connection of the Server!")
                 elif option is "2":  # ADDING CHANNELS
                     if check_server(serverIP, serverPort) is False:
                         stopped("Lost Connection of the Server!")
@@ -160,10 +162,12 @@ if __name__ == '__main__':
                     print("")
                     input("Press enter to go back to Selection.")
                     # Refresh
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     info("Getting Server Info.")
-                    channel_info = get_channel_info(serverIP, serverPort)
+                    temp_channel_info = get_channel_info(serverIP, serverPort)
+                    if temp_channel_info:
+                        channel_info = temp_channel_info
+                    else:
+                        stopped("Lost Connection of the Server!")
                 elif option is "3":  # REMOVE CHANNELS (BETA ON SERVER)
                     if check_server(serverIP, serverPort) is False:
                         stopped("Lost Connection of the Server!")
@@ -181,10 +185,12 @@ if __name__ == '__main__':
                     print("")
                     input("Press enter to go back to Selection.")
                     # Refresh
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     info("Getting Server Info.")
-                    server_info = get_channel_info(serverIP, serverPort)
+                    temp_channel_info = get_channel_info(serverIP, serverPort)
+                    if temp_channel_info:
+                        channel_info = temp_channel_info
+                    else:
+                        stopped("Lost Connection of the Server!")
                 elif option is "4":
                     Screen = "Settings"
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
@@ -237,10 +243,12 @@ if __name__ == '__main__':
                         print("")
                         input("Press enter to go back to Selection.")
                         print("")
-                        if check_server(serverIP, serverPort) is False:
-                            stopped("Lost Connection of the Server!")
                         info("Getting Server Info.")
-                        channel_info = get_channel_info(serverIP, serverPort)
+                        temp_channel_info = get_channel_info(serverIP, serverPort)
+                        if temp_channel_info:
+                            channel_info = temp_channel_info
+                        else:
+                            stopped("Lost Connection of the Server!")
             elif Screen is "Settings":
                 print("")
                 print("1) Upload Settings")
