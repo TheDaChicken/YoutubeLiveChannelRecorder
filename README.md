@@ -16,7 +16,7 @@
 
 ## CREDITS
   
-  Thanks to people of [youtube-dl!](https://https://github.com/ytdl-org/youtube-dl/)
+  Thanks to people of [youtube-dl!](https://github.com/ytdl-org/youtube-dl/)
   Youtube-dl helped me get a head start!
 
 ## SETUP SERVER
