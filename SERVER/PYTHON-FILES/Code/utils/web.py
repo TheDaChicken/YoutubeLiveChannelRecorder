@@ -67,14 +67,15 @@ def download_website(url, headers=None, data=None):
 
     try:
         response = opener.open(request)
-    except (URLError, httplib2.ServerNotFoundError, TimeoutError, OSError) as e:
+    except (URLError, TimeoutError, OSError) as e2:
         try:
-            if e.code == 404:
-                return 404
-            if e.code == 400:
-                return 400
+            return e2.code
         except AttributeError:
             return None
+        return None
+    except Exception as e2:
+        warning("Unable to request HTTP website.")
+        warning("Error: " + str(e2))
         return None
     try:
         cj.save()  # Saves Cookies
