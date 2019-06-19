@@ -154,11 +154,7 @@ class ChannelInfo:
                 if not self.video_id:
                     return [False, "Unable to find video id in the YouTube player config!"]
         else:
-            array = re.findall('property="og:title" content="(.+?)"', html)
-            if array:
-                self.privateStream = True
-            else:
-                return [False, "Unable to find video id or check if private stream"]
+            self.privateStream = True
 
         if not self.privateStream:
             # TO AVOID REPEATING REQUESTS.
