@@ -57,7 +57,7 @@ def run_channel(channel_id, returnMessage=False):
         del error_message
         channel_holder_class.registerCloseEvent()
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                 name="{0} - Checking Live Thread".format(
+                                                 name="{0} - Heartbeat Thread".format(
                                                      channel_holder_class.get("channel_name")))
         # check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
