@@ -42,6 +42,7 @@ class ChannelInfo:
     # Status on recording
     recording_status = None
     stop_heartbeat = False
+    DebugMode = False
 
     # USED TO STOP THREADS
     stop_thread = False
@@ -85,8 +86,9 @@ class ChannelInfo:
     live_scheduled = False
     live_scheduled_time = None
 
-    def __init__(self, channel_id):
+    def __init__(self, channel_id, DebugMode=False):
         self.channel_id = channel_id
+        self.DebugMode = DebugMode
 
     def loadYoutubeData(self):
         html = download_website("https://www.youtube.com/channel/{0}/live".
@@ -318,8 +320,7 @@ class ChannelInfo:
             # REPEAT (END OF LOOP)
 
     def is_live(self, alreadyChecked=False):
-        from .. import DebugMode
-        if DebugMode:
+        if self.DebugMode:
             self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
