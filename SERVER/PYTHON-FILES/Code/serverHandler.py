@@ -90,7 +90,7 @@ class _FlaskClass:
         if len(channel_array) is not 0:
             return Response("Channel Already in list!", status=500)
         del channel_array
-        ok, message = run_channel(channel_id, returnMessage=True)
+        ok, message = run_channel(channel_id)
         if ok:
             add_channel_config(channel_id)  # NEEDS TO ADD CHANNEL TO CONFIG
             info(channel_id + " has been added to the list of channels.")
@@ -277,7 +277,7 @@ class _FlaskClass:
         channel_id = request.args.get('channel_id')
         if channel_id is None:
             return Response("You need Channel_ID in args.", mimetype='text/plain', status=500)
-        ok, message = upload_test_run(channel_id, returnMessage=True)
+        ok, message = upload_test_run(channel_id)
         if ok:
             info(channel_id + " has been added for test uploading.")
             return Response("OK", mimetype='text/plain')

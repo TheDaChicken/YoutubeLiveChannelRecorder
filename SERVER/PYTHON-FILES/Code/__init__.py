@@ -53,7 +53,7 @@ class HandlerChannelInfo(ChannelInfo):
         return self.__dict__
 
 
-def run_channel(channel_id, returnMessage=False):
+def run_channel(channel_id):
     channel_holder_class = baseManager.HandlerChannelInfo(channel_id, settings)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
@@ -66,14 +66,10 @@ def run_channel(channel_id, returnMessage=False):
         # check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
-        if returnMessage is True:
-            return [True, "OK"]
+        return [True, "OK"]
     else:
-        if returnMessage is True:
-            return [False, error_message]
-        else:
-            warning(error_message)
-            channel_main_array.append({'class': channel_holder_class, "error": error_message})
+        channel_main_array.append({'class': channel_holder_class, "error": error_message})
+        return[False, error_message]
     return [False, ""]
 
 
