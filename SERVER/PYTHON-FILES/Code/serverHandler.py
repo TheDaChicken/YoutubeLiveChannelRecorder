@@ -85,8 +85,8 @@ class _FlaskClass:
         if channel_id is None:
             return Response("You need Channel_ID in args.", mimetype='text/plain', status=500)
         channel_array = [channel_ for channel_ in channel_main_array
-                         if channel_id.casefold() == channel_['class'].channel_name.casefold() or
-                         channel_id.casefold() == channel_['class'].channel_id.casefold()]
+                         if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
+                         channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
         if len(channel_array) is not 0:
             return Response("Channel Already in list!", status=500)
         del channel_array
@@ -106,19 +106,27 @@ class _FlaskClass:
             return "You need Channel_ID in args."
 
         channel_array = [channel_ for channel_ in channel_main_array
-                         if channel_id.casefold() == channel_['class'].channel_name.casefold() or
-                         channel_id.casefold() == channel_['class'].channel_id.casefold()]
+                         if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
+                         channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
         if channel_array is None or len(channel_array) is 0:
             return Response(channel_id + " hasn't been added to the channel list, so it can't be removed.",
                             mimetype='text/plain', status=500)
         channel_array = channel_array[0]
         if 'error' not in channel_array:
-            channel_array['class'].close_recording()
-            sleep(.01)
-            ok, reply_message = terminate_thread(channel_array['thread_class'])
-            if not ok:
-                return Response(reply_message, mimetype='text/plain', status=500)
-        remove_channel_config(channel_array['class'].channel_id)
+            print(channel_array['class'].get('channel_id'))
+            channel_array['class'].close()
+            thread_class = channel_array['thread_class']
+            try:
+                thread_class.terminate()
+                sleep(1.0)
+                if thread_class.is_alive():
+                    thread_class.close()
+                    return Response("Unable to Terminate. ",
+                                    mimetype='text/plain', status=500)
+            except Exception as e:
+                return Response("Cannot Remove Channel. " + str(e),
+                                mimetype='text/plain', status=500)
+        remove_channel_config(channel_array['class'].get('channel_id'))
         channel_main_array.remove(channel_array)
         sleep(.01)
         info(channel_id + " has been removed.")
@@ -137,24 +145,24 @@ class _FlaskClass:
 
         for channel in channel_main_array:
             channel_class = channel['class']
-            json['channels'].append(channel['class'].channel_id)
+            json['channels'].append(channel['class'].get('channel_id'))
             json['channel'].update({
-                channel['class'].channel_id: {
-                    'name': channel_class.channel_name,
-                    'live': channel_class.live_streaming,
-                    'video_id': channel_class.video_id,
-                    'recording_status': channel_class.recording_status,
-                    'privateStream': channel_class.privateStream,
-                    'live_scheduled': channel_class.live_scheduled,
-                    'live_scheduled_time': channel_class.live_scheduled_time,
-                    'broadcastId': channel_class.broadcastId,
-                    'sponsor_on_channel': channel_class.sponsor_on_channel,
-                    'last_heartbeat': channel_class.last_heartbeat.strftime("%I:%M %p")
-                    if channel_class.last_heartbeat is not None else None,
+                channel_class.get('channel_id'): {
+                    'name': channel_class.get('channel_name'),
+                    'live': channel_class.get('live_streaming'),
+                    'video_id': channel_class.get('video_id'),
+                    'recording_status': channel_class.get('recording_status'),
+                    'privateStream': channel_class.get('privateStream'),
+                    'live_scheduled': channel_class.get('live_scheduled'),
+                    'live_scheduled_time': channel_class.get('live_scheduled_time'),
+                    'broadcastId': channel_class.get('broadcastId'),
+                    'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
+                    'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
+                    if channel_class.get('last_heartbeat') is not None else None,
                 }
             })
             if 'error' in channel:
-                json['channel'][channel['class'].channel_id].update({
+                json['channel'][channel['class'].get('channel_id')].update({
                     'error': channel['error'],
                 })
         return jsonify(json)

@@ -41,6 +41,7 @@ class ChannelInfo:
     live_streaming = None
     # Status on recording
     recording_status = None
+    stop_heartbeat = False
 
     # USED TO STOP THREADS
     stop_thread = False
@@ -195,6 +196,10 @@ class ChannelInfo:
     def registerCloseEvent(self):
         atexit.register(self.close_recording)
 
+    def close(self):
+        self.close_recording()
+        self.stop_heartbeat = True
+
     def close_recording(self):
         if self.EncoderClass is not None:
             self.EncoderClass.stop_recording()
@@ -256,55 +261,56 @@ class ChannelInfo:
         alreadyChecked = True
         self.TestUpload = TestUpload
         while True:
-            # LOOP
-            boolean_live = self.is_live(alreadyChecked=alreadyChecked)
-            if not boolean_live:
-                # HEARTBEAT INTERNET OFFLINE.
-                if boolean_live is None:
-                    warning("INTERNET OFFLINE")
-                    sleep(2.4)
-                elif self.sponsor_on_channel:
-                    verbose("Reading Community Posts on " + self.channel_name + ".")
-                    # NOTE this edits THE video id when finds stream.
-                    boolean_found = self.is_live_sponsor_only_streams()
-                    if not boolean_found:
-                        if boolean_found is None:
-                            warning("INTERNET OFFLINE")
-                            sleep(2.52)
+            if self.stop_heartbeat is False:
+                # LOOP
+                boolean_live = self.is_live(alreadyChecked=alreadyChecked)
+                if not boolean_live:
+                    # HEARTBEAT INTERNET OFFLINE.
+                    if boolean_live is None:
+                        warning("INTERNET OFFLINE")
+                        sleep(2.4)
+                    elif self.sponsor_on_channel:
+                        verbose("Reading Community Posts on " + self.channel_name + ".")
+                        # NOTE this edits THE video id when finds stream.
+                        boolean_found = self.is_live_sponsor_only_streams()
+                        if not boolean_found:
+                            if boolean_found is None:
+                                warning("INTERNET OFFLINE")
+                                sleep(2.52)
+                            else:
+                                info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
+                                info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
+                                sleep(self.pollDelayMs / 1000)
+                        if boolean_found:
+                            self.sequence_number = 0
+                            boolean_live = self.is_live(alreadyChecked=alreadyChecked)
+                            self.sponsor_only_stream = True
+                    else:
+                        if self.sponsor_only_stream is True:
+                            self.sponsor_only_stream = False
+                        if not self.privateStream:
+                            info(self.channel_name + " is not live!")
+                            sleep(self.pollDelayMs / 1000)
                         else:
                             info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
-                            info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
                             sleep(self.pollDelayMs / 1000)
-                    if boolean_found:
-                        self.sequence_number = 0
-                        boolean_live = self.is_live(alreadyChecked=alreadyChecked)
-                        self.sponsor_only_stream = True
-                else:
-                    if self.sponsor_only_stream is True:
-                        self.sponsor_only_stream = False
-                    if not self.privateStream:
-                        info(self.channel_name + " is not live!")
-                        sleep(self.pollDelayMs / 1000)
-                    else:
-                        info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
-                        sleep(self.pollDelayMs / 1000)
-            if boolean_live:
-                if self.YoutubeStream is None:
-                    self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
-                if self.YoutubeStream is not None:
-                    fully_recorded = self.openStream(self.YoutubeStream)
-                    self.YoutubeStream = None
-                    if fully_recorded:
-                        thread = Thread(target=self.start_upload, name=self.channel_name)
-                        thread.daemon = True  # needed control+C to work.
-                        thread.start()
-                        if self.TestUpload:
-                            thread.join()
-                            stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
-                    sleep(2.5)
-                sleep(self.pollDelayMs / 1000)
-            if alreadyChecked:
-                alreadyChecked = False
+                if boolean_live:
+                    if self.YoutubeStream is None:
+                        self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
+                    if self.YoutubeStream is not None:
+                        fully_recorded = self.openStream(self.YoutubeStream)
+                        self.YoutubeStream = None
+                        if fully_recorded:
+                            thread = Thread(target=self.start_upload, name=self.channel_name)
+                            thread.daemon = True  # needed control+C to work.
+                            thread.start()
+                            if self.TestUpload:
+                                thread.join()
+                                stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
+                        sleep(2.5)
+                    sleep(self.pollDelayMs / 1000)
+                if alreadyChecked:
+                    alreadyChecked = False
 
             # REPEAT (END OF LOOP)
 
@@ -387,6 +393,7 @@ class ChannelInfo:
                 Taken from and
                 have been edited: https://stackoverflow.com/a/11023271
             """
+
             def __missing__(self, key):
                 return ''
 

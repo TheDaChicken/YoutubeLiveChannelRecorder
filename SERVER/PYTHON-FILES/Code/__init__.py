@@ -1,11 +1,13 @@
 import os
+from multiprocessing import Process, Queue
+from multiprocessing.managers import BaseManager
 from threading import Thread
 from time import sleep
 
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website
 
-from .log import warning, verbose
+from .log import warning, verbose, stopped
 
 """
 :type channel_main_array: array
@@ -19,18 +21,44 @@ UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 channel_main_array = []
 ServerClass = None
 DebugMode = False
+manager = None
+
+
+def setup_manager():
+    global manager
+    BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
+    manager = BaseManager()
+    manager.start()
+
+
+class HandlerChannelInfo(ChannelInfo):
+    """
+
+    This is a way of sharing variables from MultiThreading Process.
+    I couldn't find anything online, so what am I going to do?
+
+    """
+    def __init__(self, channel_id):
+        super().__init__(channel_id)
+
+    def get(self, variable_name):
+        return getattr(self, variable_name)
+
+    def list(self):
+        return self.__dict__
 
 
 def run_channel(channel_id, returnMessage=False):
-    channel_holder_class = ChannelInfo(channel_id)
+    channel_holder_class = manager.HandlerChannelInfo(channel_id)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
         del error_message
         channel_holder_class.registerCloseEvent()
-        check_streaming_channel_thread = Thread(target=channel_holder_class.start_heartbeat_loop,
-                                                name=channel_holder_class.channel_name + " - Checking Live Thread")
-        check_streaming_channel_thread.daemon = True  # needed control+C to work.
+        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
+                                                 name=channel_holder_class.get("channel_name") + " - Checking Live "
+                                                                                                 "Thread")
+        # check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         if returnMessage is True:
