@@ -145,14 +145,14 @@ class ChannelInfo:
                         self.channel_id + "\" doesn't exist as a channel id!"]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
         if yt_player_config:
-            if "live_playback" not in yt_player_config:
-                self.video_id = None
-                self.privateStream = True
-            else:
+            if "live_playback" in yt_player_config:
                 self.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
                 self.privateStream = False
                 if not self.video_id:
                     return [False, "Unable to find video id in the YouTube player config!"]
+            else:
+                self.video_id = None
+                self.privateStream = True
         else:
             self.privateStream = True
 
