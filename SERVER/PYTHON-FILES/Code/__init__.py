@@ -1,5 +1,5 @@
 import os
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Value
 from multiprocessing.managers import BaseManager
 from threading import Thread
 from time import sleep
@@ -14,21 +14,21 @@ from .log import warning, verbose, stopped
 """
 
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
-            'Chrome/73.0.3683.103 Safari/537.36'
+            'Chrome/74.0.3729.169 Safari/537.36'
 
 # Probably not the right type of class to put this stuff but I mean, there is public functions and variables in here.
 
 channel_main_array = []
 ServerClass = None
 DebugMode = False
-manager = None
+baseManager = None
 
 
 def setup_manager():
-    global manager
+    global baseManager
     BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
-    manager = BaseManager()
-    manager.start()
+    baseManager = BaseManager()
+    baseManager.start()
 
 
 class HandlerChannelInfo(ChannelInfo):
@@ -50,7 +50,7 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id, returnMessage=False):
-    channel_holder_class = manager.HandlerChannelInfo(channel_id, DebugMode)
+    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, DebugMode)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
