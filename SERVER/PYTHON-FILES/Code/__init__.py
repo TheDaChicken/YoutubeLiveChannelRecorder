@@ -1,6 +1,6 @@
 import os
 from multiprocessing import Process, Value
-from multiprocessing.managers import BaseManager
+from multiprocessing.managers import BaseManager, Namespace
 from threading import Thread
 from time import sleep
 
@@ -20,15 +20,19 @@ UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 
 channel_main_array = []
 ServerClass = None
-DebugMode = False
-baseManager = None
+
+baseManager = None  # type: BaseManager
+settings = None  # type: Namespace
 
 
 def setup_manager():
     global baseManager
+    global settings
     BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
     baseManager = BaseManager()
     baseManager.start()
+    settings = Namespace()
+    settings.DebugMode = False
 
 
 class HandlerChannelInfo(ChannelInfo):
@@ -39,8 +43,8 @@ class HandlerChannelInfo(ChannelInfo):
 
     """
 
-    def __init__(self, channel_id, Debug_Mode):
-        super().__init__(channel_id, DebugMode=Debug_Mode)
+    def __init__(self, channel_id, SettingsManager):
+        super().__init__(channel_id, SettingsManager)
 
     def get(self, variable_name):
         return getattr(self, variable_name)
@@ -50,7 +54,7 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id, returnMessage=False):
-    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, DebugMode)
+    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, settings)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
@@ -117,7 +121,21 @@ def google_account_logout():
 
 
 def is_google_account_login_in():
-    from .utils.web import cj
+    try:
+        from http.cookiejar import LWPCookieJar, LoadError
+    except ImportError:
+        LoadError = None
+        LWPCookieJar = None
+        stopped("Unsupported version of Python. You need Version 3 :<")
+
+    cj = LWPCookieJar(filename="cookies.txt")
+    if os.path.isfile("cookies.txt"):
+        try:
+            cj.load()
+        except LoadError as e:
+            if 'format file' in str(e):
+                return False
+
     cookie = [cookies for cookies in cj if 'SSID' in cookies.name]
     if cookie is None or len(cookie) is 0:
         return False
@@ -131,8 +149,8 @@ def check_internet():
 
 
 def enable_debug():
-    global DebugMode
-    DebugMode = True
+    global settings
+    settings.DebugMode = True
 
 
 def setupStreamsFolder():

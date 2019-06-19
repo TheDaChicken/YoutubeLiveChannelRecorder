@@ -2,6 +2,7 @@ import atexit
 import os
 import re
 from datetime import datetime
+from multiprocessing.managers import Namespace
 from threading import Thread
 from time import sleep
 
@@ -42,7 +43,7 @@ class ChannelInfo:
     # Status on recording
     recording_status = None
     stop_heartbeat = False
-    DebugMode = False
+    SettingsManager = False  # type: Namespace
 
     # USED TO STOP THREADS
     stop_thread = False
@@ -86,9 +87,9 @@ class ChannelInfo:
     live_scheduled = False
     live_scheduled_time = None
 
-    def __init__(self, channel_id, DebugMode=False):
+    def __init__(self, channel_id, SettingsManager=None):
         self.channel_id = channel_id
-        self.DebugMode = DebugMode
+        self.SettingsManager = SettingsManager
 
     def loadYoutubeData(self):
         html = download_website("https://www.youtube.com/channel/{0}/live".
@@ -320,7 +321,7 @@ class ChannelInfo:
             # REPEAT (END OF LOOP)
 
     def is_live(self, alreadyChecked=False):
-        if self.DebugMode:
+        if self.SettingsManager.DebugMode:
             self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
