@@ -122,9 +122,8 @@ def google_account_logout():
 
 def is_google_account_login_in():
     try:
-        from http.cookiejar import LWPCookieJar, LoadError
+        from http.cookiejar import LWPCookieJar
     except ImportError:
-        LoadError = None
         LWPCookieJar = None
         stopped("Unsupported version of Python. You need Version 3 :<")
 
