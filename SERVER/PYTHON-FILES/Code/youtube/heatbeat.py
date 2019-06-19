@@ -33,9 +33,9 @@ def is_live(channel_Class, alreadyChecked=False):
     referer_url = 'https://www.youtube.com/channel/{0}/live'.format(channel_Class.channel_id)
     headers = {'Accept': "*/*", 'Accept-Language': 'en-US,en;q=0.9', 'Connection': 'keep-alive', 'dnt': 1,
                'referer': referer_url, 'x-youtube-client-name': 1}
-    url = 'https://www.youtube.com/heartbeat?video_id=' + channel_Class.video_id + \
-          '&heartbeat_token&c=' + (client_name if client_name is not None else 'WEB') + '&sequence_number=' + \
-          str(channel_Class.sequence_number)
+    url = 'https://www.youtube.com/heartbeat?video_id={0}&heartbeat_token&c={1}&sequence_number={2}'.format(
+        channel_Class.video_id, (client_name if client_name is not None else 'WEB'), str(channel_Class.sequence_number)
+    )
     if account_playback_token is not None:
         headers.update({
             'x-youtube-identity-token': account_playback_token,

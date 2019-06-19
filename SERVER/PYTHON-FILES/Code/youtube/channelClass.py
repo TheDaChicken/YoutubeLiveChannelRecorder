@@ -89,13 +89,14 @@ class ChannelInfo:
         self.channel_id = channel_id
 
     def loadYoutubeData(self):
-        html = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+        html = download_website("https://www.youtube.com/channel/{0}/live".
+                                format(self.channel_id))
         if html is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
         if html == 404:
-            return [False, "Failed getting Youtube Data! \"" +
-                    self.channel_id + "\" doesn't exist as a channel id!"]
+            return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".
+                    format(self.channel_id)]
         ok, message = self.loadChannelData(html=html)
         if not ok:
             return [ok, message]
@@ -105,7 +106,8 @@ class ChannelInfo:
     # Loads the Youtube Channel Data.
     def loadChannelData(self, html=None):
         if not html:
-            html = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+            html = download_website("https://www.youtube.com/channel/{0}/live".
+                                    format(self.channel_id))
             if html is None:
                 return [False, "Failed getting Channel Data from the internet! "
                                "This means there is no good internet available!"]
@@ -130,7 +132,8 @@ class ChannelInfo:
         """
         verbose("Getting Video ID.")
         if not html:
-            html = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+            html = download_website("https://www.youtube.com/channel/{0}/live".
+                                    format(self.channel_id))
             if html is None:
                 return [False, "Failed getting Video Data from the internet! "
                                "This means there is no good internet available!"]
@@ -270,7 +273,7 @@ class ChannelInfo:
                         warning("INTERNET OFFLINE")
                         sleep(2.4)
                     elif self.sponsor_on_channel:
-                        verbose("Reading Community Posts on " + self.channel_name + ".")
+                        verbose("Reading Community Posts on {0}.".format(self.channel_name))
                         # NOTE this edits THE video id when finds stream.
                         boolean_found = self.is_live_sponsor_only_streams()
                         if not boolean_found:
@@ -289,10 +292,10 @@ class ChannelInfo:
                         if self.sponsor_only_stream is True:
                             self.sponsor_only_stream = False
                         if not self.privateStream:
-                            info(self.channel_name + " is not live!")
+                            info("{0} is not live!".format(self.channel_name))
                             sleep(self.pollDelayMs / 1000)
                         else:
-                            info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
+                            info("{0}'s channel live streaming is currently private/unlisted!".format(self.channel_name))
                             sleep(self.pollDelayMs / 1000)
                 if boolean_live:
                     if self.YoutubeStream is None:
