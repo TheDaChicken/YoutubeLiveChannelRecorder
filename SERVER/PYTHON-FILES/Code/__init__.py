@@ -132,9 +132,10 @@ def is_google_account_login_in():
     if os.path.isfile("cookies.txt"):
         try:
             cj.load()
-        except LoadError as e:
-            if 'format file' in str(e):
-                return False
+        except Exception as e:
+            warning("Unable to access cookies.")
+            warning("Error: " + str(e))
+            return False
 
     cookie = [cookies for cookies in cj if 'SSID' in cookies.name]
     if cookie is None or len(cookie) is 0:
