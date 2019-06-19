@@ -41,7 +41,7 @@ def run_channel(channel_id, returnMessage=False):
         else:
             warning(error_message)
             channel_main_array.append({'class': channel_holder_class, "error": error_message})
-    return channel_holder_class
+    return [False, ""]
 
 
 def upload_test_run(channel_id, returnMessage=False):
