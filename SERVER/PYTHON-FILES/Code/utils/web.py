@@ -16,13 +16,13 @@ from urllib3.exceptions import TimeoutError
 
 try:
     from urllib.request import HTTPCookieProcessor, build_opener
-    from http.cookiejar import LWPCookieJar, LoadError
+    from http.cookiejar import MozillaCookieJar, LoadError
 except ImportError:
     LWPCookieJar = None
     HTTPCookieProcessor = None
     stopped("Unsupported version of Python. You need Version 3 :<")
 
-cj = LWPCookieJar(filename="cookies.txt")
+cj = MozillaCookieJar(filename="cookies.txt")
 
 if os.path.isfile("cookies.txt"):
     try:

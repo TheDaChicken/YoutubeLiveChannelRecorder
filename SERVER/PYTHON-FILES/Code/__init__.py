@@ -117,12 +117,12 @@ def google_account_logout():
 
 def is_google_account_login_in():
     try:
-        from http.cookiejar import LWPCookieJar
+        from http.cookiejar import MozillaCookieJar
     except ImportError:
-        LWPCookieJar = None
+        MozillaCookieJar = None
         stopped("Unsupported version of Python. You need Version 3 :<")
 
-    cj = LWPCookieJar(filename="cookies.txt")
+    cj = MozillaCookieJar(filename="cookies.txt")
     if os.path.isfile("cookies.txt"):
         try:
             cj.load()
