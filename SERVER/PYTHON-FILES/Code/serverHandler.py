@@ -298,7 +298,6 @@ class _FlaskClass:
             return Response("OK", mimetype='text/plain')
         else:
             return Response(message, mimetype='text/plain', status=500)
-        return Response("OK", mimetype='text/plain')
 
 
 def run_server(port):
