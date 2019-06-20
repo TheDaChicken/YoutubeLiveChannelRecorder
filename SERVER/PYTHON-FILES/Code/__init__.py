@@ -49,6 +49,9 @@ class HandlerChannelInfo(ChannelInfo):
     def get(self, variable_name):
         return getattr(self, variable_name)
 
+    def set(self, variable_name, value):
+        return setattr(self, variable_name, value)
+
     def list(self):
         return self.__dict__
 
@@ -108,8 +111,8 @@ def google_account_login(username, password):
 
 
 def google_account_logout():
+    # STOP HEARTBEAT
     download_website("https://www.youtube.com/logout")
-    sleep(1)
     if is_google_account_login_in() is True:
         return [False, "Failed to logout. :/"]
     return [True, "OK"]

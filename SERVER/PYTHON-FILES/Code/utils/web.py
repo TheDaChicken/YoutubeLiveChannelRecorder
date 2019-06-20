@@ -1,4 +1,5 @@
 import os
+from http.client import HTTPResponse
 from time import sleep
 
 from .parser import parse_json, parse_m3u8_formats
@@ -66,7 +67,7 @@ def download_website(url, headers=None, data=None):
     request = Request(url, headers=headers, data=data)
 
     try:
-        response = opener.open(request)
+        response = opener.open(request)  # type: HTTPResponse
     except (URLError, TimeoutError, OSError) as e2:
         try:
             return e2.code
@@ -78,7 +79,6 @@ def download_website(url, headers=None, data=None):
         return None
     try:
         cj.save()  # Saves Cookies
-        cj.clear_expired_cookies()
     except Exception as e1:
         if 'Permission denied' in str(e1):
             print("")
