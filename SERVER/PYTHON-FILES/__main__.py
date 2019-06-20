@@ -41,7 +41,7 @@ if __name__ == '__main__':
         ok, error_message = run_channel(channel_id)
         if not ok:
             warning(error_message)
-        sleep(1.5)
+        sleep(.10)
 
     sleep(1)
 
