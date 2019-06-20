@@ -1,11 +1,10 @@
 import os
-from multiprocessing import Process, Value
+from multiprocessing import Process
 from multiprocessing.managers import BaseManager, Namespace
 from threading import Thread
-from time import sleep
 
 from .youtube.channelClass import ChannelInfo
-from .utils.web import download_website
+from .utils.web import download_website, __build__cookies
 
 from .log import warning, verbose, stopped
 
@@ -22,17 +21,17 @@ channel_main_array = []
 ServerClass = None
 
 baseManager = None  # type: BaseManager
-settings = None  # type: Namespace
+shareable_variables = None  # type: Namespace
 
 
-def setup_manager():
+def setupShared():
     global baseManager
-    global settings
+    global shareable_variables
     BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
     baseManager = BaseManager()
     baseManager.start()
-    settings = Namespace()
-    settings.DebugMode = False
+    shareable_variables = Namespace()
+    shareable_variables.DebugMode = False
 
 
 class HandlerChannelInfo(ChannelInfo):
@@ -57,7 +56,7 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id):
-    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, settings)
+    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
@@ -72,7 +71,7 @@ def run_channel(channel_id):
         return [True, "OK"]
     else:
         channel_main_array.append({'class': channel_holder_class, "error": error_message})
-        return[False, error_message]
+        return [False, error_message]
 
 
 def upload_test_run(channel_id, returnMessage=False):
@@ -119,21 +118,7 @@ def google_account_logout():
 
 
 def is_google_account_login_in():
-    try:
-        from http.cookiejar import MozillaCookieJar
-    except ImportError:
-        MozillaCookieJar = None
-        stopped("Unsupported version of Python. You need Version 3 :<")
-
-    cj = MozillaCookieJar(filename="cookies.txt")
-    if os.path.isfile("cookies.txt"):
-        try:
-            cj.load()
-        except Exception as e:
-            warning("Unable to access cookies.")
-            warning("Error: " + str(e))
-            return False
-
+    cj = __build__cookies()
     cookie = [cookies for cookies in cj if 'SSID' in cookies.name]
     if cookie is None or len(cookie) is 0:
         return False
@@ -147,8 +132,8 @@ def check_internet():
 
 
 def enable_debug():
-    global settings
-    settings.DebugMode = True
+    global shareable_variables
+    shareable_variables.DebugMode = True
 
 
 def setupStreamsFolder():

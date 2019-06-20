@@ -1,6 +1,6 @@
 import argparse
 from time import sleep
-from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setup_manager
+from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setupShared
 from Code.log import stopped, warning, disable_youtube_reply
 from Code.serverHandler import run_server
 from Code.dataHandler import createDataFile, loadData, doesDataExist
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser_args = parser.parse_args()
 
     setupStreamsFolder()
-    setup_manager()
+    setupShared()
 
     if not doesDataExist():
         createDataFile()
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             warning(error_message)
         sleep(.10)
 
-    sleep(1)
+    sleep(.5)
 
     run_server(port)
 

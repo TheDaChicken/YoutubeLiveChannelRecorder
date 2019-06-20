@@ -37,12 +37,12 @@ class ChannelInfo:
     """
 
     # USED FOR SERVER VARIABLES
-
-    # Quick Bool isLive
+    #  Quick Bool isLive
     live_streaming = None
-    # Status on recording
+    #  Status on recording
     recording_status = None
     stop_heartbeat = False
+    #  Shareable Variables
     SettingsManager = False  # type: Namespace
 
     # USED TO STOP THREADS
@@ -316,8 +316,9 @@ class ChannelInfo:
             # REPEAT (END OF LOOP)
 
     def is_live(self, alreadyChecked=False):
-        if self.SettingsManager.DebugMode:
-            self.last_heartbeat = datetime.now()
+        if self.SettingsManager:
+            if self.SettingsManager.DebugMode:
+                self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live

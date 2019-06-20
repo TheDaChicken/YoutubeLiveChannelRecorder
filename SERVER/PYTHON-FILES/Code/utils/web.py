@@ -9,38 +9,53 @@ from ..log import stopped, warning
 import httplib2
 from urllib3.exceptions import TimeoutError
 
+
 #
 #
 # LITTLE BIT OF THIS CODE IN THIS FILE IS IN YOUTUBE-DL.
 # Credit to them!
 #
 
-try:
-    from urllib.request import HTTPCookieProcessor, build_opener
-    from http.cookiejar import MozillaCookieJar, LoadError
-except ImportError:
-    LWPCookieJar = None
-    HTTPCookieProcessor = None
-    stopped("Unsupported version of Python. You need Version 3 :<")
 
-cj = MozillaCookieJar(filename="cookies.txt")
+def __build_opener(cj):
+    """
+    :type cj: MozillaCookieJar
+    """
 
-if os.path.isfile("cookies.txt"):
+    # BUILD OPENER
     try:
-        cj.load()
-    except LoadError as e:
-        if 'format file' in str(e):
-            print("")
-            warning("The Cookies File corrupted, deleting...")
-            os.remove("cookies.txt")
-            sleep(1)
-            print("")
+        from urllib.request import HTTPCookieProcessor, build_opener
+    except ImportError:
+        HTTPCookieProcessor = None
+        build_opener = None
+        stopped("Unsupported version of Python. You need Version 3 :<")
+
+    opener = build_opener(HTTPCookieProcessor(cj))
+    return opener
 
 
-opener = build_opener(HTTPCookieProcessor(cj))
+def __build__cookies():
+    try:
+        from http.cookiejar import MozillaCookieJar, LoadError
+    except ImportError:
+        MozillaCookieJar = None
+        LoadError = None
+        stopped("Unsupported version of Python. You need Version 3 :<")
+    cj = MozillaCookieJar(filename="cookies.txt")
+    if os.path.isfile("cookies.txt"):
+        try:
+            cj.load()
+        except LoadError as e:
+            if 'format file' in str(e):
+                print("")
+                warning("The Cookies File corrupted, deleting...")
+                os.remove("cookies.txt")
+                sleep(1)
+                print("")
+    return cj
 
 
-def download_website(url, headers=None, data=None):
+def download_website(url, headers=None, data=None, cookies=None):
     """
 
     Downloads website from url.
@@ -48,8 +63,13 @@ def download_website(url, headers=None, data=None):
     :param url: url to open request to.
     :param headers: Form data sent to website.
     :param data: Form data sent to website.
+    :param cookies: Already loaded cookies, if null, will preload.
     :return: str, int, None
     """
+
+    cj = cookies if cookies is not None else __build__cookies()
+    opener = __build_opener(cj)
+
     try:
         from urllib.request import urlopen, Request
         from urllib.error import URLError
@@ -77,6 +97,7 @@ def download_website(url, headers=None, data=None):
         warning("Unable to request HTTP website.")
         warning("Error: " + str(e2))
         return None
+
     try:
         cj.save()  # Saves Cookies
     except Exception as e1:
