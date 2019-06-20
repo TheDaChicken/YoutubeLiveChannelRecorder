@@ -72,7 +72,6 @@ def download_website(url, headers=None, data=None):
             return e2.code
         except AttributeError:
             return None
-        return None
     except Exception as e2:
         warning("Unable to request HTTP website.")
         warning("Error: " + str(e2))
