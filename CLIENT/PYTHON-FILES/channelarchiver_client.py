@@ -91,21 +91,26 @@ if __name__ == '__main__':
                                   Fore.LIGHTBLUE_EX + " [INTERNET OFFLINE]")
                         elif channelInfo['live'] is True:
                             if channelInfo['broadcastId'] is not None:
-                                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                    'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " Recording Status: "
-                                      + channelInfo['recording_status'] + " " + Fore.LIGHTYELLOW_EX +
-                                      "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
-                            else:
                                 if channelInfo['recording_status']:
                                     print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                        'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Recording "
-                                                                                                      "Status: "
-                                          + channelInfo['recording_status'])
+                                        'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " Status: "
+                                          + channelInfo['recording_status'] + " " + Fore.LIGHTYELLOW_EX +
+                                          "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
                                 else:
                                     print(
                                         "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                            'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Recording "
-                                                                                                           "Status: "
+                                            'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " " +
+                                        Fore.LIGHTYELLOW_EX +
+                                        "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
+                            else:
+                                if channelInfo['recording_status']:
+                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                        'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
+                                    + channelInfo['recording_status'])
+                                else:
+                                    print(
+                                        "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                            'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
                                         + "Unknown.")
                         else:
                             if channelInfo['privateStream'] is True:
