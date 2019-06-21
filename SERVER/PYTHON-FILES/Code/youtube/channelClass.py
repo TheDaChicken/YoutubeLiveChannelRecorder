@@ -309,6 +309,11 @@ class ChannelInfo:
                                 thread.join()
                                 stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
                         sleep(2.5)
+                    else:
+                        self.recording_status = "Unable to get Youtube Stream Info."
+                        warning("Unable to get Youtube Stream Info from this stream: ")
+                        warning("VIDEO ID: " + self.video_id)
+                        warning("CHANNEL ID: " + self.channel_id)
                     sleep(self.pollDelayMs / 1000)
                 if alreadyChecked:
                     alreadyChecked = False
