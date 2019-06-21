@@ -296,6 +296,7 @@ class ChannelInfo:
                             info("{0}'s channel live streaming is currently private/unlisted!".format(self.channel_name))
                             sleep(self.pollDelayMs / 1000)
                 if boolean_live:
+                    self.recording_status = "Getting Youtube Stream Info."
                     if self.YoutubeStream is None:
                         self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
                     if self.YoutubeStream is not None:
