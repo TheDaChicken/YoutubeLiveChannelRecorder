@@ -37,7 +37,7 @@ def YoutubeReply(text):
 
 
 def EncoderLog(text):
-    sys.stdout.write(Fore.LIGHTGREEN_EX + "[ENCODER] {}".format(text) + "\n")
+    sys.stdout.write(Fore.LIGHTGREEN_EX + "[ENCODER] " + Fore.RESET + "{}\n".format(text) + "\n")
     sys.stdout.flush()
 
 
