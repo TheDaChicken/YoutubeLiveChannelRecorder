@@ -35,8 +35,7 @@ def setupShared():
     shareable_variables = Namespace()
     shareable_variables.DebugMode = False
     from .utils.web import __build__cookies
-    build_cookies = __build__cookies()
-    test = Value('i', build_cookies)
+    test = Value('i', __build__cookies)
 
 
 class HandlerChannelInfo(ChannelInfo):
@@ -48,7 +47,7 @@ class HandlerChannelInfo(ChannelInfo):
     """
 
     def __init__(self, channel_id, SettingsManager, sharedCookies=None):
-        super().__init__(channel_id, SettingsManager, sharedCookies=sharedCookies)
+        super().__init__(channel_id, SettingsManager, sharedCookies=sharedCookies.value())
 
     def get(self, variable_name):
         return getattr(self, variable_name)
@@ -61,7 +60,7 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id):
-    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables, sharedCookies=None)
+    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables, sharedCookies=test)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
