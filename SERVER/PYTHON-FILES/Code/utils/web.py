@@ -114,7 +114,13 @@ def download_website(url, headers=None, data=None, cookies=None):
         warning("Error: " + str(e2))
         warning("Unable to read website bytes.")
         return None
-    return website_bytes.decode('utf-8')
+    try:
+        decoded_bytes = website_bytes.decode('utf-8')
+    except Exception as e3:
+        warning("Error: " + str(e3))
+        warning("Unable to decode website bytes.")
+        return None
+    return decoded_bytes
 
 
 def download_image(image_url, file_name):
