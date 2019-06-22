@@ -23,30 +23,56 @@ class ChannelInfo:
 
     Class that holds channel information and functions related to the information.
 
+    # Channel Data
     :type channel_id: str
     :type channel_name: str
+
+    # Stream Data.
     :type video_id: str, None
     :type title: str
     :type start_date: datetime.datetime
+    :type description: str
+    :type privateStream: bool
+    :type sponsor_only_stream: bool
+    :type YoutubeStream: dict
+
+    # USED FOR RECORDING.
+    :type EncoderClass: Encoder
+
+    # USED FOR HOLDING THUMBNAILS
     :type thumbnail_url: str
-    :type video_location: str
     :type thumbnail_location: str
+
+    # USED FOR UPLOADING.
+    :type video_location: str
+
+    # USED IN HEARTBEAT TO BE SHOWN ON CLIENT.
     :type live_scheduled: bool
     :type live_scheduled_time: str
-    :type EncoderClass: Encoder, None
+
+    # Server-type Variables
+    :type live_streaming, bool
+    :type recording_status: str
+    :type stop_heartbeat: bool
+    :type SettingsManager: Namespace
+    :type sharedCookies: Value
+
+    # HEARTBEAT Variables
+    :type pollDelayMs: int
+    :type sequence_number: int
+    :type broadcastId: str
+    :type last_heartbeat: datetime.datetime
+
+    # USER ACCOUNT
+    :type sponsor_on_channel: bool
     """
 
     # USED FOR SERVER VARIABLES
-    #  Quick Bool isLive
     live_streaming = None
-    #  Status on recording
     recording_status = None
     stop_heartbeat = False
-    #  Shareable Variables
-    SettingsManager = False  # type: Namespace
-
-    # USED TO STOP THREADS
-    stop_thread = False
+    SettingsManager = False
+    sharedCookies = False
 
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
     pollDelayMs = 8000
@@ -87,13 +113,14 @@ class ChannelInfo:
     live_scheduled = False
     live_scheduled_time = None
 
-    def __init__(self, channel_id, SettingsManager=None):
+    def __init__(self, channel_id, SettingsManager=None, sharedCookies=None):
         self.channel_id = channel_id
         self.SettingsManager = SettingsManager
+        self.sharedCookies = sharedCookies
 
     def loadYoutubeData(self):
         html = download_website("https://www.youtube.com/channel/{0}/live".
-                                format(self.channel_id))
+                                format(self.channel_id), cookies=self.sharedCookies)
         if html is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
@@ -110,7 +137,7 @@ class ChannelInfo:
     def loadChannelData(self, html=None):
         if not html:
             html = download_website("https://www.youtube.com/channel/{0}/live".
-                                    format(self.channel_id))
+                                    format(self.channel_id), cookies=self.sharedCookies)
             if html is None:
                 return [False, "Failed getting Channel Data from the internet! "
                                "This means there is no good internet available!"]
@@ -136,7 +163,7 @@ class ChannelInfo:
         verbose("Getting Video ID.")
         if not html:
             html = download_website("https://www.youtube.com/channel/{0}/live".
-                                    format(self.channel_id))
+                                    format(self.channel_id), cookies=self.sharedCookies)
             if html is None:
                 return [False, "Failed getting Video Data from the internet! "
                                "This means there is no good internet available!"]
@@ -209,7 +236,8 @@ class ChannelInfo:
     def get_channel_name(self, html_code=None):
         verbose("Getting Channel Name of " + self.channel_id + ".")
         if html_code is None:
-            html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+            html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
+                                         cookies=self.sharedCookies)
             if html_code is None:
                 return None
         yt_player_config = get_yt_player_config(html_code)
@@ -242,7 +270,8 @@ class ChannelInfo:
         if is_google_account_login_in():
             verbose("Checking if account sponsored " + self.channel_name + ".")
             if html_code is None:
-                html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live")
+                html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
+                                             cookies=self.sharedCookies)
                 if html_code is None:
                     return None
             html_code = str(html_code)

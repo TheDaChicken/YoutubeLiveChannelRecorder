@@ -1,6 +1,6 @@
 import os
 from multiprocessing import Process
-from multiprocessing.managers import BaseManager, Namespace
+from multiprocessing.managers import BaseManager, Namespace, Value
 from threading import Thread
 
 from .youtube.channelClass import ChannelInfo
@@ -22,16 +22,21 @@ ServerClass = None
 
 baseManager = None  # type: BaseManager
 shareable_variables = None  # type: Namespace
+test = None   # type: Value
 
 
 def setupShared():
     global baseManager
     global shareable_variables
+    global test
     BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
     baseManager = BaseManager()
     baseManager.start()
     shareable_variables = Namespace()
     shareable_variables.DebugMode = False
+    from .utils.web import __build__cookies
+    build_cookies = __build__cookies()
+    test = Value('i', build_cookies)
 
 
 class HandlerChannelInfo(ChannelInfo):
@@ -42,8 +47,8 @@ class HandlerChannelInfo(ChannelInfo):
 
     """
 
-    def __init__(self, channel_id, SettingsManager):
-        super().__init__(channel_id, SettingsManager)
+    def __init__(self, channel_id, SettingsManager, sharedCookies=None):
+        super().__init__(channel_id, SettingsManager, sharedCookies=sharedCookies)
 
     def get(self, variable_name):
         return getattr(self, variable_name)
@@ -56,7 +61,7 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id):
-    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables)
+    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables, sharedCookies=None)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool

@@ -6,7 +6,7 @@ from ..utils.web import download_json
 from ..dataHandler import DownloadThumbnail
 
 
-def is_live(channel_Class, alreadyChecked=False):
+def is_live(channel_Class, alreadyChecked=False, cookies=None):
     """
 
     Checks if channel is live using the normal Youtube heartbeat.
@@ -67,7 +67,7 @@ def is_live(channel_Class, alreadyChecked=False):
 
     json = download_json(
         url,
-        headers=headers)
+        headers=headers, cookies=cookies)
     if type(json) is bool or json is None:
         return None
     channel_Class.sequence_number += 1
