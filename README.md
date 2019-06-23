@@ -23,9 +23,9 @@
 
 ## EXAMPLE STREAM RECORDINGS (ORIGINAL DELETED) 
   
-  https://youtu.be/MQP8aqw7-Ko (SKEP CHANNEL)
+  https://youtu.be/MQP8aqw7-Ko (SKEP CHANNEL 6/15/19)
   
-  https://youtu.be/Ao1ZkJ8XwjE (SKEP CHANNEL)
+  https://youtu.be/Ao1ZkJ8XwjE (SKEP CHANNEL 6/22/19)
 
 ## SETUP SERVER
   To use the server-side, you need the required packages:
