@@ -25,7 +25,7 @@
   
   https://youtu.be/MQP8aqw7-Ko (SKEP CHANNEL)
   
-  https://www.youtube.com/watch?v=Ao1ZkJ8XwjE (SKEP CHANNEL)
+  https://youtu.be/Ao1ZkJ8XwjE (SKEP CHANNEL)
 
 ## SETUP SERVER
   To use the server-side, you need the required packages:
