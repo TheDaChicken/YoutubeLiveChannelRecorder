@@ -21,9 +21,11 @@
   Thanks to people of [youtube-dl!](https://github.com/ytdl-org/youtube-dl/)
   Youtube-dl helped me get a head start!
 
-## EXAMPLE STREAM RECORDINGS
+## EXAMPLE STREAM RECORDINGS (ORIGINAL DELETED) 
   
-  https://youtu.be/MQP8aqw7-Ko (ORIGINAL STREAM DELETED)
+  https://youtu.be/MQP8aqw7-Ko (SKEP CHANNEL)
+  
+  https://www.youtube.com/watch?v=Ao1ZkJ8XwjE (SKEP CHANNEL)
 
 ## SETUP SERVER
   To use the server-side, you need the required packages:
