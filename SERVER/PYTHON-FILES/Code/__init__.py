@@ -25,7 +25,6 @@ shareable_variables = None  # type: Namespace
 
 
 def setupShared():
-    # PYTHON V2.7.2 BUG FIX
     global baseManager
     global shareable_variables
     managers.BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
