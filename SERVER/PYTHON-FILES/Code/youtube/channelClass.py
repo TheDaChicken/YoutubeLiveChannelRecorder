@@ -310,7 +310,8 @@ class ChannelInfo:
                                     sleep(2.52)
                                 else:
                                     info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
-                                    info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
+                                    info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find "
+                                         "Anything!")
                                     sleep(self.pollDelayMs / 1000)
                             if boolean_found:
                                 self.sequence_number = 0
