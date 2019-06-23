@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing
 from time import sleep
 from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setupShared
 from Code.log import stopped, warning, disable_youtube_reply
@@ -6,6 +7,7 @@ from Code.serverHandler import run_server
 from Code.dataHandler import createDataFile, loadData, doesDataExist
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
 
     parser = argparse.ArgumentParser(description='Downloads Live streams when Youtube channels are live!')
 
