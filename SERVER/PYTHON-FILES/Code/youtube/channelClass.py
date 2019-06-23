@@ -291,63 +291,66 @@ class ChannelInfo:
         alreadyChecked = True
         self.TestUpload = TestUpload
         while True:
-            if self.stop_heartbeat is False:
-                # LOOP
-                boolean_live = self.is_live(alreadyChecked=alreadyChecked)
-                if not boolean_live:
-                    # HEARTBEAT INTERNET OFFLINE.
-                    if boolean_live is None:
-                        warning("INTERNET OFFLINE")
-                        sleep(2.4)
-                    elif self.sponsor_on_channel:
-                        verbose("Reading Community Posts on {0}.".format(self.channel_name))
-                        # NOTE this edits THE video id when finds stream.
-                        boolean_found = self.is_live_sponsor_only_streams()
-                        if not boolean_found:
-                            if boolean_found is None:
-                                warning("INTERNET OFFLINE")
-                                sleep(2.52)
-                            else:
-                                info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
-                                info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
-                                sleep(self.pollDelayMs / 1000)
-                        if boolean_found:
-                            self.sequence_number = 0
-                            boolean_live = self.is_live(alreadyChecked=alreadyChecked)
-                            self.sponsor_only_stream = True
-                    else:
-                        if self.sponsor_only_stream is True:
-                            self.sponsor_only_stream = False
-                        if not self.privateStream:
-                            info("{0} is not live!".format(self.channel_name))
-                            sleep(self.pollDelayMs / 1000)
+            try:
+                if self.stop_heartbeat is False:
+                    # LOOP
+                    boolean_live = self.is_live(alreadyChecked=alreadyChecked)
+                    if not boolean_live:
+                        # HEARTBEAT INTERNET OFFLINE.
+                        if boolean_live is None:
+                            warning("INTERNET OFFLINE")
+                            sleep(2.4)
+                        elif self.sponsor_on_channel:
+                            verbose("Reading Community Posts on {0}.".format(self.channel_name))
+                            # NOTE this edits THE video id when finds stream.
+                            boolean_found = self.is_live_sponsor_only_streams()
+                            if not boolean_found:
+                                if boolean_found is None:
+                                    warning("INTERNET OFFLINE")
+                                    sleep(2.52)
+                                else:
+                                    info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
+                                    info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find Anything!")
+                                    sleep(self.pollDelayMs / 1000)
+                            if boolean_found:
+                                self.sequence_number = 0
+                                boolean_live = self.is_live(alreadyChecked=alreadyChecked)
+                                self.sponsor_only_stream = True
                         else:
-                            info("{0}'s channel live streaming is currently private/unlisted!".format(self.channel_name))
-                            sleep(self.pollDelayMs / 1000)
-                if boolean_live:
-                    self.recording_status = "Getting Youtube Stream Info."
-                    if self.YoutubeStream is None:
-                        self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
-                    if self.YoutubeStream is not None:
-                        fully_recorded = self.openStream(self.YoutubeStream)
-                        self.YoutubeStream = None
-                        if fully_recorded:
-                            thread = Thread(target=self.start_upload, name=self.channel_name)
-                            thread.daemon = True  # needed control+C to work.
-                            thread.start()
-                            if self.TestUpload:
-                                thread.join()
-                                stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
-                        sleep(2.5)
-                    else:
-                        self.recording_status = "Unable to get Youtube Stream Info."
-                        warning("Unable to get Youtube Stream Info from this stream: ")
-                        warning("VIDEO ID: " + self.video_id)
-                        warning("CHANNEL ID: " + self.channel_id)
-                    sleep(self.pollDelayMs / 1000)
-                if alreadyChecked:
-                    alreadyChecked = False
-
+                            if self.sponsor_only_stream is True:
+                                self.sponsor_only_stream = False
+                            if not self.privateStream:
+                                info("{0} is not live!".format(self.channel_name))
+                                sleep(self.pollDelayMs / 1000)
+                            else:
+                                info("{0}'s channel live streaming is currently private/unlisted!".format(self.channel_name))
+                                sleep(self.pollDelayMs / 1000)
+                    if boolean_live:
+                        self.recording_status = "Getting Youtube Stream Info."
+                        if self.YoutubeStream is None:
+                            self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
+                        if self.YoutubeStream is not None:
+                            fully_recorded = self.openStream(self.YoutubeStream)
+                            self.YoutubeStream = None
+                            if fully_recorded:
+                                thread = Thread(target=self.start_upload, name=self.channel_name)
+                                thread.daemon = True  # needed control+C to work.
+                                thread.start()
+                                if self.TestUpload:
+                                    thread.join()
+                                    stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
+                            sleep(2.5)
+                        else:
+                            self.recording_status = "Unable to get Youtube Stream Info."
+                            warning("Unable to get Youtube Stream Info from this stream: ")
+                            warning("VIDEO ID: " + self.video_id)
+                            warning("CHANNEL ID: " + self.channel_id)
+                        sleep(self.pollDelayMs / 1000)
+                    if alreadyChecked:
+                        alreadyChecked = False
+            except Exception as e1:
+                self.recording_status = "Crashed. Exception type: " + str(type(e1)) + ", " + str(e1)
+                self.live_streaming = None
             # REPEAT (END OF LOOP)
 
     def is_live(self, alreadyChecked=False):
