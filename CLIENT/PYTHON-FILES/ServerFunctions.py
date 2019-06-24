@@ -112,7 +112,7 @@ def downloadRecording(ip, port, RecordingName):
         from urllib.parse import urlencode
     except ImportError:
         stopped("Unsupported version of Python. You need Version 3 :<")
-    FFplay = FFmpeg("http://" + ip + ":" + port + "/playStream?" + urlencode({'stream_name': RecordingName}),
+    FFmpeg = FFmpeg("http://" + ip + ":" + port + "/playStream?" + urlencode({'stream_name': RecordingName}),
                     RecordingName, Headers=DefaultHeaders)
-    FFplay.start_recording()
-    return FFplay
+    FFmpeg.start_recording()
+    return FFmpeg
