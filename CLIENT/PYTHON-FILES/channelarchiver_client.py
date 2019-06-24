@@ -57,6 +57,8 @@ if __name__ == '__main__':
     serverIP = input(":")
     print("What is the Server Port?")
     serverPort = input(":")
+    if serverPort is '':
+        serverPort = '31311'
     info("Checking for Server port " + serverPort + " on " + serverIP)
     if not check_server(serverIP, serverPort):
         stopped("Server is not running! Try checking again.")
