@@ -19,6 +19,7 @@ class FFmpeg:
     running = None
     crashFunction = None
     Headers = None
+    last_line = None
 
     def __init__(self, url, videoLocation, crashFunction=None, Headers=None):
         self.video_url = url
@@ -62,12 +63,14 @@ class FFmpeg:
     def __crashHandler(self):
         log = ""
         for line in self.process.stdout:
-            if True:
-                EncoderLog(line)
+            # if True:
+            #    EncoderLog(line)
             if self.running is None and self.running is not None:
                 log += line
             if "Press [q] to stop" in line:
                 self.running = True
+            if "frame=" in line:
+                self.last_line = line
         if self.running is True:
             warning("FFmpeg has stopped.")
             self.running = False

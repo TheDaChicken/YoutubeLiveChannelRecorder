@@ -1,8 +1,9 @@
 import os
 import platform
+import re
 from time import sleep
 
-from log import info, stopped, warning
+from log import info, stopped, warning, EncoderLog
 from colorama import Fore
 from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, get_settings, swap_settings, \
     get_youtube_settings, get_youtube_info, youtube_login, youtube_logout, test_upload, youtube_fully_login, \
@@ -516,8 +517,52 @@ if __name__ == '__main__':
                                 print("")
                             print("{0} Starting Download.".format(Fore.LIGHTMAGENTA_EX))
                             ffmpeg_class = downloadRecording(serverIP, serverPort, recording)
+                            last_line = None
+                            encoder_logs = False
+                            try:
+                                import keyboard
+                            except ImportError:
+                                keyboard = None
                             while True:
-                                if not ffmpeg_class.running:
+                                if ffmpeg_class.running:
+                                    if keyboard:
+                                        if not encoder_logs:
+                                            if keyboard.is_pressed('q'):
+                                                print("{0} Switched To Encoder Logs.".format(Fore.LIGHTGREEN_EX))
+                                                encoder_logs = True
+                                    if last_line is not ffmpeg_class.last_line:
+                                        if last_line is not None:
+                                            if encoder_logs:
+                                                EncoderLog(last_line)
+                                            else:
+                                                frames = re.search(r'frame= (.+) f|frame=(.+) f', last_line)
+                                                frames_tuple = frames.groups()
+                                                frames = next(x for x in frames_tuple if x is not None)
+                                                time = re.findall(r'time=(.+) b', last_line)
+                                                clearScreen()
+                                                print("")
+                                                print("")
+                                                print("===================")
+                                                print("")
+                                                print("    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX, frames
+                                                                                             if frames is not None else
+                                                                                             'Unknown'))
+                                                print("    {0}DOWNLOADED VIDEO TIME: {1}".format(Fore.LIGHTMAGENTA_EX, time[0] if len(time) is not 0
+                                                                                                 else 'Unknown'))
+                                                print("")
+                                                if not keyboard:
+                                                    print("    {0}INSTALL KEYBOARD USING PIP TO SWITCH TO ENCODER LOGS."
+                                                          .format(Fore.LIGHTRED_EX))
+                                                else:
+                                                    print("    {0}HOLD Q FOR A SECOND TO SWITCH TO "
+                                                          "FFMPEG LOGS. (ENCODER LOGS)"
+                                                          .format(Fore.LIGHTYELLOW_EX))
+                                                print("===================")
+                                                print("")
+                                                print("")
+                                        last_line = ffmpeg_class.last_line
+                                        sleep(.2)
+                                else:
                                     break
             elif Screen is "NotificationHold":
                 channel_info_last = channel_info
