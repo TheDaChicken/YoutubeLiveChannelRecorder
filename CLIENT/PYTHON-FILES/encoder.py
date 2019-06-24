@@ -132,7 +132,7 @@ class FFplay:
 
     def __run_Encoder(self, video_url):
         self.running = None
-        verbose("Opening FFmpeg.")
+        verbose("Opening FFplay.")
         command = ["ffplay", "-loglevel", "verbose", "-x", "1280", "-y", "720", "-i", video_url]
         if self.Headers:
             for header in self.Headers:
