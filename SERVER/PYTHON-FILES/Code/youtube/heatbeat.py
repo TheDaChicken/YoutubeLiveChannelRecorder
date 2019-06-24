@@ -139,7 +139,6 @@ def is_scheduled(liveStreamAbilityRenderer):
 def get_schedule_time(liveStreamAbilityRenderer):
     offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['offlineSlate'], dict)
     liveStreamOfflineSlateRenderer = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer'], dict)
-    print(liveStreamOfflineSlateRenderer)
     if liveStreamOfflineSlateRenderer:
         return try_get(liveStreamOfflineSlateRenderer, lambda x: x['subtitleText']['simpleText'], str)
     return None
