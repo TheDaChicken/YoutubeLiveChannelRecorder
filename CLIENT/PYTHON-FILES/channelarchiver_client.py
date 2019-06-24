@@ -6,7 +6,7 @@ from log import info, stopped, warning
 from colorama import Fore
 from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, get_settings, swap_settings, \
     get_youtube_settings, get_youtube_info, youtube_login, youtube_logout, test_upload, youtube_fully_login, \
-    youtube_fully_logout
+    youtube_fully_logout, listRecordings, playbackRecording, downloadRecording
 
 serverIP = None
 serverPort = None
@@ -147,6 +147,7 @@ if __name__ == '__main__':
                                                       "")
                 else:
                     print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
+                print(" 6) {0}View Recordings.".format(Fore.LIGHTYELLOW_EX))
                 if toaster is not None and 'localhost' not in serverIP:
                     print(" N) Holds console, shows Windows 10 Toast Notification every time a stream goes live.")
                 print("  - Type a specific number to do the specific action. - ")
@@ -262,6 +263,8 @@ if __name__ == '__main__':
                             channel_info = temp_channel_info
                         else:
                             stopped("Lost Connection of the Server!")
+                elif option is "6":
+                    Screen = "View-Recording"
             elif Screen is "Settings":
                 print("")
                 print("1) Upload Settings")
@@ -447,6 +450,73 @@ if __name__ == '__main__':
                             settings = get_youtube_settings(serverIP, serverPort)
                             info = get_youtube_info(serverIP, serverPort)
                             Screen = "Main"
+            elif Screen is "View-Recording":
+                print("")
+                recordingList = listRecordings(serverIP, serverPort)
+                if len(recordingList) is 0:
+                    print("{0} No Recordings Available!".format(Fore.LIGHTRED_EX))
+                    print("")
+                    input("Press enter to go back to Selection.")
+                    temp_channel_info = get_channel_info(serverIP, serverPort)
+                    if temp_channel_info:
+                        channel_info = temp_channel_info
+                    else:
+                        stopped("Lost Connection of the Server!")
+                    Screen = "Main"
+                else:
+                    loopNumber = 1
+                    print(Fore.LIGHTMAGENTA_EX + "List of Recordings:")
+                    print("")
+                    for recording in recordingList:
+                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + recording)
+                        loopNumber += 1
+                    print("")
+                    print(" 1) Play a Recording.")
+                    print(" 2) Download a Recording.")
+                    print("  - Type a specific number to do the specific action. - ")
+                    option = input(":")
+                    is_number = False
+                    number = 0
+                    if option is "1" or option is "2":
+                        print("")
+                        print("Type the number corresponding with the recording.")
+                        print("")
+                        recording_number = input("Recording Number: ")
+                        print("")
+                        try:
+                            number = int(recording_number)
+                            is_number = True
+                        except ValueError:
+                            print(Fore.LIGHTRED_EX + "That is not a number!")
+                            sleep(3.5)
+                    if is_number:
+                        recording = recordingList[number - 1]
+                        print("{0} Selected Recording: {1}".format(Fore.LIGHTMAGENTA_EX, recording))
+                        sleep(1)
+                        if option is "1":
+                            print("")
+                            print("{0} Starting Playback.".format(Fore.LIGHTMAGENTA_EX))
+                            ffplay_class = playbackRecording(serverIP, serverPort, recording)
+                            while True:
+                                if not ffplay_class.running:
+                                    break
+                        if option is "2":
+                            print("")
+                            from os import path, getcwd
+                            stream_output_location = path.join(getcwd(), recording)
+                            if os.path.isfile(stream_output_location):
+                                print("{0} File with the stream name already exists! Want to override?".format(
+                                    Fore.LIGHTMAGENTA_EX))
+                                print("")
+                                answer_input = input(" YES/NO:")
+                                if "NO" in answer_input or "no" in answer_input or "n" in answer_input:
+                                    break
+                                print("")
+                            print("{0} Starting Download.".format(Fore.LIGHTMAGENTA_EX))
+                            ffmpeg_class = downloadRecording(serverIP, serverPort, recording)
+                            while True:
+                                if not ffmpeg_class.running:
+                                    break
             elif Screen is "NotificationHold":
                 channel_info_last = channel_info
                 channel_info = get_channel_info(serverIP, serverPort)

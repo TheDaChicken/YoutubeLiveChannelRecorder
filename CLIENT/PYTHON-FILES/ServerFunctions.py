@@ -1,4 +1,5 @@
 from utils import download_website, download_json
+from log import stopped
 
 DefaultHeaders = {'Client': 'PYTHON-CLIENT'}
 
@@ -85,3 +86,33 @@ def youtube_fully_logout(ip, port):
     if "OK" in html_reply:
         return [True, html_reply]
     return [False, html_reply]
+
+
+def listRecordings(ip, port):
+    html_reply = download_json("http://" + ip + ":" + port + "/listRecordings",
+                               Headers=DefaultHeaders)
+    return html_reply
+
+
+def playbackRecording(ip, port, RecordingName):
+    from encoder import FFplay
+    try:
+        from urllib.parse import urlencode
+    except ImportError:
+        stopped("Unsupported version of Python. You need Version 3 :<")
+    FFplay = FFplay("http://" + ip + ":" + port + "/playStream?" + urlencode({'stream_name': RecordingName}),
+                    Headers=DefaultHeaders)
+    FFplay.start_playback()
+    return FFplay
+
+
+def downloadRecording(ip, port, RecordingName):
+    from encoder import FFmpeg
+    try:
+        from urllib.parse import urlencode
+    except ImportError:
+        stopped("Unsupported version of Python. You need Version 3 :<")
+    FFplay = FFmpeg("http://" + ip + ":" + port + "/playStream?" + urlencode({'stream_name': RecordingName}),
+                    RecordingName, Headers=DefaultHeaders)
+    FFplay.start_recording()
+    return FFplay

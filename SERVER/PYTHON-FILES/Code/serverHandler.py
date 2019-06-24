@@ -307,6 +307,31 @@ class _FlaskClass:
         else:
             return Response(message, mimetype='text/plain', status=500)
 
+    @staticmethod
+    @app.route('/listRecordings')
+    def listStreams():
+        from flask import jsonify
+        from os import path, getcwd, walk
+        recorded_streams_dir = path.join(getcwd(), "RecordedStreams")
+        list_recordings = []
+        for (dir_path, dir_names, file_names) in walk(recorded_streams_dir):
+            for file_name in file_names:
+                if 'mp4' in file_name:
+                    list_recordings.append(file_name)
+        return jsonify(list_recordings)
+
+    @staticmethod
+    @app.route('/playStream')
+    def uploadVideo():
+        from flask import request
+        stream_name = request.args.get('stream_name')
+        if stream_name is None:
+            return Response("You need stream_name in args.", mimetype='text/plain', status=500)
+        from os import path, getcwd
+        stream_folder = path.join(getcwd(), "RecordedStreams")
+        from flask import send_from_directory
+        return send_from_directory(directory=stream_folder, filename=stream_name)
+
 
 def run_server(port):
     current_flask_class = _FlaskClass(port)
