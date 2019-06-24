@@ -84,7 +84,7 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
         channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
 
     if channel_Class.live_scheduled is True:
-        channel_Class.live_scheduled_time = get_schedule_time(json)
+        channel_Class.live_scheduled_time = get_schedule_time(liveStreamAbilityRenderer)
     if 'stop_heartbeat' in json:
         sleep(.5)
         channel_Class.video_id = channel_Class.get_video_id()
@@ -129,7 +129,7 @@ def get_thumbnail(liveStreamAbilityRenderer):
 
 # Checking if live stream is scheduled from Heartbeat Json
 def is_scheduled(liveStreamAbilityRenderer):
-    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
+    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['offlineSlate'], dict)
     liveStreamOfflineSlateRenderer = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer'], dict)
     if liveStreamOfflineSlateRenderer:
         return 'scheduledStartTime' in liveStreamOfflineSlateRenderer
@@ -137,8 +137,9 @@ def is_scheduled(liveStreamAbilityRenderer):
 
 
 def get_schedule_time(liveStreamAbilityRenderer):
-    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
+    offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['offlineSlate'], dict)
     liveStreamOfflineSlateRenderer = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer'], dict)
+    print(liveStreamOfflineSlateRenderer)
     if liveStreamOfflineSlateRenderer:
         return try_get(liveStreamOfflineSlateRenderer, lambda x: x['subtitleText']['simpleText'], str)
     return None
