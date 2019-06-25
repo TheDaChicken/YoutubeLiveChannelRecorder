@@ -76,7 +76,7 @@ def run_channel(channel_id):
 
 def upload_test_run(channel_id, returnMessage=False):
     # TODO UPDATE.
-    channel_holder_class = ChannelInfo(channel_id)
+    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
@@ -87,8 +87,8 @@ def upload_test_run(channel_id, returnMessage=False):
             return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
 
         channel_holder_class.registerCloseEvent()
-        check_streaming_channel_thread = Thread(target=channel_holder_class.start_heartbeat_loop,
-                                                name=channel_holder_class.channel_name, args=(True,))
+        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
+                                                 name=channel_holder_class.channel_name, args=(True,))
         check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
