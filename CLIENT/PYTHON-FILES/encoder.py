@@ -36,7 +36,7 @@ class FFmpeg:
         self.__hold()
         if not self.running:
             return False
-        info("Recording Started.")
+        info("Downloading Started.")
         return True
 
     def __run_Encoder(self, video_url, videoLocation):
