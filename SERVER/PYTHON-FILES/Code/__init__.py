@@ -1,12 +1,10 @@
 import os
 from multiprocessing import Process
 from multiprocessing import managers
-from threading import Thread
 
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website, __build__cookies
-
-from .log import warning, verbose, stopped
+from .log import warning, verbose
 
 """
 :type channel_main_array: array
@@ -20,16 +18,16 @@ UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 channel_main_array = []
 ServerClass = None
 
-baseManager = None  # type: BaseManager
+baseManagerChannelInfo = None  # type: BaseManager
 shareable_variables = None  # type: Namespace
 
 
 def setupShared():
-    global baseManager
+    global baseManagerChannelInfo
     global shareable_variables
     managers.BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
-    baseManager = managers.BaseManager()
-    baseManager.start()
+    baseManagerChannelInfo = managers.BaseManager()
+    baseManagerChannelInfo.start()
     shareable_variables = managers.Namespace()
     shareable_variables.DebugMode = False
 
@@ -56,16 +54,16 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id, startup=False):
-    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables)
+    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
         del error_message
         channel_holder_class.registerCloseEvent()
-        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                 name="{0} - Heartbeat Thread".format(
-                                                     channel_holder_class.get("channel_name")))
         # check_streaming_channel_thread.daemon = True  # needed control+C to work.
+        channel_name = channel_holder_class.get("channel_name")
+        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
+                                                 name="{0} - Heartbeat Thread".format(channel_name))
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         return [True, "OK"]
@@ -77,7 +75,7 @@ def run_channel(channel_id, startup=False):
 
 def upload_test_run(channel_id, returnMessage=False):
     # TODO UPDATE.
-    channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables)
+    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
@@ -88,8 +86,9 @@ def upload_test_run(channel_id, returnMessage=False):
             return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
 
         channel_holder_class.registerCloseEvent()
+        channel_name = channel_holder_class.get("channel_name")
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                 name=channel_holder_class.channel_name, args=(True,))
+                                                 name="{0} - Heartbeat Thread".format(channel_name), args=(True,))
         check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})

@@ -4,7 +4,7 @@ from time import sleep
 
 from .parser import parse_json, parse_m3u8_formats
 
-from ..log import stopped, warning
+from ..log import stopped, warning, verbose
 
 import httplib2
 from urllib3.exceptions import TimeoutError
@@ -44,6 +44,7 @@ def __build__cookies():
     cj = MozillaCookieJar(filename="cookies.txt")
     if os.path.isfile("cookies.txt"):
         try:
+            verbose("Loading Cookies.")
             cj.load()
         except LoadError as e:
             if 'format file' in str(e):
