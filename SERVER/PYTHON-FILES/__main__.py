@@ -40,7 +40,7 @@ if __name__ == '__main__':
         port = 31311
 
     for channel_id in channel_ids:
-        ok, error_message = run_channel(channel_id)
+        ok, error_message = run_channel(channel_id, startup=True)
         if not ok:
             warning(error_message)
         sleep(.10)

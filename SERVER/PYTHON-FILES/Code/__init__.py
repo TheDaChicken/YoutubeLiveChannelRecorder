@@ -55,7 +55,7 @@ class HandlerChannelInfo(ChannelInfo):
         return self.__dict__
 
 
-def run_channel(channel_id):
+def run_channel(channel_id, startup=False):
     channel_holder_class = baseManager.HandlerChannelInfo(channel_id, shareable_variables)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
@@ -70,8 +70,9 @@ def run_channel(channel_id):
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         return [True, "OK"]
     else:
-        channel_main_array.append({'class': channel_holder_class, "error": error_message})
-        return [False, error_message]
+        if startup:
+            channel_main_array.append({'class': channel_holder_class, "error": error_message})
+            return [False, error_message]
 
 
 def upload_test_run(channel_id, returnMessage=False):
