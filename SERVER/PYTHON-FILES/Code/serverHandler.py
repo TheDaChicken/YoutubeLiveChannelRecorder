@@ -307,6 +307,8 @@ class _FlaskClass:
         else:
             return Response(message, mimetype='text/plain', status=500)
 
+    # Playback recordings and downloading them.
+
     @staticmethod
     @app.route('/listRecordings')
     def listStreams():
@@ -331,7 +333,7 @@ class _FlaskClass:
         stream_folder = path.join(getcwd(), "RecordedStreams")
         from flask import send_from_directory
         return send_from_directory(directory=stream_folder, filename=stream_name)
-
+    
 
 def run_server(port):
     current_flask_class = _FlaskClass(port)
