@@ -14,45 +14,13 @@ def download_website(url, Headers=None, RequestMethod='GET'):
     try:
         from urllib.request import urlopen, Request
     except ImportError:
+        urlopen = None
+        Request = None
         stopped("Unsupported version of Python. You need Version 3 :<")
 
-    def _guess_encoding_from_content(content_type, webpage_bytes):
-        m = re.match(r'[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+\s*;\s*charset=(.+)', content_type)
-        if m:
-            encoding = m.group(1)
-        else:
-            m = re.search(br'<meta[^>]+charset=[\'"]?([^\'")]+)[ /\'">]', webpage_bytes[:1024])
-            if m:
-                encoding = m.group(1).decode('ascii')
-            elif webpage_bytes.startswith(b'\xff\xfe'):
-                encoding = 'utf-16'
-            else:
-                encoding = 'utf-8'
-        return encoding
-
-    def download_website_handle(http_response):
-        content_type = http_response.headers.get('Content-Type', '')
-        webpage_bytes = http_response.read()
-        encoding = _guess_encoding_from_content(content_type, webpage_bytes)
-        try:
-            content = webpage_bytes.decode(encoding, 'replace')
-        except LookupError:
-            content = webpage_bytes.decode('utf-8', 'replace')
-        return content
-
-    if Headers is not None:
-        # {'User-Agent': UserAgent}
-        request = Request(url, headers=Headers)
-    else:
-        request = Request(url)
-
+    request = Request(url, headers=Headers)
     try:
-        if 'POST' in RequestMethod:
-            website = urlopen(request, data=urllib.parse.urlencode({}).encode("utf-8"))
-        elif 'GET' in RequestMethod:
-            website = urlopen(request, data=None)
-        else:
-            website = urlopen(request)
+        response = urlopen(request, data=urllib.parse.urlencode({}).encode("utf-8") if 'POST' in RequestMethod else None)
     except (urllib.error.URLError, httplib2.ServerNotFoundError, TimeoutError) as e:
         try:
             if e.code == 500:  # CUSTOM FOR READING ERROR MESSAGES FROM SERVER.
@@ -62,9 +30,19 @@ def download_website(url, Headers=None, RequestMethod='GET'):
         except AttributeError:
             return None
         return None
-
-    res = download_website_handle(website)
-    return res
+    try:
+        website_bytes = response.read()
+    except OSError as e2:
+        warning("Error: " + str(e2))
+        warning("Unable to read website bytes.")
+        return None
+    try:
+        decoded_bytes = website_bytes.decode('utf-8')
+    except Exception as e3:
+        warning("Error: " + str(e3))
+        warning("Unable to decode website bytes.")
+        return None
+    return decoded_bytes
 
 
 def parse_json(json_string):

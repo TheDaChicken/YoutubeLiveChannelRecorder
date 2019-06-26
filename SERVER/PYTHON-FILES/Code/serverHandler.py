@@ -49,9 +49,10 @@ class _FlaskClass:
             WSGIServer = None
         if WSGIServer is None:
             info("To disable this warning, install gevent pip package!")
-            self.app.run(host='0.0.0.0', threaded=True, port=self.port)
+            self.app.run(host='0.0.0.0', threaded=True, port=self.port, ssl_context=('cert.pem', 'key.pem'))
         else:
-            http_server = WSGIServer(('', self.port), self.app)
+            http_server = WSGIServer(('', self.port), self.app, certfile='cert.pem', keyfile='key.pem',
+                                     server_side=True)
             info("Server started. Hosted on port: {0}".format(self.port) + "!")
             show_windows_toast_notification("ChannelArchiver Server", "ChannelArchiver server started")
             http_server.serve_forever()
@@ -66,6 +67,8 @@ class _FlaskClass:
     @app.before_request
     def before_request():
         # This is used mostly for security. This can be easily broken
+        if request.url.startswith('http://'):
+            return Response(None, mimetype='text/plain', status=403)
         if 'Client' not in request.headers:
             rule = request.url_rule
             if rule is not None:
@@ -333,11 +336,11 @@ class _FlaskClass:
         stream_folder = path.join(getcwd(), "RecordedStreams")
         from flask import send_from_directory
         return send_from_directory(directory=stream_folder, filename=stream_name)
-    
+
 
 def run_server(port):
     current_flask_class = _FlaskClass(port)
-    check_streaming_thread = Thread(target=current_flask_class.loadServer,
-                                    name="Server Thread")
-    check_streaming_thread.daemon = True  # needed control+C to work.
-    check_streaming_thread.start()
+    load_server_thread = Thread(target=current_flask_class.loadServer,
+                                name="Server Thread")
+    load_server_thread.daemon = True  # needed control+C to work.
+    load_server_thread.start()
