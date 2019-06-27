@@ -20,26 +20,27 @@ def download_website(url, Headers=None, RequestMethod='GET'):
 
     request = Request(url, headers=Headers)
     try:
-        response = urlopen(request, data=urllib.parse.urlencode({}).encode("utf-8") if 'POST' in RequestMethod else None)
-    except (urllib.error.URLError, httplib2.ServerNotFoundError, TimeoutError) as e:
+        response = urlopen(request,
+                           data=urllib.parse.urlencode({}).encode("utf-8") if 'POST' in RequestMethod else None)
+    except (urllib.error.URLError, TimeoutError, OSError) as e1:
         try:
-            if e.code == 500:  # CUSTOM FOR READING ERROR MESSAGES FROM SERVER.
-                return e.read().decode('utf-8')
-            if e.code == 404:
-                return 404
+            return e1.code
         except AttributeError:
             return None
+    except Exception as e4:
+        warning("Unable to request HTTP website.")
+        warning("Error: " + str(e4))
         return None
     try:
         website_bytes = response.read()
-    except OSError as e2:
-        warning("Error: " + str(e2))
+    except OSError as e4:
+        warning("Error: " + str(e4))
         warning("Unable to read website bytes.")
         return None
     try:
         decoded_bytes = website_bytes.decode('utf-8')
-    except Exception as e3:
-        warning("Error: " + str(e3))
+    except Exception as e4:
+        warning("Error: " + str(e4))
         warning("Unable to decode website bytes.")
         return None
     return decoded_bytes
