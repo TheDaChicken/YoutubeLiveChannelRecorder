@@ -49,10 +49,9 @@ class _FlaskClass:
             WSGIServer = None
         if WSGIServer is None:
             info("To disable this warning, install gevent pip package!")
-            self.app.run(host='0.0.0.0', threaded=True, port=self.port, ssl_context=('cert.pem', 'key.pem'))
+            self.app.run(host='0.0.0.0', threaded=True, port=self.port)
         else:
-            http_server = WSGIServer(('', self.port), self.app, certfile='cert.pem', keyfile='key.pem',
-                                     server_side=True)
+            http_server = WSGIServer(('', self.port), self.app, server_side=True)
             info("Server started. Hosted on port: {0}".format(self.port) + "!")
             show_windows_toast_notification("ChannelArchiver Server", "ChannelArchiver server started")
             http_server.serve_forever()
