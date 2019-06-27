@@ -26,6 +26,8 @@ def download_website(url, Headers=None, RequestMethod='GET'):
         try:
             return e1.code
         except AttributeError:
+            if 'closed' in str(e1):
+                return 504
             return None
     except Exception as e4:
         warning("Unable to request HTTP website.")

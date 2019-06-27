@@ -1,6 +1,7 @@
 import argparse
 import multiprocessing
 from time import sleep
+from Code.utils.other import try_get
 from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setupShared
 from Code.log import stopped, warning, disable_youtube_reply
 from Code.serverHandler import run_server
@@ -23,7 +24,12 @@ if __name__ == '__main__':
 
     if not doesDataExist():
         createDataFile()
-    channel_ids = loadData()['channel_ids']
+    data_file = loadData()
+    channel_ids = data_file['channel_ids']
+
+    # FOR SSL
+    key = try_get(data_file, lambda x: x['ssl_key'], str)
+    cert = try_get(data_file, lambda x: x['ssl_cert'], str)
 
     if not check_internet():
         stopped("Not able to access the internet!")
@@ -47,7 +53,7 @@ if __name__ == '__main__':
 
     sleep(.5)
 
-    run_server(port)
+    run_server(port, key=key, cert=cert)
 
     if len(channel_ids) is 0:
         warning("None channels found added into this program!")

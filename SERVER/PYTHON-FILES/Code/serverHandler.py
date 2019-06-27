@@ -40,7 +40,7 @@ class _FlaskClass:
     def __init__(self, port):
         self.port = port
 
-    def loadServer(self):
+    def loadServer(self, cert=None, key=None):
         sleep(1.5)
         self.add_url_rules()
         try:
@@ -49,9 +49,14 @@ class _FlaskClass:
             WSGIServer = None
         if WSGIServer is None:
             info("To disable this warning, install gevent pip package!")
-            self.app.run(host='0.0.0.0', threaded=True, port=self.port)
+            ssl_context = ((cert, key) if cert and key else None)
+            self.app.run(host='0.0.0.0', threaded=True, port=self.port, ssl_context=ssl_context)
         else:
-            http_server = WSGIServer(('', self.port), self.app, server_side=True)
+            if cert and key:
+                http_server = WSGIServer(('', self.port), self.app, certfile=cert, keyfile=key,
+                                         server_side=True)
+            else:
+                http_server = WSGIServer(('', self.port), self.app)
             info("Server started. Hosted on port: {0}".format(self.port) + "!")
             show_windows_toast_notification("ChannelArchiver Server", "ChannelArchiver server started")
             http_server.serve_forever()
@@ -66,8 +71,6 @@ class _FlaskClass:
     @app.before_request
     def before_request():
         # This is used mostly for security. This can be easily broken
-        if request.url.startswith('http://'):
-            return Response(None, mimetype='text/plain', status=403)
         if 'Client' not in request.headers:
             rule = request.url_rule
             if rule is not None:
@@ -337,9 +340,10 @@ class _FlaskClass:
         return send_from_directory(directory=stream_folder, filename=stream_name)
 
 
-def run_server(port):
+def run_server(port, cert=None, key=None):
     current_flask_class = _FlaskClass(port)
     load_server_thread = Thread(target=current_flask_class.loadServer,
-                                name="Server Thread")
+                                name="Server Thread",
+                                args=(cert, key,))
     load_server_thread.daemon = True  # needed control+C to work.
     load_server_thread.start()
