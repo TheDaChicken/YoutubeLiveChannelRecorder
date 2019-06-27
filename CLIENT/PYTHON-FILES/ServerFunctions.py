@@ -1,5 +1,3 @@
-from time import sleep
-
 from utils import download_website, download_json
 from log import stopped
 
