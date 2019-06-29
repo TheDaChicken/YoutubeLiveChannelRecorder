@@ -1,6 +1,7 @@
 import atexit
 import os
 import re
+import traceback
 from datetime import datetime
 from multiprocessing.managers import Namespace
 from threading import Thread
@@ -350,7 +351,8 @@ class ChannelInfo:
                     if alreadyChecked:
                         alreadyChecked = False
             except Exception as e1:
-                self.recording_status = "Crashed. Exception type: " + str(type(e1)) + ", " + str(e1)
+                self.recording_status = "Crashed. Exception type: " + str(type(e1)) + ", " + str(e1) + \
+                                        "\nTraceback: " + traceback.format_exc()
                 self.live_streaming = None
             # REPEAT (END OF LOOP)
 
