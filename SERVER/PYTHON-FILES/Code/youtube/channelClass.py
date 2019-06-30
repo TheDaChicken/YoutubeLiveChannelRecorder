@@ -344,6 +344,7 @@ class ChannelInfo:
                             sleep(2.5)
                         else:
                             self.recording_status = "Unable to get Youtube Stream Info."
+                            self.live_streaming = None
                             warning("Unable to get Youtube Stream Info from this stream: ")
                             warning("VIDEO ID: " + self.video_id)
                             warning("CHANNEL ID: " + self.channel_id)
