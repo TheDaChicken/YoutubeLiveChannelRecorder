@@ -7,7 +7,6 @@ from flask import request
 
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
     google_account_logout
-from .utils.other import terminate_thread
 from .utils.windowsNotification import show_windows_toast_notification
 from .dataHandler import add_channel_config, DownloadThumbnail, loadData, saveData, UploadVideos, save_username, \
     save_credentials, clear_credentials, get_username, remove_channel_config

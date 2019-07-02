@@ -8,28 +8,6 @@ from logging import warning
 #
 
 
-# TODO CHANGE TO A BETTER WAY OF TERMINATING TYPE THREAD THING
-# Got this somewhere online... and have been edited! Sorry.
-def terminate_thread(thread):
-    """
-
-    Terminates a python thread from another thread.
-
-    """
-    if not thread.isAlive():
-        return
-    import ctypes
-    exc = ctypes.py_object(SystemExit)
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-        ctypes.c_long(thread.ident), exc)
-    if res == 0:
-        return [False, "Unable to Terminating Channel Thread, nonexistent thread id"]
-    elif res > 1:
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
-        return [False, "Unable to Terminating Channel Thread, Try again later."]
-    return [True, "OK"]
-
-
 # This gets the best format of the width.
 def get_format_from_data(formats, height):
     lower = None
