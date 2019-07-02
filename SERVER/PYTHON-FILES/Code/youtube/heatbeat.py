@@ -91,14 +91,14 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
             channel_Class.live_scheduled_time = get_schedule_time(liveStreamAbilityRenderer)
         if 'stop_heartbeat' in json:
             sleep(.5)
-            channel_Class.video_id = channel_Class.loadVideoData()
+            channel_Class.loadVideoData()
             return False
         if 'status' in json:  # Sometimes status is removed and causes an error.
             if "ok" in json['status']:
                 return True
             if "stop" in json['status']:
                 sleep(.29)
-                channel_Class.video_id = channel_Class.loadVideoData()
+                channel_Class.loadVideoData()
                 return False
             if "error" in json['status']:
                 warning("Getting the Live Data, failed on Youtube's Side. Youtube Replied with: " + json['reason'])
