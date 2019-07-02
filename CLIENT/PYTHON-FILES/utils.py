@@ -27,7 +27,6 @@ def download_website(url, Headers=None, RequestMethod='GET'):
             return e1.code
         except AttributeError:
             # SSL ERROR MESSAGES.
-            print(str(e1))
             if 'closed' in str(e1):  # ERROR IN OSError.
                 return 1
             if 'CERTIFICATE_VERIFY_FAILED' in str(e1):  # ERROR IN URLError.
