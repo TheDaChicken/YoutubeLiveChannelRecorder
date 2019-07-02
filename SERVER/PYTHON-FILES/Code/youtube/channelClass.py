@@ -155,8 +155,8 @@ class ChannelInfo:
     def loadVideoData(self, html=None):
         """
 
-        This is used to grab video info from the Youtube site, like video_id, to check if already live,
-        and the stream url if already live.
+        This is used to grab video information from the YouTube Channel Live site, like video_id,
+        to check if already live, and the stream url if already live.
         Everything else would use heartbeat and get video info url.
 
         :return: Nothing. It edits the class.
