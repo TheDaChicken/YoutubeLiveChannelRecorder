@@ -26,8 +26,12 @@ def download_website(url, Headers=None, RequestMethod='GET'):
         try:
             return e1.code
         except AttributeError:
-            if 'closed' in str(e1):
-                return 504
+            # SSL ERROR MESSAGES.
+            print(str(e1))
+            if 'closed' in str(e1):  # ERROR IN OSError.
+                return 1
+            if 'CERTIFICATE_VERIFY_FAILED' in str(e1):  # ERROR IN URLError.
+                return 2
             return None
     except Exception as e4:
         warning("Unable to request HTTP website.")
