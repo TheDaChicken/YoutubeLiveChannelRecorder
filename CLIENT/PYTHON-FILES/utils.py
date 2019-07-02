@@ -22,16 +22,20 @@ def download_website(url, Headers=None, RequestMethod='GET'):
     try:
         response = urlopen(request,
                            data=urllib.parse.urlencode({}).encode("utf-8") if 'POST' in RequestMethod else None)
-    except (urllib.error.URLError, TimeoutError, OSError) as e1:
+    except urllib.error.HTTPError as e1:
         try:
-            return e1.code
+            if e1.code == 500:  # CUSTOM FOR READING ERROR MESSAGES FROM SERVER.
+                return e1.read().decode('utf-8')
+            else:
+                return e1.code
         except AttributeError:
-            # SSL ERROR MESSAGES.
-            if 'closed' in str(e1):  # ERROR IN OSError.
-                return 504
             if 'CERTIFICATE_VERIFY_FAILED' in str(e1):  # ERROR IN URLError.
                 return 2
             return None
+    except (TimeoutError, OSError) as e:
+        if 'closed' in str(e):  # ERROR IN OSError.
+            return 504
+        return None
     except Exception as e4:
         warning("Unable to request HTTP website.")
         warning("Error: " + str(e4))
