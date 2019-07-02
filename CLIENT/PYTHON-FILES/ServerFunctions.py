@@ -8,7 +8,7 @@ useHTTPS = False
 def check_server(ip, port):
     global useHTTPS
     html_reply = download_website("http://" + ip + ":" + port + "/", Headers=DefaultHeaders)
-    if html_reply == 1:
+    if html_reply == 504:
         html_reply = download_website("https://" + ip + ":" + port + "/", Headers=DefaultHeaders)
         if html_reply == 2:
             stopped("Certificate verify failed. Hostname mismatch, certificate is not valid for '{0}'".format(ip))
