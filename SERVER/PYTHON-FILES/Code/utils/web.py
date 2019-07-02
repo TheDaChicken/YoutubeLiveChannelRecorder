@@ -44,7 +44,6 @@ def __build__cookies():
     cj = MozillaCookieJar(filename="cookies.txt")
     if os.path.isfile("cookies.txt"):
         try:
-            verbose("Loading Cookies.")
             cj.load()
         except LoadError as e:
             if 'format file' in str(e):
