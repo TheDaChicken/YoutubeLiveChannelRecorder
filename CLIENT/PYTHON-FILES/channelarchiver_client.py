@@ -115,6 +115,14 @@ if __name__ == '__main__':
                                         "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
                                             'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
                                         + "Unknown.")
+                        elif channelInfo['live'] == 1:
+                            if channelInfo['last_heartbeat'] is not None:
+                                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                    'name'] + Fore.LIGHTRED_EX + " [ERROR ON HEARTBEAT]" + Fore.LIGHTMAGENTA_EX +
+                                      " [LAST HEARTBEAT: " + channelInfo['last_heartbeat'] + "] ")
+                            else:
+                                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                    'name'] + Fore.LIGHTRED_EX + " [ERROR ON HEARTBEAT]")
                         else:
                             if channelInfo['privateStream'] is True:
                                 if channelInfo['sponsor_on_channel'] is True:
