@@ -1,33 +1,28 @@
 # YoutubeLiveChannelRecorder
   Records Youtube Livestreams for a certain channels in a list automatically until specific channel removed from the list!
   
-## NOTE
-  This is a server program. You will need to use the client in order to
-  control this program.
-  
-  ALSO BOTH SERVER AND CLIENT WON'T WORK ON PYTHON VERSION 2.
-  
-  THIS PROGRAM IS TESTED AND WORKS BEST ON PYTHON VERSION 3.7.2.
-  
-  ALSO MASTER IS BETA. SOME THINGS MAY NOT WORK UNTIL I FIX THEM.
+### NOTE
+  #####This is a server program. You will need to use the client in order to control this program.
+  #####This program is tested on PYTHON VERSION 3.7.2.
+  #####This program does not work anything below PYTHON VERSION 3.
 
-## Inspiration
+### Inspiration
   
   This idea came from when I wanted to record livestreams from [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
   When he ends his livestreams, his deletes the recording. Meaning if I were to miss a livestream or want to watch and look back on it. I can't. Since sometimes I am unable to watch Skeppy's streams he was live, I made the program to record it automatically so I can watch it later! (NOTE SKEPPY LIVE STREAMS MOSTLY ON HIS SECOND CHANNEL, [SKEP](https://www.youtube.com/channel/UCviw1uSMHnTFm9RQvacw6Mw))
 
-## CREDITS
+### CREDITS
   
   Thanks to people of [youtube-dl!](https://github.com/ytdl-org/youtube-dl/)
   Youtube-dl helped me get a head start!
 
-## EXAMPLE STREAM RECORDINGS (ORIGINAL DELETED) 
+### EXAMPLE STREAM RECORDINGS (ORIGINAL DELETED) 
   
   https://youtu.be/MQP8aqw7-Ko (SKEP CHANNEL 6/15/19)
   
   https://youtu.be/Ao1ZkJ8XwjE (SKEP CHANNEL 6/22/19)
 
-## SETUP SERVER
+### SETUP SERVER
   To use the server-side, you need the required packages:
   ```
   colorama: Used for color.
@@ -52,7 +47,7 @@
   
   run __main__.py in the server files folder with argument -p <port_name> to specify port.
 
-## SETUP CLIENT
+### SETUP CLIENT
   To use the client, you need the required packages:
   ```
   colorama: Used for color.
