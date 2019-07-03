@@ -4,7 +4,6 @@ from time import sleep
 from ..log import warning, YoutubeReply, stopped
 from ..utils.other import get_highest_thumbnail, try_get
 from ..utils.web import download_json
-from ..dataHandler import DownloadThumbnail
 
 
 def is_live(channel_Class, alreadyChecked=False, cookies=None):
@@ -127,8 +126,6 @@ def get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class):
 
 # Getting Thumbnails from Heartbeat Json
 def get_thumbnail(liveStreamAbilityRenderer):
-    if DownloadThumbnail() is not True:
-        return None
     offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['liveStreamabilityRenderer']['offlineSlate'], dict)
     thumbnail_list = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer']['thumbnail']['thumbnails'],
                              list)
