@@ -82,7 +82,7 @@ def openStream(channelClass, YoutubeStream):
         return True
 
     offline = False
-    while True:
+    while channelClass.stop_heartbeat is False:
         array = channelClass.is_live()
         if not array:
             if array is None:
@@ -104,29 +104,30 @@ def openStream(channelClass, YoutubeStream):
                 channelClass.EncoderClass = None
                 return True
         elif array:
-            if not channelClass.EncoderClass.running:
-                if offline:
-                    offline = False
-                    # Starts the recording back if internet was offline.
-                    channelClass.recording_status = "Starting Recording."
-                    channelClass.EncoderClass.start_recording(videoLocation=os.path.join("RecordedStreams",
-                                                                                         channelClass.create_filename(
-                                                                                             channelClass.video_id)
-                                                                                         + '.mp4'))
-                    channelClass.recording_status = "Recording."
-                    show_windows_toast_notification("Live Recording Notifications",
-                                                    channelClass.channel_name + " is live and is now "
-                                                                                "recording. \n"
-                                                                                "Recording at "
-                                                    + YoutubeStream['stream_resolution'] +
-                                                    ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
-                else:
-                    channelClass.recording_status = "Crashed."
-                    show_windows_toast_notification("Live Recording Notifications", "FFMPEG CRASHED ON " +
-                                                    channelClass.channel_name + "'s live stream! Retrying ...")
-                    info("FFmpeg crashed. Restarting ... Uploading part that was recorded (if uploading is on).")
-                    return False
-            sleep(channelClass.pollDelayMs / 1000)
+            if channelClass.EncoderClass:
+                if not channelClass.EncoderClass.running:
+                    if offline:
+                        offline = False
+                        # Starts the recording back if internet was offline.
+                        channelClass.recording_status = "Starting Recording."
+                        channelClass.EncoderClass.start_recording(videoLocation=os.path.join("RecordedStreams",
+                                                                                             channelClass.create_filename(
+                                                                                                 channelClass.video_id)
+                                                                                             + '.mp4'))
+                        channelClass.recording_status = "Recording."
+                        show_windows_toast_notification("Live Recording Notifications",
+                                                        channelClass.channel_name + " is live and is now "
+                                                                                    "recording. \n"
+                                                                                    "Recording at "
+                                                        + YoutubeStream['stream_resolution'] +
+                                                        ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
+                    else:
+                        channelClass.recording_status = "Crashed."
+                        show_windows_toast_notification("Live Recording Notifications", "FFMPEG CRASHED ON " +
+                                                        channelClass.channel_name + "'s live stream! Retrying ...")
+                        info("FFmpeg crashed. Restarting ... Uploading part that was recorded (if uploading is on).")
+                        return False
+                sleep(channelClass.pollDelayMs / 1000)
 
 
 def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
