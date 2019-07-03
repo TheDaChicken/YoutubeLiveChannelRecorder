@@ -108,7 +108,7 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
             warning("The Program couldn't find any value that matches the normal heartbeat. Returning False.")
         return False
     except Exception as e1:
-        warning("Error occurred when doing Heartbeat/")
+        warning("Error occurred when doing Heartbeat.")
         warning("Exception type: " + str(type(e1)) + ", " + str(e1) +
                 "\nTraceback: " + traceback.format_exc())
         return 1
