@@ -148,7 +148,6 @@ def channelInfo():
                 'name': channel_class.get('channel_name'),
                 'live': channel_class.get('live_streaming'),
                 'video_id': channel_class.get('video_id'),
-                'recording_status': channel_class.get('recording_status'),
                 'privateStream': channel_class.get('privateStream'),
                 'live_scheduled': channel_class.get('live_scheduled'),
                 'live_scheduled_time': channel_class.get('live_scheduled_time'),
@@ -166,6 +165,10 @@ def channelInfo():
         if process_class is not None and not process_class.is_alive():
             json['channel'][channel_class.get('channel_id')].update({
                 'crashed_traceback': channel_class.get('crashed_traceback')
+            })
+        if channel_class.get('live_streaming') is True:
+            json['channel'][channel_class.get('channel_id')].update({
+                'recording_status': channel_class.get('recording_status')
             })
     return Response(json)
 
