@@ -10,7 +10,7 @@ from time import sleep
 from .heatbeat import is_live
 from . import set_global_youtube_variables
 from ..dataHandler import UploadThumbnail, get_upload_settings
-from ..log import verbose, stopped, warning, info, note
+from ..log import verbose, stopped, warning, info, note, crash_warning
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
@@ -57,6 +57,7 @@ class ChannelInfo:
     :type stop_heartbeat: bool
     :type SettingsManager: Namespace
     :type sharedCookies: Value
+    :type crashed_traceback: str
 
     # HEARTBEAT Variables
     :type pollDelayMs: int
@@ -74,6 +75,7 @@ class ChannelInfo:
     stop_heartbeat = False
     SettingsManager = False
     sharedCookies = False
+    crashed_traceback = None
 
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
     pollDelayMs = 8000
@@ -127,7 +129,7 @@ class ChannelInfo:
                            "This means there is no good internet available!"]
         if html == 404:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".
-                    format(self.channel_id)]
+                format(self.channel_id)]
         ok, message = self.loadChannelData(html=html)
         if not ok:
             return [ok, message]
@@ -291,8 +293,9 @@ class ChannelInfo:
         """
         alreadyChecked = True
         self.TestUpload = TestUpload
-        while True:
-            try:
+        # noinspection PyBroadException
+        try:
+            while True:
                 if self.stop_heartbeat is False:
                     # LOOP
                     boolean_live = self.is_live(alreadyChecked=alreadyChecked)
@@ -329,7 +332,8 @@ class ChannelInfo:
                                 info("{0} is not live!".format(self.channel_name))
                                 sleep(self.pollDelayMs / 1000)
                             else:
-                                info("{0}'s channel live streaming is currently private/unlisted!".format(self.channel_name))
+                                info("{0}'s channel live streaming is currently private/unlisted!".format(
+                                    self.channel_name))
                                 sleep(self.pollDelayMs / 1000)
                     if boolean_live:
                         self.recording_status = "Getting Youtube Stream Info."
@@ -355,11 +359,10 @@ class ChannelInfo:
                         sleep(self.pollDelayMs / 1000)
                     if alreadyChecked:
                         alreadyChecked = False
-            except Exception as e1:
-                self.recording_status = "Crashed. Exception type: " + str(type(e1)) + ", " + str(e1) + \
-                                        "\nTraceback: " + traceback.format_exc()
-                self.live_streaming = None
-            # REPEAT (END OF LOOP)
+                    # REPEAT (END OF LOOP)
+        except Exception:
+            self.crashed_traceback = traceback.format_exc()
+            crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
 
     def is_live(self, alreadyChecked=False):
         if self.SettingsManager:

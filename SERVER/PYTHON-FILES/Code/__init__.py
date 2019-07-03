@@ -69,7 +69,7 @@ def run_channel(channel_id, startup=False):
         return [True, "OK"]
     else:
         if startup:
-            channel_main_array.append({'class': channel_holder_class, "error": error_message})
+            channel_main_array.append({'class': channel_holder_class, "error": error_message, 'thread_class': None})
         return [False, error_message]
 
 

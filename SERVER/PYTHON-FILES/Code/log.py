@@ -25,6 +25,11 @@ def warning(text):
     sys.stdout.flush()
 
 
+def crash_warning(text):
+    sys.stdout.write(Fore.LIGHTYELLOW_EX + "[CRASH WARNING] " + Fore.RESET + "{}\n".format(text))
+    sys.stdout.flush()
+
+
 def disable_youtube_reply():
     global Reply
     Reply = False

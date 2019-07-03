@@ -90,65 +90,78 @@ if __name__ == '__main__':
                             else:
                                 print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channel +
                                       Fore.LIGHTRED_EX + " [GETTING YOUTUBE DATA]")
-                        elif channelInfo['live'] is None:
-                            print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                'name'] +
-                                  Fore.LIGHTBLUE_EX + " [INTERNET OFFLINE]")
-                        elif channelInfo['live'] is True:
-                            if channelInfo['broadcastId'] is not None:
-                                if channelInfo['recording_status']:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                        'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " Status: "
-                                          + channelInfo['recording_status'] + " " + Fore.LIGHTYELLOW_EX +
-                                          "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
-                                else:
-                                    print(
-                                        "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                            'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " " +
-                                        Fore.LIGHTYELLOW_EX +
-                                        "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
-                            else:
-                                if channelInfo['recording_status']:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                        'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
-                                    + channelInfo['recording_status'])
-                                else:
-                                    print(
-                                        "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                            'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
-                                        + "Unknown.")
-                        elif channelInfo['live'] == 1:
-                            if channelInfo['last_heartbeat'] is not None:
+                        if channelInfo['is_alive']:
+                            if channelInfo['live'] is None:
                                 print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                    'name'] + Fore.LIGHTRED_EX + " [ERROR ON HEARTBEAT]" + Fore.LIGHTMAGENTA_EX +
-                                      " [LAST HEARTBEAT: " + channelInfo['last_heartbeat'] + "] ")
-                            else:
-                                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                    'name'] + Fore.LIGHTRED_EX + " [ERROR ON HEARTBEAT]")
-                        else:
-                            if channelInfo['privateStream'] is True:
-                                if channelInfo['sponsor_on_channel'] is True:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
-                                          channelInfo[
-                                              'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + "[SPONSOR MODE (CHECKS "
-                                                                                           "COMMUNITY TAB FOR "
-                                                                                           "SPONSOR ONLY STREAMS)]")
+                                    'name'] +
+                                      Fore.LIGHTBLUE_EX + " [INTERNET OFFLINE]")
+                            elif channelInfo['live'] is True:
+                                if channelInfo['broadcastId'] is not None:
+                                    if channelInfo['recording_status']:
+                                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                              channelInfo[
+                                                  'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " Status: "
+                                              + channelInfo['recording_status'] + " " + Fore.LIGHTYELLOW_EX +
+                                              "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
+                                    else:
+                                        print(
+                                            "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                            channelInfo[
+                                                'name'] + Fore.LIGHTRED_EX + " [LIVE]" + Fore.LIGHTGREEN_EX + " " +
+                                            Fore.LIGHTYELLOW_EX +
+                                            "[RECORDING BROADCAST ID: " + channelInfo['broadcastId'] + "]")
                                 else:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
-                                          channelInfo[
-                                              'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + Fore.WHITE + " ")
-                            elif channelInfo['live_scheduled'] is True:
-                                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                    'name'] + Fore.LIGHTGREEN_EX + " [SCHEDULED AT " +
-                                      channelInfo['live_scheduled_time'] + " (AT SERVER\'S TIMEZONE)]")
-                            else:
+                                    if channelInfo['recording_status']:
+                                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                              channelInfo[
+                                                  'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
+                                              + channelInfo['recording_status'])
+                                    else:
+                                        print(
+                                            "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                            channelInfo[
+                                                'name'] + Fore.LIGHTRED_EX + " [LIVE] " + Fore.LIGHTGREEN_EX + "Status: "
+                                            + "Unknown.")
+                            elif channelInfo['live'] == 1:
                                 if channelInfo['last_heartbeat'] is not None:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                            'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]" + Fore.LIGHTYELLOW_EX +
-                                          " [LAST HEARTBEAT: " + channelInfo['last_heartbeat'] + "] ")
+                                    print(
+                                        "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                            'name'] + Fore.LIGHTRED_EX + " [ERROR ON HEARTBEAT]" + Fore.LIGHTMAGENTA_EX +
+                                        " [LAST HEARTBEAT: " + channelInfo['last_heartbeat'] + "] ")
                                 else:
-                                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
-                                        'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]")
+                                    print(
+                                        "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                            'name'] + Fore.LIGHTRED_EX + " [ERROR ON HEARTBEAT]")
+                            else:
+                                if channelInfo['privateStream'] is True:
+                                    if channelInfo['sponsor_on_channel'] is True:
+                                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                              channelInfo[
+                                                  'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + "[SPONSOR MODE (CHECKS "
+                                                                                               "COMMUNITY TAB FOR "
+                                                                                               "SPONSOR ONLY STREAMS)]")
+                                    else:
+                                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                              channelInfo[
+                                                  'name'] + Fore.LIGHTRED_EX + " [PRIVATE] " + Fore.WHITE + " ")
+                                elif channelInfo['live_scheduled'] is True:
+                                    print(
+                                        "    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                            'name'] + Fore.LIGHTGREEN_EX + " [SCHEDULED AT " +
+                                        channelInfo['live_scheduled_time'] + " (AT SERVER\'S TIMEZONE)]")
+                                else:
+                                    if channelInfo['last_heartbeat'] is not None:
+                                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                              channelInfo[
+                                                  'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]" + Fore.LIGHTYELLOW_EX +
+                                              " [LAST HEARTBEAT: " + channelInfo['last_heartbeat'] + "] ")
+                                    else:
+                                        print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE +
+                                              channelInfo[
+                                                  'name'] + Fore.LIGHTCYAN_EX + " [NOT LIVE]")
+                        else:
+                            print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + channelInfo[
+                                'name'] + Fore.LIGHTYELLOW_EX + " [CRASHED] ")
                         loopNumber += 1
                 print("")
                 print(" 1) Refresh Channel List.")
@@ -561,6 +574,7 @@ if __name__ == '__main__':
                         if option is "2":
                             print("")
                             from os import path, getcwd
+
                             stream_output_location = path.join(getcwd(), recording)
                             if os.path.isfile(stream_output_location):
                                 print("{0} File with the stream name already exists! Want to override?".format(
@@ -599,10 +613,13 @@ if __name__ == '__main__':
                                                 print("")
                                                 print("===================")
                                                 print("")
-                                                print("    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX, frames
-                                                                                             if frames is not None else
-                                                                                             'Unknown'))
-                                                print("    {0}DOWNLOADED VIDEO TIME: {1}".format(Fore.LIGHTMAGENTA_EX, time[0] if len(time) is not 0
+                                                print(
+                                                    "    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX, frames
+                                                    if frames is not None else
+                                                    'Unknown'))
+                                                print("    {0}DOWNLOADED VIDEO TIME: {1}".format(Fore.LIGHTMAGENTA_EX,
+                                                                                                 time[0] if len(
+                                                                                                     time) is not 0
                                                                                                  else 'Unknown'))
                                                 print("")
                                                 if not keyboard:

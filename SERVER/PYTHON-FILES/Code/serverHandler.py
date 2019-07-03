@@ -141,7 +141,8 @@ def channelInfo():
 
     for channel in channel_main_array:
         channel_class = channel['class']
-        json['channels'].append(channel['class'].get('channel_id'))
+        process_class = channel['thread_class']
+        json['channels'].append(channel_class.get('channel_id'))
         json['channel'].update({
             channel_class.get('channel_id'): {
                 'name': channel_class.get('channel_name'),
@@ -155,11 +156,16 @@ def channelInfo():
                 'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
                 'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
                 if channel_class.get('last_heartbeat') is not None else None,
+                'is_alive': process_class.is_alive() if process_class is not None else False,
             }
         })
         if 'error' in channel:
-            json['channel'][channel['class'].get('channel_id')].update({
+            json['channel'][channel_class.get('channel_id')].update({
                 'error': channel['error'],
+            })
+        if process_class is not None and not process_class.is_alive():
+            json['channel'][channel_class.get('channel_id')].update({
+                'crashed_traceback': channel_class.get('crashed_traceback')
             })
     return Response(json)
 
