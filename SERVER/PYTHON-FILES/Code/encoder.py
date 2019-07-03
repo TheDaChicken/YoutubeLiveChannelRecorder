@@ -40,11 +40,12 @@ class Encoder:
     def __run_Encoder(self, video_url, videoLocation):
         self.running = None
         verbose("Opening FFmpeg.")
-        command = ["ffmpeg", "-loglevel", "verbose", "-i", video_url, "-c:v", "copy", "-c:a", "copy", "-movflags", "faststart", "-f", "mpegts",
-                   videoLocation]  # Enables Full Logs
+        command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
         if self.Headers:
             for header in self.Headers:
-                command.extend(["-header", header])
+                command.extend(["-headers", '{0}: {1}'.format(header, self.Headers[header])])
+        command.extend(["-y", "-i", video_url, "-c:v", "copy", "-c:a", "copy",
+                        videoLocation])
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
         encoder_crash_handler = Thread(target=self.__crashHandler, name="FFMPEG Crash Handler.")
