@@ -99,7 +99,7 @@ def openStream(channelClass, YoutubeStream):
                                                     channelClass.channel_name + "'s live stream!")
                 sleep(channelClass.pollDelayMs / 1000)
             else:
-                sleep(channelClass.pollDelayMs / 1000 / 2)
+                sleep(channelClass.pollDelayMs / 1000)
                 channelClass.EncoderClass.stop_recording()
                 channelClass.EncoderClass = None
                 return True
