@@ -24,6 +24,7 @@ class Encoder:
         self.video_url = url
         self.video_location = videoLocation
         self.crashFunction = crashFunction
+        self.Headers = Headers
 
     def start_recording(self, videoURL=None, videoLocation=None):
         if videoURL is not None:
