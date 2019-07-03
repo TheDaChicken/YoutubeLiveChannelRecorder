@@ -24,10 +24,9 @@ def download_website(url, Headers=None, RequestMethod='GET'):
                            data=urllib.parse.urlencode({}).encode("utf-8") if 'POST' in RequestMethod else None)
     except urllib.error.HTTPError as e1:
         try:
-            if e1.code == 500:  # CUSTOM FOR READING ERROR MESSAGES FROM SERVER.
-                return e1.read().decode('utf-8')
-            else:
-                return e1.code
+            if e1.code == 504:
+                return 504
+            return e1.read().decode('utf-8')
         except AttributeError:
             if 'CERTIFICATE_VERIFY_FAILED' in str(e1):  # ERROR IN URLError.
                 return 2
@@ -64,8 +63,8 @@ def parse_json(json_string):
         warning(errmsg)
 
 
-def download_json(url, Headers=None):
-    res = download_website(url, Headers=Headers)
+def download_json(url, Headers=None, RequestMethod='GET'):
+    res = download_website(url, Headers=Headers, RequestMethod=RequestMethod)
     if type(res) is not str:
         return res
     json_string = res

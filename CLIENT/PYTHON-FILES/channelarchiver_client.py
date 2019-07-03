@@ -67,7 +67,9 @@ if __name__ == '__main__':
         setTitle('YoutubeLiveChannelRecorder [Connected to Server: ' + serverIP + " Port: " + serverPort + "]")
         info("Server Running.")
         info("Getting Server Info.")
-        channel_info = get_channel_info(serverIP, serverPort)
+        ok, channel_info = get_channel_info(serverIP, serverPort)
+        if not ok:
+            stopped("Error Response from Server: " + channel_info)
         Screen = "Main"
         while True:
             if Screen is "Main":
@@ -165,11 +167,13 @@ if __name__ == '__main__':
                 option = input(":")
                 if option is "1":  # Just Refresh
                     info("Getting Server Info.")
-                    temp_channel_info = get_channel_info(serverIP, serverPort)
-                    if temp_channel_info:
-                        channel_info = temp_channel_info
+                    ok, reply = get_channel_info(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("")
+                        input("Press enter to go back to Selection.")
                     else:
-                        stopped("Lost Connection of the Server!")
+                        channel_info = reply
                 elif option is "2":  # ADDING CHANNELS
                     if check_server(serverIP, serverPort) is False:
                         stopped("Lost Connection of the Server!")
@@ -188,11 +192,13 @@ if __name__ == '__main__':
                     input("Press enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
-                    temp_channel_info = get_channel_info(serverIP, serverPort)
-                    if temp_channel_info:
-                        channel_info = temp_channel_info
+                    ok, reply = get_channel_info(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("")
+                        input("Press enter to go back to Selection.")
                     else:
-                        stopped("Lost Connection of the Server!")
+                        channel_info = reply
                 elif option is "3":  # REMOVE CHANNELS (BETA ON SERVER)
                     if check_server(serverIP, serverPort) is False:
                         stopped("Lost Connection of the Server!")
@@ -211,11 +217,13 @@ if __name__ == '__main__':
                     input("Press enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
-                    temp_channel_info = get_channel_info(serverIP, serverPort)
-                    if temp_channel_info:
-                        channel_info = temp_channel_info
+                    ok, reply = get_channel_info(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("")
+                        input("Press enter to go back to Selection.")
                     else:
-                        stopped("Lost Connection of the Server!")
+                        channel_info = reply
                 elif option is "4":
                     Screen = "Settings"
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
@@ -251,7 +259,13 @@ if __name__ == '__main__':
                         if check_server(serverIP, serverPort) is False:
                             stopped("Lost Connection of the Server!")
                         info("Getting Server Info.")
-                        channel_info = get_channel_info(serverIP, serverPort)
+                        ok, reply = get_channel_info(serverIP, serverPort)
+                        if not ok:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        else:
+                            channel_info = reply
                     elif channel_info['YoutubeLogin'] is True:
                         print("")
                         print("")
@@ -269,11 +283,13 @@ if __name__ == '__main__':
                         input("Press enter to go back to Selection.")
                         print("")
                         info("Getting Server Info.")
-                        temp_channel_info = get_channel_info(serverIP, serverPort)
-                        if temp_channel_info:
-                            channel_info = temp_channel_info
+                        ok, reply = get_channel_info(serverIP, serverPort)
+                        if not ok:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            input("Press enter to go back to Selection.")
                         else:
-                            stopped("Lost Connection of the Server!")
+                            channel_info = reply
                 elif option is "6":
                     Screen = "View-Recording"
             elif Screen is "Settings":
@@ -285,8 +301,12 @@ if __name__ == '__main__':
                     if check_server(serverIP, serverPort) is False:
                         stopped("Lost Connection of the Server!")
                     info("Getting Settings.")
-                    settings = get_settings(serverIP, serverPort)
-                    if settings == 404:
+                    ok, settings = get_settings(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                    elif settings == 404:
                         warning("It seems this server doesn't support getQuickSettings.")
                         sleep(2.5)
                     else:
@@ -295,9 +315,17 @@ if __name__ == '__main__':
                     if check_server(serverIP, serverPort) is False:
                         stopped("Lost Connection of the Server!")
                     info("Getting Settings.")
-                    settings = get_youtube_settings(serverIP, serverPort)
-                    info = get_youtube_info(serverIP, serverPort)
-                    if settings == 404 or info == 404:
+                    ok, settings = get_youtube_settings(serverIP, serverPort)
+                    ok2, info = get_youtube_info(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                    elif not ok2:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + info)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                    elif settings == 404 or info == 404:
                         warning("It seems this server doesn't support UploadSettings.")
                         sleep(2.5)
                     else:
@@ -341,21 +369,23 @@ if __name__ == '__main__':
                             sleep(3.5)
                             is_good_index = False
                         if is_good_index:
-                            if check_server(serverIP, serverPort) is False:
-                                stopped("Lost Connection of the Server!")
-                            reply = swap_settings(serverIP, serverPort, setting)
+                            ok, reply = swap_settings(serverIP, serverPort, setting)
                             print("")
                             print("")
+                            if not ok:
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                sleep(3.5)
                             if reply == 404:
                                 print(Fore.LIGHTRED_EX + "Sorry, the Server, doesn't support that type of setting"
                                                          " to be changed!")
                                 sleep(3.5)
-                            elif "OK" not in reply:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                sleep(3.5)
                             else:
                                 info("Getting Settings.")
-                                settings = get_settings(serverIP, serverPort)
+                                ok, settings = get_settings(serverIP, serverPort)
+                                if not ok:
+                                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
+                                    print("")
+                                    input("Press enter to go back to Selection.")
             elif Screen is "UploadSettings":
                 clearScreen()
                 print("")
@@ -408,32 +438,42 @@ if __name__ == '__main__':
                     sleep(3.5)
                 if is_number:
                     option = int(option)
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     if option == 1:
                         if not info['info']['YoutubeAccountLogin-in']:
-                            reply = youtube_login(serverIP, serverPort)
+                            ok, reply = youtube_login(serverIP, serverPort)
                             print("")
                             print("")
-                            if 'http' in reply:
+                            if not ok:
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                print("")
+                                input("Press enter to go back to Selection.")
+                            else:
                                 print(Fore.LIGHTRED_EX + "Go to this URL IN YOUR BROWSER: " + reply)
                                 print("   "
                                       "On Windows, you should be able to copy the url "
                                       "by selecting the url and right clicking.")
-                                sleep(15)
-                            else:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                sleep(3.5)
+                                print("")
+                                input("Press enter to go back to Selection.")
+                                print("")
                         else:
                             print("")
                             print("")
                             print("Signing out...")
-                            reply = youtube_logout(serverIP, serverPort)
-                            if "OK" not in reply:
+                            ok, reply = youtube_logout(serverIP, serverPort)
+                            if not ok:
+                                print("")
                                 print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                                 sleep(3.5)
-                        settings = get_youtube_settings(serverIP, serverPort)
-                        info = get_youtube_info(serverIP, serverPort)
+                        ok, settings = get_youtube_settings(serverIP, serverPort)
+                        ok2, info = get_youtube_info(serverIP, serverPort)
+                        if not ok:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        elif not ok2:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + info)
+                            print("")
+                            input("Press enter to go back to Selection.")
                     if option == 2:
                         if check_server(serverIP, serverPort) is False:
                             stopped("Lost Connection of the Server!")
@@ -451,28 +491,47 @@ if __name__ == '__main__':
                         print("")
                         input("Press enter to go back to Selection.")
                         # Refresh
-                        if check_server(serverIP, serverPort) is False:
-                            stopped("Lost Connection of the Server!")
-                        settings = get_youtube_settings(serverIP, serverPort)
-                        info = get_youtube_info(serverIP, serverPort)
+                        ok, settings = get_youtube_settings(serverIP, serverPort)
+                        ok2, info = get_youtube_info(serverIP, serverPort)
+                        if not ok:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        elif not ok2:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + info)
+                            print("")
+                            input("Press enter to go back to Selection.")
                     if option > 2:
                         sn = len(settings['settings']) + 2
                         if sn + 1 == option:
-                            settings = get_youtube_settings(serverIP, serverPort)
-                            info = get_youtube_info(serverIP, serverPort)
-                            Screen = "Main"
+                            # Refresh
+                            ok, reply = get_channel_info(serverIP, serverPort)
+                            if not ok:
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                print("")
+                                input("Press enter to go back to Selection.")
+                            else:
+                                channel_info = reply
+                                Screen = "Main"
             elif Screen is "View-Recording":
                 print("")
-                recordingList = listRecordings(serverIP, serverPort)
+                ok, recordingList = listRecordings(serverIP, serverPort)
+                if not ok:
+                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                    print("")
+                    input("Press enter to go back to Selection.")
                 if len(recordingList) is 0:
                     print("{0} No Recordings Available!".format(Fore.LIGHTRED_EX))
                     print("")
                     input("Press enter to go back to Selection.")
-                    temp_channel_info = get_channel_info(serverIP, serverPort)
-                    if temp_channel_info:
-                        channel_info = temp_channel_info
+                    info("Getting Server Info.")
+                    ok, reply = get_channel_info(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("")
+                        input("Press enter to go back to Selection.")
                     else:
-                        stopped("Lost Connection of the Server!")
+                        channel_info = reply
                     Screen = "Main"
                 else:
                     loopNumber = 1
@@ -574,7 +633,12 @@ if __name__ == '__main__':
                                     break
             elif Screen is "NotificationHold":
                 channel_info_last = channel_info
-                channel_info = get_channel_info(serverIP, serverPort)
+                ok, reply = get_channel_info(serverIP, serverPort)
+                if not ok:
+                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                    print("")
+                else:
+                    channel_info = reply
                 for channel in channel_info['channels']:
                     channelInfo = channel_info['channel'][channel]
                     channelInfo_last = channel_info_last['channel'][channel]
