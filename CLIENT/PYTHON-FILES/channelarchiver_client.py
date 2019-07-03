@@ -175,8 +175,6 @@ if __name__ == '__main__':
                     else:
                         channel_info = reply
                 elif option is "2":  # ADDING CHANNELS
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     print("To Find The Channel_IDs USE THIS: ")
                     print("https://commentpicker.com/youtube-channel-id.php")
                     temp_channel_id = input("Channel ID: ")
@@ -200,8 +198,6 @@ if __name__ == '__main__':
                     else:
                         channel_info = reply
                 elif option is "3":  # REMOVE CHANNELS (BETA ON SERVER)
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     print("  To Find The Channel_IDs USE THIS: ")
                     print("  https://commentpicker.com/youtube-channel-id.php")
                     temp_channel_id = input("Channel ID: ")
@@ -256,8 +252,6 @@ if __name__ == '__main__':
                         print("")
                         input("Press enter to go back to Selection.")
                         print("")
-                        if check_server(serverIP, serverPort) is False:
-                            stopped("Lost Connection of the Server!")
                         info("Getting Server Info.")
                         ok, reply = get_channel_info(serverIP, serverPort)
                         if not ok:
@@ -298,8 +292,6 @@ if __name__ == '__main__':
                 print("2) Boolean Settings")
                 option = input(":")
                 if option is "2":
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     info("Getting Settings.")
                     ok, settings = get_settings(serverIP, serverPort)
                     if not ok:
@@ -312,8 +304,6 @@ if __name__ == '__main__':
                     else:
                         Screen = "BooleanSettings"
                 if option is "1":
-                    if check_server(serverIP, serverPort) is False:
-                        stopped("Lost Connection of the Server!")
                     info("Getting Settings.")
                     ok, settings = get_youtube_settings(serverIP, serverPort)
                     ok2, info = get_youtube_info(serverIP, serverPort)
@@ -475,8 +465,6 @@ if __name__ == '__main__':
                             print("")
                             input("Press enter to go back to Selection.")
                     if option == 2:
-                        if check_server(serverIP, serverPort) is False:
-                            stopped("Lost Connection of the Server!")
                         print("To Find The Channel_IDs USE THIS: ")
                         print("https://commentpicker.com/youtube-channel-id.php")
                         temp_channel_id = input("Channel ID: ")
