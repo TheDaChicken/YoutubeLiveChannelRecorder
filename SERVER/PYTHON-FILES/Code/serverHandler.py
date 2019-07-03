@@ -143,33 +143,39 @@ def channelInfo():
         channel_class = channel['class']
         process_class = channel['thread_class']
         json['channels'].append(channel_class.get('channel_id'))
-        json['channel'].update({
-            channel_class.get('channel_id'): {
-                'name': channel_class.get('channel_name'),
-                'live': channel_class.get('live_streaming'),
-                'video_id': channel_class.get('video_id'),
-                'privateStream': channel_class.get('privateStream'),
-                'live_scheduled': channel_class.get('live_scheduled'),
-                'live_scheduled_time': channel_class.get('live_scheduled_time'),
-                'broadcastId': channel_class.get('broadcastId'),
-                'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
-                'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
-                if channel_class.get('last_heartbeat') is not None else None,
-                'is_alive': process_class.is_alive() if process_class is not None else False,
-            }
-        })
+        json['channel'].update({channel_class.get('channel_id'): {}})
         if 'error' in channel:
             json['channel'][channel_class.get('channel_id')].update({
                 'error': channel['error'],
             })
-        if process_class is not None and not process_class.is_alive():
+        else:
             json['channel'][channel_class.get('channel_id')].update({
-                'crashed_traceback': channel_class.get('crashed_traceback')
+                    'name': channel_class.get('channel_name'),
+                    'is_alive': process_class.is_alive() if process_class is not None else False,
             })
-        if channel_class.get('live_streaming') is True:
-            json['channel'][channel_class.get('channel_id')].update({
-                'recording_status': channel_class.get('recording_status')
-            })
+            if process_class.is_alive():
+                json['channel'][channel_class.get('channel_id')].update({
+                        'video_id': channel_class.get('video_id'),
+                        'live': channel_class.get('live_streaming'),
+                        'privateStream': channel_class.get('privateStream'),
+                        'live_scheduled': channel_class.get('live_scheduled'),
+                        'broadcastId': channel_class.get('broadcastId'),
+                        'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
+                        'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
+                        if channel_class.get('last_heartbeat') is not None else None,
+                })
+                if channel_class.get('live_streaming') is True:
+                    json['channel'][channel_class.get('channel_id')].update({
+                        'recording_status': channel_class.get('recording_status')
+                    })
+                if channel_class.get('live_scheduled') is True:
+                    json['channel'][channel_class.get('channel_id')].update({
+                        'live_scheduled_time': channel_class.get('live_scheduled_time')
+                    })
+            elif not process_class.is_alive():
+                json['channel'][channel_class.get('channel_id')].update({
+                    'crashed_traceback': channel_class.get('crashed_traceback')
+                })
     return Response(json)
 
 
