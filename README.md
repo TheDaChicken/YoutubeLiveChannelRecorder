@@ -2,9 +2,9 @@
   Records Youtube Livestreams for a certain channels in a list automatically until specific channel removed from the list!
   
 ### NOTE
-  #####This is a server program. You will need to use the client in order to control this program.
-  #####This program is tested on PYTHON VERSION 3.7.2.
-  #####This program does not work anything below PYTHON VERSION 3.
+  This is a server program. You will need to use the client in order to control this program.
+  This program is tested on PYTHON VERSION 3.7.2.
+  This program does not work anything below PYTHON VERSION 3.
 
 ### Inspiration
   
