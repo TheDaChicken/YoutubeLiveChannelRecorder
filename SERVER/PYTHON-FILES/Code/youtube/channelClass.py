@@ -296,15 +296,9 @@ class ChannelInfo:
                 if self.stop_heartbeat is False:
                     # LOOP
                     boolean_live = self.is_live(alreadyChecked=alreadyChecked)
-                    """
-                    boolean_live returns: 
-                        live: True
-                        non-live: False
-                        error: 1
-                    """
-                    if boolean_live == 1:
+                    if boolean_live is 1:
                         # IF CRASHED.
-                        info("Waiting 1 seconds then, trying heartbeat again.")
+                        info("Error on Heartbeat on {0}! Trying again ...".format(self.channel_name))
                         sleep(1)
                     if not boolean_live:
                         # HEARTBEAT INTERNET OFFLINE.
