@@ -209,10 +209,10 @@ class ChannelInfo:
                         if thumbnails:
                             self.thumbnail_url = get_highest_thumbnail(thumbnails)
                         self.YoutubeStream = {
-                            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                            'url': f['url'],
-                            'title': videoDetails['title'],
-                            'description': videoDetails['shortDescription'],
+                             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                             'url': f['url'],
+                             'title': videoDetails['title'],
+                             'description': videoDetails['shortDescription'],
                         }
 
         if not self.privateStream:

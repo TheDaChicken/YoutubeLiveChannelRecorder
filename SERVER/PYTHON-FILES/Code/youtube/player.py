@@ -146,10 +146,27 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
         from urllib.request import urlopen
     except ImportError:
         parse_qs = None  # Fixes a random PyCharm warning.
+        urlencode = None
         stopped("Unsupported version of Python. You need Version 3 :<")
 
+    url_arguments = {'html5': 1, 'video_id': channelInfo.video_id}
+    from . import client_name, client_version, ps, sts, cbr
+    if ps is not None:
+        url_arguments.update({'ps': ps})
+    url_arguments.update({'eurl': ''})
+    url_arguments.update({'hl': 'en_US'})
+    if sts is not None:
+        url_arguments.update({'sts': sts})
+    if client_name is not None:
+        url_arguments.update({'c': client_name})
+    if cbr is not None:
+        url_arguments.update({'cbr': cbr})
+    if client_version is not None:
+        url_arguments.update({'cver': client_version})
+
     video_info_website = download_website(
-        'https://www.youtube.com/get_video_info?video_id={0}'.format(channelInfo.video_id))
+        'https://www.youtube.com/get_video_info?{0}'.format(
+            urlencode(url_arguments)))
     if video_info_website is None:
         return video_info_website
     video_info = parse_qs(video_info_website)
@@ -171,7 +188,7 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
         youtube_stream_info = {
             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
             'url': f['url'],
-            'title': video_info['title'],
+            'title': try_get(video_info, lambda x: x['title'][0], str),
             'description': player_response['videoDetails']['shortDescription'],
         }
         return youtube_stream_info

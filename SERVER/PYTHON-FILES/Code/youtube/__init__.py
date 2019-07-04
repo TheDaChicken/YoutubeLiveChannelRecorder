@@ -16,6 +16,9 @@ account_playback_token = None
 client_version = None
 client_name = None
 timezone = None
+ps = None
+sts = None
+cbr = None
 
 
 def set_global_youtube_variables(html_code=None):
@@ -27,9 +30,13 @@ def set_global_youtube_variables(html_code=None):
     global utf_offset
     global client_name
     global timezone
+    global ps
+    global sts
+    global cbr
 
     if not account_playback_token and not page_build_label and not page_cl and not variants_checksum and not \
-            client_version and not utf_offset and not client_name:
+            client_version and not utf_offset and not client_name and not ps and not sts and not cbr:
+        verbose("Getting Global YouTube Variables.")
         youtube_player_config = get_yt_player_config(html_code)
         youtube_initial_data = get_yt_initial_data(html_code)
         e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
@@ -38,17 +45,24 @@ def set_global_youtube_variables(html_code=None):
         if not youtube_player_config:
             warning("Unable to find Youtube Player Config. Cannot find all Youtube Variables.")
         else:
-            verbose("Getting Playback Token. [GLOBAL YOUTUBE]")
             account_playback_token = try_get(youtube_player_config, lambda x: x['args']['account_playback_token'][:-1],
                                              str)
+            ps = try_get(youtube_player_config, lambda x: x['args']['ps'], str)
+            sts = try_get(youtube_player_config, lambda x: x['sts'], int)
+            cbr = try_get(youtube_player_config, lambda x: x['args']['cbr'])
             if account_playback_token is None:
-                warning("Something happened when finding the account "
-                        "playback Token.")
+                warning("Unable to find account playback token in the YouTube player config.")
+            if ps is None:
+                warning("Unable to find ps in the YouTube player config.")
+            if sts is None:
+                warning("Unable to find sts in the YouTube player config.")
+            if cbr is None:
+                warning("Unable to find cbr in the YouTube player config.")
 
         if not youtube_initial_data:
             warning("Unable to find Youtube Initial Data. Cannot find all Youtube Variables.")
         elif not e_catcher:
-            warning("Unable to find ECATCHER service data in Youtube Initial Data. Cannot find Youtube Variables.")
+            warning("Unable to find ECATCHER service data in Youtube Initial Data. Cannot find all Youtube Variables.")
         else:
             params = try_get(e_catcher, lambda x: x['params'], list)
             page_build_label = getSettingsValue(params, 'innertube.build.label', name="Page Build Label")
@@ -69,8 +83,6 @@ def getServiceSettings(serviceTrackingParamsList, service_nameLook):
 
 
 def getSettingsValue(ServiceSettings, settings_nameLook, name=None):
-    if name:
-        verbose("Getting " + name + ". [GLOBAL YOUTUBE]")
     for service in ServiceSettings:
         service_name = try_get(service, lambda x: x['key'], str)
         if service_name is not None and service_name in settings_nameLook:
@@ -84,7 +96,6 @@ def getSettingsValue(ServiceSettings, settings_nameLook, name=None):
 
 
 def get_utc_offset():
-    verbose("Getting UTC Offset. [GLOBAL YOUTUBE]")
     # Mostly from https://stackoverflow.com/a/16061385 but as been changed.
     from datetime import datetime
     utc_offset = int((round((datetime.now() - datetime.utcnow()).total_seconds())) / 60)
@@ -92,5 +103,4 @@ def get_utc_offset():
 
 
 def get_time_zone():
-    verbose("Getting Time Zone. [GLOBAL YOUTUBE]")
     return getTimeZone()
