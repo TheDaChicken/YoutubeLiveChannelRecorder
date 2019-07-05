@@ -199,7 +199,7 @@ class ChannelInfo:
                         manifest_url = str(
                             try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
                         if not manifest_url:
-                            return [False, "Unable to find Manifest URL."]
+                            return [False, "Unable to find HLS Manifest URL."]
                         formats = download_m3u8_formats(manifest_url)
                         if formats is None or len(formats) is 0:
                             return [False, "There were no formats found! Even when the streamer is live."]

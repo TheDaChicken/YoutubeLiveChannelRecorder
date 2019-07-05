@@ -178,7 +178,7 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
             return None
         manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
         if not manifest_url:
-            warning("Unable to find Manifest URL.")
+            warning("Unable to find HLS Manifest URL.")
             return None
         formats = download_m3u8_formats(manifest_url)
         if formats is None or len(formats) is 0:
