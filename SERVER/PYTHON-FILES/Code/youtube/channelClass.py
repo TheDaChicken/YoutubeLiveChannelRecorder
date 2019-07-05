@@ -35,7 +35,7 @@ class ChannelInfo:
     :type description: str
     :type privateStream: bool
     :type sponsor_only_stream: bool
-    :type YoutubeStream: dict
+    :type YoutubeStream: dict, None
 
     # USED FOR RECORDING.
     :type EncoderClass: Encoder
@@ -129,7 +129,7 @@ class ChannelInfo:
                            "This means there is no good internet available!"]
         if html == 404:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".
-                format(self.channel_id)]
+                    format(self.channel_id)]
         ok, message = self.loadChannelData(html=html)
         if not ok:
             return [ok, message]
@@ -209,10 +209,10 @@ class ChannelInfo:
                         if thumbnails:
                             self.thumbnail_url = get_highest_thumbnail(thumbnails)
                         self.YoutubeStream = {
-                             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                             'url': f['url'],
-                             'title': videoDetails['title'],
-                             'description': videoDetails['shortDescription'],
+                            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                            'url': f['url'],
+                            'title': videoDetails['title'],
+                            'description': videoDetails['shortDescription'],
                         }
 
         if not self.privateStream:
