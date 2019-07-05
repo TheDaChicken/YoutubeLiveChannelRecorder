@@ -8,7 +8,7 @@ from threading import Thread
 from time import sleep
 
 from .heatbeat import is_live
-from . import set_global_youtube_variables
+from . import set_global_youtube_variables, generate_cpn
 from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note, crash_warning
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
@@ -35,7 +35,7 @@ class ChannelInfo:
     :type description: str
     :type privateStream: bool
     :type sponsor_only_stream: bool
-    :type YoutubeStream: dict, None
+    :type YoutubeStream: dict
 
     # USED FOR RECORDING.
     :type EncoderClass: Encoder
@@ -67,6 +67,9 @@ class ChannelInfo:
 
     # USER ACCOUNT
     :type sponsor_on_channel: bool
+
+    # PER-CHANNEL YOUTUBE VARIABLES
+    :type cpn: str
     """
 
     # USED FOR SERVER VARIABLES
@@ -116,6 +119,9 @@ class ChannelInfo:
     live_scheduled = False
     live_scheduled_time = None
 
+    # PER-CHANNEL YOUTUBE VARIABLES
+    cpn: None
+
     def __init__(self, channel_id, SettingsManager=None, sharedCookies=None):
         self.channel_id = channel_id
         self.SettingsManager = SettingsManager
@@ -134,6 +140,13 @@ class ChannelInfo:
         if not ok:
             return [ok, message]
         ok, message = self.loadVideoData(html=html)
+        if not self.privateStream:
+            set_global_youtube_variables(html_code=html)
+
+        # ONLY WORKS IF LOGGED IN
+        self.sponsor_on_channel = self.get_sponsor_channel(html_code=html)
+
+        self.cpn = generate_cpn()
         return [ok, message]
 
     # Loads the Youtube Channel Data.
@@ -209,17 +222,11 @@ class ChannelInfo:
                         if thumbnails:
                             self.thumbnail_url = get_highest_thumbnail(thumbnails)
                         self.YoutubeStream = {
-                            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                            'url': f['url'],
-                            'title': videoDetails['title'],
-                            'description': videoDetails['shortDescription'],
+                             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                             'url': f['url'],
+                             'title': videoDetails['title'],
+                             'description': videoDetails['shortDescription'],
                         }
-
-        if not self.privateStream:
-            set_global_youtube_variables(html_code=html)
-
-        # ONLY WORKS IF LOGGED IN
-        self.sponsor_on_channel = self.get_sponsor_channel(html_code=html)
 
         return [True, "OK"]
 

@@ -150,10 +150,10 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
         stopped("Unsupported version of Python. You need Version 3 :<")
 
     url_arguments = {'html5': 1, 'video_id': channelInfo.video_id}
-    from . import client_name, client_version, ps, sts, cbr
+    from . import client_name, client_version, ps, sts, cbr, client_os, client_os_version
     if ps is not None:
         url_arguments.update({'ps': ps})
-    url_arguments.update({'eurl': ''})
+    url_arguments.update({'eurl': None})
     url_arguments.update({'hl': 'en_US'})
     if sts is not None:
         url_arguments.update({'sts': sts})
@@ -163,6 +163,12 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
         url_arguments.update({'cbr': cbr})
     if client_version is not None:
         url_arguments.update({'cver': client_version})
+    if client_os is not None:
+        url_arguments.update({'cos': client_os})
+    if client_os_version is not None:
+        url_arguments.update({'cosver': client_os_version})
+    if channelInfo.cpn is not None:
+        url_arguments.update({'cpn': channelInfo.cpn})
 
     video_info_website = download_website(
         'https://www.youtube.com/get_video_info?{0}'.format(

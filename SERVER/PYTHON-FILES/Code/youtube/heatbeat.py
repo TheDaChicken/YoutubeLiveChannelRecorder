@@ -35,41 +35,29 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
         referer_url = 'https://www.youtube.com/channel/{0}/live'.format(channel_Class.channel_id)
         headers = {'Accept': "*/*", 'Accept-Language': 'en-US,en;q=0.9', 'Connection': 'keep-alive', 'dnt': 1,
                    'referer': referer_url, 'x-youtube-client-name': 1}
-        url = 'https://www.youtube.com/heartbeat?video_id={0}&heartbeat_token&c={1}&sequence_number={2}'.format(
-            channel_Class.video_id, (client_name if client_name is not None else 'WEB'),
-            str(channel_Class.sequence_number)
-        )
+        url_arguments = {'video_id': channel_Class.video_id, 'heartbeat_token': None,
+                         'c': (client_name if client_name is not None else 'WEB'), 'sequence_number': str(channel_Class.sequence_number)}
         if account_playback_token is not None:
-            headers.update({
-                'x-youtube-identity-token': account_playback_token,
-            })
+            headers.update({'x-youtube-identity-token': account_playback_token})
         if page_build_label is not None:
-            headers.update({
-                'x-youtube-page-label': page_build_label,
-            })
+            headers.update({'x-youtube-page-label': page_build_label})
         if page_cl is not None:
-            headers.update({
-                'x-youtube-page-cl': page_cl,
-            })
+            headers.update({'x-youtube-page-cl': page_cl})
         if variants_checksum is not None:
-            headers.update({
-                'x-youtube-variants-checksum': variants_checksum,
-            })
+            headers.update({'x-youtube-variants-checksum': variants_checksum})
         if utf_offset is not None:
-            headers.update({
-                'x-youtube-utc-offset': utf_offset,
-            })
-            url += "&utc_offset_minutes=" + str(utf_offset)
+            headers.update({'x-youtube-utc-offset': utf_offset})
+            url_arguments.update({'utc_offset_minutes': str(utf_offset)})
         if client_version is not None:
-            headers.update({
-                'x-youtube-client-version': client_version,
-            })
-            url += "&cver=" + client_version
+            headers.update({'x-youtube-client-version': client_version})
+            url_arguments.update({'cver': client_version})
         if timezone is not None:
-            url += "&" + urlencode({'time_zone': timezone})
+            url_arguments.update({'time_zone': timezone})
+        if channel_Class.cpn is not None:
+            url_arguments.update({'cpn': channel_Class.cpn})
 
         json = download_json(
-            url,
+            'https://www.youtube.com/heartbeat?{0}'.format(urlencode(url_arguments)),
             headers=headers, cookies=cookies)
         if type(json) is bool or json is None:
             return None

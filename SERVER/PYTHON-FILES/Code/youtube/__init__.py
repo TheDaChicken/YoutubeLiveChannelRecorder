@@ -1,4 +1,5 @@
 import re
+from random import randint
 
 from ..log import verbose, warning
 from ..utils.youtube import get_yt_player_config, get_yt_initial_data
@@ -19,6 +20,9 @@ timezone = None
 ps = None
 sts = None
 cbr = None
+client_os = None
+client_os_version = None
+cpn = None
 
 
 def set_global_youtube_variables(html_code=None):
@@ -33,6 +37,9 @@ def set_global_youtube_variables(html_code=None):
     global ps
     global sts
     global cbr
+    global client_os
+    global client_os_version
+    global cpn
 
     if not account_playback_token and not page_build_label and not page_cl and not variants_checksum and not \
             client_version and not utf_offset and not client_name and not ps and not sts and not cbr:
@@ -50,6 +57,8 @@ def set_global_youtube_variables(html_code=None):
             ps = try_get(youtube_player_config, lambda x: x['args']['ps'], str)
             sts = try_get(youtube_player_config, lambda x: x['sts'], int)
             cbr = try_get(youtube_player_config, lambda x: x['args']['cbr'])
+            client_os = try_get(youtube_player_config, lambda x: x['args']['cos'])
+            client_os_version = try_get(youtube_player_config, lambda x: x['args']['cosver'])
             if account_playback_token is None:
                 warning("Unable to find account playback token in the YouTube player config.")
             if ps is None:
@@ -58,6 +67,10 @@ def set_global_youtube_variables(html_code=None):
                 warning("Unable to find sts in the YouTube player config.")
             if cbr is None:
                 warning("Unable to find cbr in the YouTube player config.")
+            if client_os is None:
+                warning("Unable to find Client OS in the YouTube player config.")
+            if client_os_version is None:
+                warning("Unable to find Client OS Version in the YouTube player config.")
 
         if not youtube_initial_data:
             warning("Unable to find Youtube Initial Data. Cannot find all Youtube Variables.")
@@ -104,3 +117,15 @@ def get_utc_offset():
 
 def get_time_zone():
     return getTimeZone()
+
+
+def generate_cpn():
+    """
+
+    Looked at for reference:
+    https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/youtube.py#L1531
+
+    """
+    CPN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_'
+    cpn = ''.join((CPN_ALPHABET[randint(0, 256) & 63] for _ in range(0, 16)))
+    return cpn
