@@ -120,7 +120,7 @@ class ChannelInfo:
     live_scheduled_time = None
 
     # PER-CHANNEL YOUTUBE VARIABLES
-    cpn: None
+    cpn = None
 
     def __init__(self, channel_id, SettingsManager=None, sharedCookies=None):
         self.channel_id = channel_id
