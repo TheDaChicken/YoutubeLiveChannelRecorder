@@ -74,7 +74,7 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
             channel_Class.live_scheduled = is_scheduled(liveStreamAbilityRenderer)
             channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
             video_id = get_video_id(liveStreamAbilityRenderer)
-            if video_id is not None:
+            if video_id:
                 channel_Class.video_id = video_id
 
         if channel_Class.live_scheduled is True:
