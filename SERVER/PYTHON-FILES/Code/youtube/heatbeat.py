@@ -73,6 +73,9 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
             channel_Class.pollDelayMs = get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class)
             channel_Class.live_scheduled = is_scheduled(liveStreamAbilityRenderer)
             channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
+            video_id = get_video_id(liveStreamAbilityRenderer)
+            if video_id is not None:
+                channel_Class.video_id = video_id
 
         if channel_Class.live_scheduled is True:
             channel_Class.live_scheduled_time = get_schedule_time(liveStreamAbilityRenderer)
@@ -141,4 +144,9 @@ def get_schedule_time(liveStreamAbilityRenderer):
 
 def get_broadcast_id(liveStreamAbilityRenderer):
     broadcastId = try_get(liveStreamAbilityRenderer, lambda x: x['broadcastId'], str)
+    return broadcastId
+
+
+def get_video_id(liveStreamAbilityRenderer):
+    broadcastId = try_get(liveStreamAbilityRenderer, lambda x: x['videoId'], str)
     return broadcastId
