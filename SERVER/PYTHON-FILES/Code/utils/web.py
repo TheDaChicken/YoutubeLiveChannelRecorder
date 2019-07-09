@@ -1,5 +1,4 @@
 import os
-from http.client import HTTPResponse
 from time import sleep
 
 from .parser import parse_json, parse_m3u8_formats
@@ -34,17 +33,35 @@ def __build_opener(cj):
     return opener
 
 
-def __build__cookies():
+def __build__cookies(cookies=None):
     try:
-        from http.cookiejar import MozillaCookieJar, LoadError
+        from http.cookiejar import MozillaCookieJar, LoadError, Cookie
     except ImportError:
         MozillaCookieJar = None
         LoadError = None
         stopped("Unsupported version of Python. You need Version 3 :<")
-    cj = MozillaCookieJar(filename="cookies.txt")
+
+    class CustomCookieJar(MozillaCookieJar):
+        def load(self, custom_list=None, **kwargs):
+            """
+            Allows to load list of Cookies instead of keep loading a cookie file, if needed.
+            """
+            if custom_list:
+                self._cookies = custom_list
+            else:
+                super().load(**kwargs)
+
+        def save(self, **kwargs):
+            super().save(**kwargs)
+            return self._cookies
+
+        def get_cookie_list(self):
+            return self._cookies
+
+    cj = CustomCookieJar(filename="cookies.txt")
     if os.path.isfile("cookies.txt"):
         try:
-            cj.load()
+            cj.load(custom_list=cookies)
         except LoadError as e:
             if 'format file' in str(e):
                 print("")
@@ -55,19 +72,19 @@ def __build__cookies():
     return cj
 
 
-def download_website(url, headers=None, data=None, cookies=None):
+def download_website(url, headers={}, data=None, SharedVariables=None):
     """
 
     Downloads website from url.
 
+    :param SharedVariables: Contains Shared Variables between different processes.
     :param url: url to open request to.
     :param headers: Form data sent to website.
     :param data: Form data sent to website.
-    :param cookies: Already loaded cookies, if null, will preload.
     :return: str, int, None
     """
 
-    cj = cookies if cookies is not None else __build__cookies()
+    cj = __build__cookies(SharedVariables.CachedCookieList if SharedVariables is not None else None)
     opener = __build_opener(cj)
 
     try:
@@ -79,15 +96,13 @@ def download_website(url, headers=None, data=None, cookies=None):
         stopped("Unsupported version of Python. You need Version 3 :<")
 
     from .. import UserAgent
-    if headers is None:
-        headers = {"User-Agent": UserAgent}
-    elif "User-Agent" not in headers:
+    if "User-Agent" not in headers:
         headers.update({"User-Agent": UserAgent})
 
     request = Request(url, headers=headers, data=data)
 
     try:
-        response = opener.open(request)  # type: HTTPResponse
+        response = opener.open(request)
     except (URLError, TimeoutError, OSError) as e2:
         try:
             return e2.code
@@ -99,7 +114,10 @@ def download_website(url, headers=None, data=None, cookies=None):
         return None
 
     try:
-        cj.save()  # Saves Cookies
+        if SharedVariables:
+            SharedVariables.CachedCookieList = cj.save()  # Saves Cookies
+        else:
+            cj.save()  # Saves Cookies
     except Exception as e1:
         if 'Permission denied' in str(e1):
             print("")
@@ -138,8 +156,8 @@ def download_image(image_url, file_name):
         return False
 
 
-def download_json(url, headers=None, data=None, transform_source=None, cookies=None):
-    json_string = download_website(url, headers=headers, data=data, cookies=cookies)
+def download_json(url, headers=None, data=None, transform_source=None, SharedVariables=None):
+    json_string = download_website(url, headers=headers, data=data, SharedVariables=SharedVariables)
     if type(json_string) is str:
         return parse_json(json_string, transform_source=transform_source)
     return json_string

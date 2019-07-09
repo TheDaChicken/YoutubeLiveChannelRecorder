@@ -6,7 +6,7 @@ from ..utils.other import get_highest_thumbnail, try_get
 from ..utils.web import download_json
 
 
-def is_live(channel_Class, alreadyChecked=False, cookies=None):
+def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
     """
 
     Checks if channel is live using the normal Youtube heartbeat.
@@ -58,7 +58,7 @@ def is_live(channel_Class, alreadyChecked=False, cookies=None):
 
         json = download_json(
             'https://www.youtube.com/heartbeat?{0}'.format(urlencode(url_arguments)),
-            headers=headers, cookies=cookies)
+            headers=headers, SharedVariables=SharedVariables)
         if type(json) is bool or json is None:
             return None
         channel_Class.sequence_number += 1

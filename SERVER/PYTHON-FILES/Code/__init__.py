@@ -31,6 +31,14 @@ def setupShared():
     shareable_variables = managers.Namespace()
     shareable_variables.DebugMode = False
 
+    # Cache Cookies.
+    from .utils.web import __build__cookies
+    cookieHandler = __build__cookies()
+    cookieHandler.load()
+    cookies_ = cookieHandler.get_cookie_list()
+    if cookies_:
+        shareable_variables.CachedCookieList = cookies_
+
 
 class HandlerChannelInfo(ChannelInfo):
     """
@@ -40,8 +48,8 @@ class HandlerChannelInfo(ChannelInfo):
 
     """
 
-    def __init__(self, channel_id, SettingsManager, sharedCookies=None):
-        super().__init__(channel_id, SettingsManager, sharedCookies)
+    def __init__(self, channel_id, SharedVariables):
+        super().__init__(channel_id, SharedVariables)
 
     def get(self, variable_name):
         return getattr(self, variable_name)

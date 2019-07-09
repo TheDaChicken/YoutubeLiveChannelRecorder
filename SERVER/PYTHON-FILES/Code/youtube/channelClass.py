@@ -55,7 +55,7 @@ class ChannelInfo:
     :type live_streaming, bool
     :type recording_status: str
     :type stop_heartbeat: bool
-    :type SettingsManager: Namespace
+    :type SharedVariables: Namespace
     :type sharedCookies: Value
     :type crashed_traceback: str
 
@@ -76,7 +76,7 @@ class ChannelInfo:
     live_streaming = None
     recording_status = None
     stop_heartbeat = False
-    SettingsManager = False
+    SharedVariables = False
     sharedCookies = False
     crashed_traceback = None
 
@@ -122,20 +122,19 @@ class ChannelInfo:
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
 
-    def __init__(self, channel_id, SettingsManager=None, sharedCookies=None):
+    def __init__(self, channel_id, SharedVariables=None):
         self.channel_id = channel_id
-        self.SettingsManager = SettingsManager
-        self.sharedCookies = sharedCookies
+        self.SharedVariables = SharedVariables
 
     def loadYoutubeData(self):
         html = download_website("https://www.youtube.com/channel/{0}/live".
-                                format(self.channel_id), cookies=self.sharedCookies)
+                                format(self.channel_id), SharedVariables=self.SharedVariables)
         if html is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
         if html == 404:
-            return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".
-                    format(self.channel_id)]
+            return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
+                self.channel_id)]
         ok, message = self.loadChannelData(html=html)
         if not ok:
             return [ok, message]
@@ -153,7 +152,7 @@ class ChannelInfo:
     def loadChannelData(self, html=None):
         if not html:
             html = download_website("https://www.youtube.com/channel/{0}/live".
-                                    format(self.channel_id), cookies=self.sharedCookies)
+                                    format(self.channel_id), SharedVariables=self.SharedVariables)
             if html is None:
                 return [False, "Failed getting Channel Data from the internet! "
                                "This means there is no good internet available!"]
@@ -179,7 +178,7 @@ class ChannelInfo:
         verbose("Getting Video ID.")
         if not html:
             html = download_website("https://www.youtube.com/channel/{0}/live".
-                                    format(self.channel_id), cookies=self.sharedCookies)
+                                    format(self.channel_id), SharedVariables=self.SharedVariables)
             if html is None:
                 return [False, "Failed getting Video Data from the internet! "
                                "This means there is no good internet available!"]
@@ -222,10 +221,10 @@ class ChannelInfo:
                         if thumbnails:
                             self.thumbnail_url = get_highest_thumbnail(thumbnails)
                         self.YoutubeStream = {
-                             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                             'url': f['url'],
-                             'title': videoDetails['title'],
-                             'description': videoDetails['shortDescription'],
+                            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                            'url': f['url'],
+                            'title': videoDetails['title'],
+                            'description': videoDetails['shortDescription'],
                         }
 
         return [True, "OK"]
@@ -247,7 +246,7 @@ class ChannelInfo:
         verbose("Getting Channel Name of " + self.channel_id + ".")
         if html_code is None:
             html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
-                                         cookies=self.sharedCookies)
+                                         SharedVariables=self.SharedVariables)
             if html_code is None:
                 return None
         yt_player_config = get_yt_player_config(html_code)
@@ -281,7 +280,7 @@ class ChannelInfo:
             verbose("Checking if account sponsored " + self.channel_name + ".")
             if html_code is None:
                 html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
-                                             cookies=self.sharedCookies)
+                                             SharedVariables=self.SharedVariables)
                 if html_code is None:
                     return None
             html_code = str(html_code)
@@ -371,15 +370,15 @@ class ChannelInfo:
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
 
     def is_live(self, alreadyChecked=False):
-        if self.SettingsManager:
-            if self.SettingsManager.DebugMode:
+        if self.SharedVariables:
+            if self.SharedVariables.DebugMode:
                 self.last_heartbeat = datetime.now()
-        boolean_live = is_live(self, alreadyChecked=alreadyChecked)
+        boolean_live = is_live(self, alreadyChecked=alreadyChecked, SharedVariables=self.SharedVariables)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
 
     def is_live_sponsor_only_streams(self):
-        boolean_live = is_live_sponsor_only_streams(self)
+        boolean_live = is_live_sponsor_only_streams(self, SharedVariables=self.SharedVariables)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
 

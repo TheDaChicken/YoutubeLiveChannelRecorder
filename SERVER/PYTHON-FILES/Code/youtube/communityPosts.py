@@ -99,7 +99,7 @@ def is_live_sponsor_only_streams(channel_class):
     return False
 
 
-def readCommunityPosts(channel_class):
+def readCommunityPosts(channel_class, SharedVariables=None):
     def getCommunityTabInfo(tabList):
         """
 
@@ -178,7 +178,7 @@ def readCommunityPosts(channel_class):
     url = 'https://www.youtube.com/channel/' + channel_class.channel_id + '/community'
     website = download_website(
         url,
-        headers=headers)
+        headers=headers, SharedVariables=SharedVariables)
     if type(website) is bool or website is None:
         return None
 
