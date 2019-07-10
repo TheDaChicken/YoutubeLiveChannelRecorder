@@ -9,7 +9,7 @@ from ..log import warning
 already_checked_video_ids = []
 
 
-def is_live_sponsor_only_streams(channel_class):
+def is_live_sponsor_only_streams(channel_class, SharedVariables):
     """
 
     Checks for unlisted youtube live stream links in sponsor only community tab.
@@ -71,7 +71,7 @@ def is_live_sponsor_only_streams(channel_class):
                     'description': videoDetails['shortDescription'],
                 }
 
-    CommunityPosts = readCommunityPosts(channel_class)
+    CommunityPosts = readCommunityPosts(channel_class, SharedVariables=SharedVariables)
     if CommunityPosts:
         for communityTabMessage in CommunityPosts:
             dict_urls = communityTabMessage['contentText']['URLs']
@@ -131,7 +131,7 @@ def readCommunityPosts(channel_class, SharedVariables=None):
 
             :type communityTabMessageInfo: dict
             """
-            communityMessage = ""
+            communityMessage = []
             communityURL = []
 
             textHolder = try_get(communityTabMessageInfo, lambda x: x['contentText'], dict)
@@ -146,14 +146,15 @@ def readCommunityPosts(channel_class, SharedVariables=None):
                                 # Due to Youtube simplifying URLS. This is used to grab all of the url.
                                 fullUrl = try_get(textHolder, lambda x: x['navigationEndpoint'][
                                     'urlEndpoint']['url'], str)
+                                communityMessage.append(fullUrl)
                                 if fullUrl:
                                     communityURL.append(fullUrl)
                             else:
                                 partMessage = try_get(textHolder, lambda x: x['text'], str)
                                 if partMessage:
-                                    communityMessage += partMessage
+                                    communityMessage.append(partMessage)
             community = {
-                'communityMessage': communityMessage,
+                'communityMessage': ''.join(communityMessage),
                 'URLs': communityURL
             }
             return community

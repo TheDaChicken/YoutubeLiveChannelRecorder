@@ -10,23 +10,23 @@ init(autoreset=True)
 # Sys.stdout.write is used to fix overlapping in printing.
 
 def info(text):
-    sys.stdout.write(Fore.LIGHTCYAN_EX + "[INFO] {}".format(text) + "\n")
+    sys.stdout.write("{0}[INFO] {1}\n".format(Fore.LIGHTCYAN_EX, text))
     sys.stdout.flush()
 
 
 def verbose(text):
     if Verbose is True:
-        sys.stdout.write(Fore.LIGHTRED_EX + "[VERBOSE] {}".format(text) + "\n")
+        sys.stdout.write("{0}[VERBOSE] {1}\n".format(Fore.LIGHTRED_EX, text))
     sys.stdout.flush()
 
 
 def warning(text):
-    sys.stdout.write(Fore.LIGHTRED_EX + "[WARNING] {}".format(text) + "\n")
+    sys.stdout.write("{0}[WARNING] {1}\n".format(Fore.LIGHTRED_EX, text))
     sys.stdout.flush()
 
 
 def crash_warning(text):
-    sys.stdout.write(Fore.LIGHTYELLOW_EX + "[CRASH WARNING] " + Fore.RESET + "{}\n".format(text))
+    sys.stdout.write("{0}[CRASH WARNING] {1}{2}\n".format(Fore.LIGHTYELLOW_EX, Fore.RESET, text))
     sys.stdout.flush()
 
 
@@ -37,17 +37,17 @@ def disable_youtube_reply():
 
 def YoutubeReply(text):
     if Reply is True:
-        sys.stdout.write(Fore.LIGHTMAGENTA_EX + "[REPLY] {}".format(text) + "\n")
+        sys.stdout.write("{0}[REPLY] {1}\n".format(Fore.LIGHTMAGENTA_EX, text))
     sys.stdout.flush()
 
 
 def EncoderLog(text):
-    sys.stdout.write(Fore.LIGHTGREEN_EX + "[ENCODER] " + Fore.RESET + "{}\n".format(text))
+    sys.stdout.write("{0}[ENCODER] {1}{2}\n".format(Fore.LIGHTGREEN_EX, Fore.RESET, text))
     sys.stdout.flush()
 
 
 def stopped(text):
-    sys.stdout.write(Fore.LIGHTRED_EX + "{}\n".format(text))
+    sys.stdout.write("{0}{1}\n".format(Fore.LIGHTRED_EX, text))
     sys.stdout.flush()
     from time import sleep
     sleep(10)
@@ -55,5 +55,5 @@ def stopped(text):
 
 
 def note(text):
-    sys.stdout.write(Fore.LIGHTCYAN_EX + "[NOTE] " + "{}".format(text) + "\n")
+    sys.stdout.write("{0}[NOTE] {1}\n".format(Fore.LIGHTCYAN_EX, text))
     sys.stdout.flush()

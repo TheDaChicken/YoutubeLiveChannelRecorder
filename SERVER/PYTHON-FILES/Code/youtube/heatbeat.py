@@ -62,7 +62,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         if type(json) is bool or json is None:
             return None
         channel_Class.sequence_number += 1
-        YoutubeReply('FROM YOUTUBE -> ' + "{}".format(json))
+        YoutubeReply('FROM YOUTUBE -> {0}'.format(json))
 
         # SETTING VARIABLES
         liveStreamAbilityRenderer = try_get(json, lambda x: x['liveStreamability']['liveStreamabilityRenderer'], dict)

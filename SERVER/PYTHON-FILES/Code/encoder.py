@@ -1,5 +1,7 @@
 import subprocess
 from threading import Thread
+from time import sleep
+
 from .log import verbose, info, EncoderLog, warning
 
 
@@ -59,6 +61,7 @@ class Encoder:
         while True:
             if self.running is not None:
                 return None
+            sleep(.1)
 
     # Handles when FFMPEG Crashes and when it's fully running.
     def __crashHandler(self):

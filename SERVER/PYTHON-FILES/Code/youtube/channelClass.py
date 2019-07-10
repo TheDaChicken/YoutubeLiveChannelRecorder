@@ -183,8 +183,8 @@ class ChannelInfo:
                 return [False, "Failed getting Video Data from the internet! "
                                "This means there is no good internet available!"]
             if html == 404:
-                return [False, "Failed getting Video Data! \"" +
-                        self.channel_id + "\" doesn't exist as a channel id!"]
+                return [False, "Failed getting Video Data! \""
+                               "{0}\" doesn't exist as a channel id!".format(self.channel_id)]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
         if yt_player_config:
             if "live_playback" in yt_player_config:
@@ -322,7 +322,8 @@ class ChannelInfo:
                                 warning("INTERNET OFFLINE")
                                 sleep(2.52)
                             else:
-                                info(self.channel_name + "'s channel live streaming is currently private/unlisted!")
+                                info("{0}'s channel live streaming is currently private/unlisted!".format(
+                                    self.channel_name))
                                 info("Checked Community Posts for any Sponsor Only live Streams. Didn't Find "
                                      "Anything!")
                                 sleep(self.pollDelayMs / 1000)
@@ -433,7 +434,7 @@ class ChannelInfo:
                                                     self._replace_variables(settings['tags']),
                                                     settings['CategoryID'], settings['privacyStatus'])
                 if UploadThumbnail() is True:
-                    info("Uploading Thumbnail for " + self.channel_name)
+                    info("Uploading Thumbnail for {0}".format(self.channel_name))
                     sleep(1.5)
                     upload_thumbnail(youtube_client, upload_video_id,
                                      self.thumbnail_location)
