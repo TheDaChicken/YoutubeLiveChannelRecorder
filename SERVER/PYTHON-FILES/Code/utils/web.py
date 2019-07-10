@@ -72,7 +72,7 @@ def __build__cookies(cookies=None):
     return cj
 
 
-def download_website(url, headers={}, data=None, SharedVariables=None):
+def download_website(url, headers=None, data=None, SharedVariables=None):
     """
 
     Downloads website from url.
@@ -84,6 +84,8 @@ def download_website(url, headers={}, data=None, SharedVariables=None):
     :return: str, int, None
     """
 
+    if headers is None:
+        headers = {}
     cj = __build__cookies(SharedVariables.CachedCookieList if SharedVariables is not None else None)
     opener = __build_opener(cj)
 
