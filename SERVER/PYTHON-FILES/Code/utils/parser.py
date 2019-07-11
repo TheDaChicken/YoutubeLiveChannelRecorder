@@ -1,6 +1,7 @@
 import re
+import traceback
 
-from ..log import warning, stopped
+from ..log import warning, stopped, crash_warning
 import json
 
 
@@ -22,9 +23,10 @@ def parse_json(json_string, transform_source=None):
             json_string = transform_source(json_string)
         try:
             return json.loads(json_string)
-        except TypeError:
+        except Exception:
             warning("Failed to parse JSON.")
-        return None
+            crash_warning(traceback.format_exc())
+            return None
     return None
 
 

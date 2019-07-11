@@ -88,10 +88,11 @@ def set_global_youtube_variables(html_code=None):
 
 
 def getServiceSettings(serviceTrackingParamsList, service_nameLook):
-    for service in serviceTrackingParamsList:
-        service_name = try_get(service, lambda x: x['service'], str)
-        if service_name is not None and service_name in service_nameLook:
-            return service
+    if serviceTrackingParamsList:
+        for service in serviceTrackingParamsList:
+            service_name = try_get(service, lambda x: x['service'], str)
+            if service_name is not None and service_name in service_nameLook:
+                return service
     return None
 
 

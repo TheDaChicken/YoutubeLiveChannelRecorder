@@ -187,7 +187,7 @@ class ChannelInfo:
                                "{0}\" doesn't exist as a channel id!".format(self.channel_id)]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
         if yt_player_config:
-            if "live_playback" in yt_player_config:
+            if "is_live_destination" in yt_player_config:
                 self.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
                 self.privateStream = False
                 if not self.video_id:
@@ -251,19 +251,19 @@ class ChannelInfo:
                 return None
         yt_player_config = get_yt_player_config(html_code)
         if yt_player_config:
-            if "live_playback" not in yt_player_config['args']:
-                array = re.findall('property="og:title" content="(.+?)"', html_code)
-                self.privateStream = True
-                if array is None:
-                    stopped("Failed to get author! This must be a bug in the code! Please Report!")
+            if "is_live_destination" not in yt_player_config['args']:
                 if 'author' not in yt_player_config['args']:
-                    warning("ERROR IN PRIVATE SAFEGUARD.")
-                    return None
+                    array = re.findall('property="og:title" content="(.+?)"', html_code)
+                    self.privateStream = True
+                    if array:
+                        return array[0]
+                    else:
+                        stopped("Failed to get author! This must be a bug in the code! Please Report!")
                 warning(
                     yt_player_config['args']['author'] + " has the live stream "
                                                          "currently unlisted or private, or only for members. "
                                                          "Using safeguard. This may not be the best to leave on.\n")
-                return array[0]
+                return yt_player_config['args']['author']
             return yt_player_config['args']['author']
         else:
             # PRIVATE LOGIN FALLBACK
