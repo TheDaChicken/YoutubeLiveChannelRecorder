@@ -50,7 +50,7 @@ def set_global_youtube_variables(html_code=None):
             'serviceTrackingParams'], list), "ECATCHER")
 
         if not youtube_player_config:
-            warning("Unable to find Youtube Player Config. Cannot find all Youtube Variables.")
+            warning("Unable to get Youtube Player Config. Cannot find all Youtube Variables.")
         else:
             account_playback_token = try_get(youtube_player_config, lambda x: x['args']['account_playback_token'][:-1],
                                              str)
@@ -73,9 +73,9 @@ def set_global_youtube_variables(html_code=None):
                 warning("Unable to find Client OS Version in the YouTube player config.")
 
         if not youtube_initial_data:
-            warning("Unable to find Youtube Initial Data. Cannot find all Youtube Variables.")
+            warning("Unable to get Youtube Initial Data. Cannot find all Youtube Variables.")
         elif not e_catcher:
-            warning("Unable to find ECATCHER service data in Youtube Initial Data. Cannot find all Youtube Variables.")
+            warning("Unable to get ECATCHER service data in Youtube Initial Data. Cannot find all Youtube Variables.")
         else:
             params = try_get(e_catcher, lambda x: x['params'], list)
             page_build_label = getSettingsValue(params, 'innertube.build.label', name="Page Build Label")

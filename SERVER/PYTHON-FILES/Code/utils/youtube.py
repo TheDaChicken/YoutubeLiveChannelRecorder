@@ -25,7 +25,7 @@ def get_yt_initial_data(website):
     from .parser import parse_json
     if type(website) is not str:
         return None
-    config = re.findall(r'window\[\"ytInitialData\"] = JSON\.parse\(\"{(.+)\);', website)
+    config = re.findall(r'window\[\"ytInitialData\"]\s=\s(.+);', website)
     if config:
         return parse_json(config[0])
 
