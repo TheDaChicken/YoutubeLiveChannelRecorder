@@ -35,7 +35,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         referer_url = 'https://www.youtube.com/channel/{0}/live'.format(channel_Class.channel_id)
         headers = {'Accept': "*/*", 'Accept-Language': 'en-US,en;q=0.9', 'Connection': 'keep-alive', 'dnt': 1,
                    'referer': referer_url, 'x-youtube-client-name': 1}
-        url_arguments = {'video_id': channel_Class.video_id, 'heartbeat_token': None,
+        url_arguments = {'video_id': channel_Class.video_id, 'heartbeat_token': '',
                          'c': (client_name if client_name is not None else 'WEB'), 'sequence_number': str(channel_Class.sequence_number)}
         if account_playback_token is not None:
             headers.update({'x-youtube-identity-token': account_playback_token})

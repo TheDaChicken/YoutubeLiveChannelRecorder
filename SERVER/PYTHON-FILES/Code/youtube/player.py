@@ -153,7 +153,7 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
     from . import client_name, client_version, ps, sts, cbr, client_os, client_os_version
     if ps is not None:
         url_arguments.update({'ps': ps})
-    url_arguments.update({'eurl': None})
+    url_arguments.update({'eurl': ''})
     url_arguments.update({'hl': 'en_US'})
     if sts is not None:
         url_arguments.update({'sts': sts})
