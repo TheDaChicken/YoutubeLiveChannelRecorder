@@ -135,10 +135,11 @@ class ChannelInfo:
         if html == 404:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
                 self.channel_id)]
-        ok, message = self.loadChannelData(html=html)
+        yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        ok, message = self.loadChannelData(html=html, yt_player_config=yt_player_config)
         if not ok:
             return [ok, message]
-        ok, message = self.loadVideoData(html=html)
+        ok, message = self.loadVideoData(html=html, yt_player_config=yt_player_config)
         if not self.privateStream:
             set_global_youtube_variables(html_code=html)
 
@@ -149,8 +150,8 @@ class ChannelInfo:
         return [ok, message]
 
     # Loads the Youtube Channel Data.
-    def loadChannelData(self, html=None):
-        if not html:
+    def loadChannelData(self, html=None, yt_player_config=None):
+        if not html and not yt_player_config:
             html = download_website("https://www.youtube.com/channel/{0}/live".
                                     format(self.channel_id), SharedVariables=self.SharedVariables)
             if html is None:
@@ -161,12 +162,12 @@ class ChannelInfo:
                         self.channel_id + "\" doesn't exist as a channel id!"]
         if type(html) is int:
             warning("" + str(html))
-        self.channel_name = self.get_channel_name(html_code=html)
+        self.channel_name = self.get_channel_name(html_code=html, yt_player_config=yt_player_config)
         if self.channel_name is None:
             return [False, "Failed Getting " + self.channel_id + " channel_name."]
         return [True, "OK"]
 
-    def loadVideoData(self, html=None):
+    def loadVideoData(self, html=None, yt_player_config=None):
         """
 
         This is used to grab video information from the YouTube Channel Live site, like video_id,
@@ -185,7 +186,8 @@ class ChannelInfo:
             if html == 404:
                 return [False, "Failed getting Video Data! \""
                                "{0}\" doesn't exist as a channel id!".format(self.channel_id)]
-        yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        if not yt_player_config:
+            yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
         if yt_player_config:
             if "is_live_destination" in yt_player_config:
                 self.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
@@ -242,17 +244,18 @@ class ChannelInfo:
             self.EncoderClass.stop_recording()
             self.EncoderClass = None
 
-    def get_channel_name(self, html_code=None):
+    def get_channel_name(self, html_code=None, yt_player_config=None):
         verbose("Getting Channel Name of " + self.channel_id + ".")
-        if html_code is None:
+        if html_code is None and yt_player_config is None:
             html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
                                          SharedVariables=self.SharedVariables)
             if html_code is None:
                 return None
-        yt_player_config = get_yt_player_config(html_code)
+        if not yt_player_config:
+            yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
         if yt_player_config:
-            if "is_live_destination" not in yt_player_config['args']:
-                if 'author' not in yt_player_config['args']:
+            if "is_live_destination" not in yt_player_config:
+                if 'author' not in yt_player_config:
                     array = re.findall('property="og:title" content="(.+?)"', html_code)
                     self.privateStream = True
                     if array:
@@ -260,11 +263,11 @@ class ChannelInfo:
                     else:
                         stopped("Failed to get author! This must be a bug in the code! Please Report!")
                 warning(
-                    yt_player_config['args']['author'] + " has the live stream "
-                                                         "currently unlisted or private, or only for members. "
-                                                         "Using safeguard. This may not be the best to leave on.\n")
-                return yt_player_config['args']['author']
-            return yt_player_config['args']['author']
+                    yt_player_config['author'] + " has the live stream "
+                                                 "currently unlisted or private, or only for members. "
+                                                 "Using safeguard. This may not be the best to leave on.\n")
+                return yt_player_config['author']
+            return yt_player_config['author']
         else:
             # PRIVATE LOGIN FALLBACK
             array = re.findall('property="og:title" content="(.+?)"', html_code)

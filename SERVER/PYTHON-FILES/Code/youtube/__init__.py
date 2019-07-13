@@ -1,9 +1,8 @@
-import re
 from random import randint
 
 from ..log import verbose, warning
-from ..utils.youtube import get_yt_player_config, get_yt_initial_data
 from ..utils.other import try_get, getTimeZone
+from ..utils.youtube import get_yt_player_config, get_yt_initial_data
 
 # HOLDS GLOBAL YOUTUBE VARIABLES AND OTHER HEARTBEAT FUNCTIONS
 
@@ -25,7 +24,7 @@ client_os_version = None
 cpn = None
 
 
-def set_global_youtube_variables(html_code=None):
+def set_global_youtube_variables(html_code, youtube_player_config=None, youtube_initial_data=None):
     global account_playback_token
     global page_build_label
     global page_cl
@@ -44,11 +43,12 @@ def set_global_youtube_variables(html_code=None):
     if not account_playback_token and not page_build_label and not page_cl and not variants_checksum and not \
             client_version and not utf_offset and not client_name and not ps and not sts and not cbr:
         verbose("Getting Global YouTube Variables.")
-        youtube_player_config = get_yt_player_config(html_code)
-        youtube_initial_data = get_yt_initial_data(html_code)
+        if not youtube_player_config:
+            youtube_player_config = get_yt_player_config(html_code)
+        if not youtube_initial_data:
+            youtube_initial_data = get_yt_initial_data(html_code)
         e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
             'serviceTrackingParams'], list), "ECATCHER")
-
         if not youtube_player_config:
             warning("Unable to get Youtube Player Config. Cannot find all Youtube Variables.")
         else:
