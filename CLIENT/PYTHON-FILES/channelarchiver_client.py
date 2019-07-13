@@ -126,6 +126,8 @@ if __name__ == '__main__':
                                     if last_heartbeat:
                                         message += "{0} [LAST HEARTBEAT: {1}]".format(Fore.LIGHTYELLOW_EX,
                                                                                       last_heartbeat)
+                            elif live is 1:
+                                message += "{0} [ERROR ON HEARTBEAT]".format(Fore.LIGHTRED_EX)
                         elif not is_alive:
                             message += "{0} [CRASHED]".format(Fore.LIGHTYELLOW_EX)
                         print(message)
