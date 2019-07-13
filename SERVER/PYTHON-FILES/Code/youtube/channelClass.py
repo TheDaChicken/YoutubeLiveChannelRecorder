@@ -14,7 +14,7 @@ from ..log import verbose, stopped, warning, info, note, crash_warning
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
-from ..utils.youtube import get_yt_player_config
+from ..utils.youtube import get_yt_player_config, get_endpoint_type
 from .player import openStream, getYoutubeStreamInfo
 from .communityPosts import is_live_sponsor_only_streams
 
@@ -251,30 +251,28 @@ class ChannelInfo:
                                          SharedVariables=self.SharedVariables)
             if html_code is None:
                 return None
-        if not yt_player_config:
-            yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
-        if yt_player_config:
-            if "is_live_destination" not in yt_player_config:
-                if 'author' not in yt_player_config:
-                    array = re.findall('property="og:title" content="(.+?)"', html_code)
-                    self.privateStream = True
-                    if array:
-                        return array[0]
-                    else:
-                        stopped("Failed to get author! This must be a bug in the code! Please Report!")
-                warning(
-                    yt_player_config['author'] + " has the live stream "
-                                                 "currently unlisted or private, or only for members. "
-                                                 "Using safeguard. This may not be the best to leave on.\n")
-                return yt_player_config['author']
-            return yt_player_config['author']
-        else:
-            # PRIVATE LOGIN FALLBACK
+        endpoint_type = get_endpoint_type(html_code)
+        if endpoint_type == 'browse':
             array = re.findall('property="og:title" content="(.+?)"', html_code)
             if array:
-                return array[0]
-            verbose("Website HTML: " + str(html_code))
-            stopped("Failed getting Channel Name! Please report this!")
+                channel_name = array[0]
+                warning(
+                    channel_name + " has the live stream "
+                                   "currently unlisted or private, or only for members. "
+                                   "Using safeguard. This may not be the best to leave on.\n")
+                return channel_name
+        elif endpoint_type == 'watch':
+            if not yt_player_config:
+                yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
+            if yt_player_config:
+                if "is_live_destination" in yt_player_config:
+                    return yt_player_config['author']
+                else:
+                    warning("Found a stream, the stream seemed to be a non-live stream.")
+            else:
+                stopped("Unable to get yt player config.")
+        else:
+            stopped("Unrecognized endpoint type.")
             return None
 
     def get_sponsor_channel(self, html_code=None):

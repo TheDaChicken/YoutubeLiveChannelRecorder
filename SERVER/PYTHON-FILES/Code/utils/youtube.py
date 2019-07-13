@@ -42,3 +42,16 @@ def get_yt_config(website):
     config = re.findall(r'ytcfg\.set({.+?});', website)
     if config:
         return parse_json(config[0])
+
+
+def get_endpoint_type(website):
+    """
+
+    Gets Endpoint Type. of course
+
+    """
+    if type(website) is not str:
+        return None
+    config = re.findall(r'var data = {\n[^>]*page: \"(.+?)\",', website)
+    if config:
+        return config[0]
