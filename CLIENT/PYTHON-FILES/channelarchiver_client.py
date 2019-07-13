@@ -207,6 +207,7 @@ if __name__ == '__main__':
                 elif option is "4":
                     Screen = "Settings"
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
+                    info("Now Checking.")
                     Screen = "NotificationHold"
                 elif option is "5":
                     if channel_info['YoutubeLogin'] is False:
