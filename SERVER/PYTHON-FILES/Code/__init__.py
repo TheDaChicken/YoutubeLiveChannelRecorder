@@ -11,7 +11,7 @@ from .log import warning, verbose
 """
 
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
-            'Chrome/74.0.3729.169 Safari/537.36'
+            'Chrome/75.0.3770.100 Safari/537.36'
 
 # Probably not the right type of class to put this stuff but I mean, there is public functions and variables in here.
 
