@@ -52,6 +52,6 @@ def get_endpoint_type(website):
     """
     if type(website) is not str:
         return None
-    config = re.findall(r'var data = {\n[^>]*page: \"(.+?)\",', website)
+    config = re.findall(r'var data\s=\s{\s[^>]*page: \"(.+?)\",', website)
     if config:
         return config[0]
