@@ -86,14 +86,14 @@ if __name__ == '__main__':
                         channel_name = channelInfo.get('name')
                         is_alive = channelInfo['is_alive']
 
-                        message = "    {0}{1}: {2}{3}".format(Fore.LIGHTCYAN_EX, str(loopNumber),
-                                                              Fore.WHITE,
-                                                              channel_name if channel_name is not None else channel_id)
+                        message = ["    {0}{1}: {2}{3}".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                               Fore.WHITE,
+                                                               channel_name if channel_name is not None else channel_id)]
                         if channel_name is None:
                             if 'error' in channelInfo:
-                                message += "{0} [FAILED GETTING YOUTUBE DATA]".format(Fore.LIGHTRED_EX)
+                                message.append("{0} [FAILED GETTING YOUTUBE DATA]".format(Fore.LIGHTRED_EX))
                             else:
-                                message += "{0} [GETTING YOUTUBE DATA]".format(Fore.LIGHTRED_EX)
+                                message.append("{0} [GETTING YOUTUBE DATA]".format(Fore.LIGHTRED_EX))
                         elif is_alive:
                             live = channelInfo.get('live')
                             recording_status = channelInfo.get('recording_status')
@@ -103,34 +103,36 @@ if __name__ == '__main__':
                             sponsor_on_channel = channelInfo.get('sponsor_on_channel')
                             live_scheduled = channelInfo.get('live_scheduled')
                             if live is None:
-                                message += "{0} [INTERNET OFFLINE]".format(Fore.LIGHTBLUE_EX)
+                                message.append("{0} [INTERNET OFFLINE]".format(Fore.LIGHTBLUE_EX))
                             elif live is True:
-                                message += "{0} [LIVE]".format(Fore.LIGHTRED_EX)
-                                message += "{0} Status: {1}".format(Fore.LIGHTRED_EX,
-                                                                    recording_status if recording_status is not None
-                                                                    else 'UNKNOWN.')
+                                message.append("{0} [LIVE]".format(Fore.LIGHTRED_EX))
+                                message.append("{0} Status: {1}".format(Fore.LIGHTRED_EX,
+                                                                        recording_status if recording_status is not None
+                                                                        else 'UNKNOWN.'))
                                 if broadcastId:
-                                    message += "{0} [RECORDING BROADCAST ID: {1}]".format(Fore.LIGHTYELLOW_EX,
-                                                                                          broadcastId)
+                                    message.append("{0} [RECORDING BROADCAST ID: {1}]".format(Fore.LIGHTYELLOW_EX,
+                                                                                              broadcastId))
                             elif live is False:
                                 if privateStream is True:
-                                    message += "{0} [PRIVATE]".format(Fore.LIGHTRED_EX)
+                                    message.append("{0} [PRIVATE]".format(Fore.LIGHTRED_EX))
                                     if sponsor_on_channel is True:
-                                        message += " [SPONSOR MODE (CHECKS COMMUNITY TAB FOR SPONSOR ONLY STREAMS)]"
+                                        message.append(
+                                            " [SPONSOR MODE (CHECKS COMMUNITY TAB FOR SPONSOR ONLY STREAMS)]")
                                 elif live_scheduled is True:
                                     live_scheduled_time = channelInfo.get('live_scheduled_time')
                                     message += "{0} [SCHEDULED AT {1} (AT SERVER\'S TIMEZONE)]".format(
                                         Fore.LIGHTGREEN_EX, live_scheduled_time)
                                 else:
-                                    message += "{0} [NOT LIVE]".format(Fore.LIGHTCYAN_EX)
+                                    message.append("{0} [NOT LIVE]".format(Fore.LIGHTCYAN_EX))
                                     if last_heartbeat:
-                                        message += "{0} [LAST HEARTBEAT: {1}]".format(Fore.LIGHTYELLOW_EX,
-                                                                                      last_heartbeat)
+                                        message.append("{0} [LAST HEARTBEAT: {1}]".format(Fore.LIGHTYELLOW_EX,
+                                                                                          last_heartbeat))
                             elif live is 1:
-                                message += "{0} [ERROR ON HEARTBEAT]".format(Fore.LIGHTRED_EX)
+                                message.append("{0} [ERROR ON HEARTBEAT]".format(Fore.LIGHTRED_EX))
                         elif not is_alive:
-                            message += "{0} [CRASHED]".format(Fore.LIGHTYELLOW_EX)
-                        print(message)
+                            message.append("{0} [CRASHED]".format(Fore.LIGHTYELLOW_EX))
+                        # USING JOIN INSTEAD OF += ON STRING BECAUSE JOIN IS FASTER.
+                        print(''.join(message))
                         loopNumber += 1
                 print("")
                 print(" 1) Refresh Channel List.")
