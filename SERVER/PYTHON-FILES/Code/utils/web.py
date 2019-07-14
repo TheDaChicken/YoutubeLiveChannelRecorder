@@ -1,9 +1,10 @@
 import os
+import traceback
 from time import sleep
 
 from .parser import parse_json, parse_m3u8_formats
 
-from ..log import stopped, warning, verbose
+from ..log import stopped, warning, verbose, error_warning
 
 import httplib2
 from urllib3.exceptions import TimeoutError
@@ -101,8 +102,11 @@ def download_website(url, headers=None, data=None, SharedVariables=None):
     if "User-Agent" not in headers:
         headers.update({"User-Agent": UserAgent})
 
-    request = Request(url, headers=headers, data=data)
-
+    try:
+        request = Request(url, headers=headers, data=data)
+    except Exception:
+        error_warning(traceback.format_exc())
+        return None
     try:
         response = opener.open(request)
     except (URLError, TimeoutError, OSError) as e2:
@@ -110,9 +114,9 @@ def download_website(url, headers=None, data=None, SharedVariables=None):
             return e2.code
         except AttributeError:
             return None
-    except Exception as e2:
+    except Exception:
         warning("Unable to request HTTP website.")
-        warning("Error: " + str(e2))
+        error_warning(traceback.format_exc())
         return None
 
     try:
@@ -126,18 +130,18 @@ def download_website(url, headers=None, data=None, SharedVariables=None):
             stopped("Permission denied Saving Cookies!\n"
                     "You can allow access by running sudo if you are on Linux.")
         else:
-            warning("Error: " + str(e1))
+            error_warning(traceback.format_exc())
             warning("Unable to save cookies.")
     try:
         website_bytes = response.read()
     except OSError as e2:
-        warning("Error: " + str(e2))
+        error_warning(traceback.format_exc())
         warning("Unable to read website bytes.")
         return None
     try:
         decoded_bytes = website_bytes.decode('utf-8')
-    except Exception as e3:
-        warning("Error: " + str(e3))
+    except Exception:
+        error_warning(traceback.format_exc())
         warning("Unable to decode website bytes.")
         return None
     return decoded_bytes
