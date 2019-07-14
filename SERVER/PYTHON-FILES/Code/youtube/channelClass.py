@@ -35,7 +35,7 @@ class ChannelInfo:
     :type description: str
     :type privateStream: bool
     :type sponsor_only_stream: bool
-    :type YoutubeStream: dict
+    :type YoutubeStream: dict, None
 
     # USED FOR RECORDING.
     :type EncoderClass: Encoder
