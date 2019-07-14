@@ -136,7 +136,7 @@ class ChannelInfo:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
                 self.channel_id)]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
-        ok, message = self.loadChannelData(html=html, yt_player_config=yt_player_config)
+        ok, message = self.loadChannelData(html_code=html, yt_player_config=yt_player_config)
         if not ok:
             return [ok, message]
         ok, message = self.loadVideoData(html=html, yt_player_config=yt_player_config)
@@ -150,19 +150,52 @@ class ChannelInfo:
         return [ok, message]
 
     # Loads the Youtube Channel Data.
-    def loadChannelData(self, html=None, yt_player_config=None):
-        if not html and not yt_player_config:
-            html = download_website("https://www.youtube.com/channel/{0}/live".
-                                    format(self.channel_id), SharedVariables=self.SharedVariables)
-            if html is None:
+    def loadChannelData(self, html_code=None, yt_player_config=None):
+        if not html_code and not yt_player_config:
+            html_code = download_website("https://www.youtube.com/channel/{0}/live".
+                                         format(self.channel_id), SharedVariables=self.SharedVariables)
+            if html_code is None:
                 return [False, "Failed getting Channel Data from the internet! "
                                "This means there is no good internet available!"]
-            if html == 404:
+            if html_code == 404:
                 return [False, "Failed getting Channel Data! \"" +
                         self.channel_id + "\" doesn't exist as a channel id!"]
-        if type(html) is int:
-            warning("" + str(html))
-        self.channel_name = self.get_channel_name(html_code=html, yt_player_config=yt_player_config)
+        if type(html_code) is int:
+            warning("" + str(html_code))
+        verbose("Getting Channel Name of " + self.channel_id + ".")
+        endpoint_type = get_endpoint_type(html_code)
+        if endpoint_type:
+            if endpoint_type == 'browse':
+                array = re.findall('property="og:title" content="(.+?)"', html_code)
+                if array:
+                    channel_name = array[0]
+                    warning(
+                        channel_name + " has the live stream "
+                                       "currently unlisted or private, or only for members. "
+                                       "Using safeguard. This may not be the best to leave on.\n")
+                    self.channel_name = channel_name
+            elif endpoint_type == 'watch':
+                if not yt_player_config:
+                    yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
+                if yt_player_config:
+                    if "is_live_destination" in yt_player_config:
+                        self.channel_name = yt_player_config['author']
+                    else:
+                        warning("Found a stream, the stream seemed to be a non-live stream.")
+                else:
+                    stopped("Unable to get yt player config.")
+            else:
+                warning("Unrecognized endpoint type. Endpoint Type: {0}".format(endpoint_type))
+                if not yt_player_config:
+                    yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
+                if yt_player_config:
+                    if "is_live_destination" in yt_player_config:
+                        return yt_player_config['author']
+                    else:
+                        warning("Found a stream, the stream seemed to be a non-live stream.")
+                else:
+                    stopped("Unable to get yt player config.")
+
         if self.channel_name is None:
             return [False, "Failed Getting " + self.channel_id + " channel_name."]
         return [True, "OK"]
@@ -243,37 +276,6 @@ class ChannelInfo:
         if self.EncoderClass is not None:
             self.EncoderClass.stop_recording()
             self.EncoderClass = None
-
-    def get_channel_name(self, html_code=None, yt_player_config=None):
-        verbose("Getting Channel Name of " + self.channel_id + ".")
-        if html_code is None and yt_player_config is None:
-            html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
-                                         SharedVariables=self.SharedVariables)
-            if html_code is None:
-                return None
-        endpoint_type = get_endpoint_type(html_code)
-        if endpoint_type == 'browse':
-            array = re.findall('property="og:title" content="(.+?)"', html_code)
-            if array:
-                channel_name = array[0]
-                warning(
-                    channel_name + " has the live stream "
-                                   "currently unlisted or private, or only for members. "
-                                   "Using safeguard. This may not be the best to leave on.\n")
-                return channel_name
-        elif endpoint_type == 'watch':
-            if not yt_player_config:
-                yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
-            if yt_player_config:
-                if "is_live_destination" in yt_player_config:
-                    return yt_player_config['author']
-                else:
-                    warning("Found a stream, the stream seemed to be a non-live stream.")
-            else:
-                stopped("Unable to get yt player config.")
-        else:
-            stopped("Unrecognized endpoint type.")
-            return None
 
     def get_sponsor_channel(self, html_code=None):
         from .. import is_google_account_login_in
