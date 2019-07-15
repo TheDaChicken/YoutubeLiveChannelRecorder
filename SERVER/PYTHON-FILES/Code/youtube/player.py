@@ -3,19 +3,19 @@ from datetime import datetime
 from threading import Thread
 from time import sleep
 
-from ..utils.web import download_website, download_m3u8_formats
-from ..utils.parser import parse_json
-from ..utils.other import get_format_from_data, try_get
-from ..utils.windowsNotification import show_windows_toast_notification
-from ..dataHandler import DownloadThumbnail
-from ..log import stopped, warning, info
+from ..dataHandler import CacheDataHandler
 from ..encoder import Encoder
+from ..log import stopped, warning, info
+from ..utils.other import get_format_from_data, try_get
+from ..utils.parser import parse_json
+from ..utils.web import download_website, download_m3u8_formats
+from ..utils.windowsNotification import show_windows_toast_notification
 
 
 # from .channelClass import ChannelInfo
 
 
-def openStream(channelClass, YoutubeStream):
+def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
     """
 
     Records Youtube Live Stream. This holds until live stream is over.
@@ -23,6 +23,7 @@ def openStream(channelClass, YoutubeStream):
 
     :type YoutubeStream: dict
     :type channelClass: ChannelInfo
+    :type sharedDataHandler: CacheDataHandler
     """
 
     channelClass.title = YoutubeStream['title']
@@ -31,8 +32,9 @@ def openStream(channelClass, YoutubeStream):
 
     filename = channelClass.create_filename(channelClass.video_id)
     channelClass.video_location = os.path.join("RecordedStreams", filename + '.mp4')
-    if DownloadThumbnail() is True:
-        channelClass.thumbnail_location = os.path.join("RecordedStreams", filename + '.jpg')
+    if sharedDataHandler:
+        if sharedDataHandler.getValue('DownloadThumbnail'):
+            channelClass.thumbnail_location = os.path.join("RecordedStreams", filename + '.jpg')
 
     channelClass.EncoderClass = Encoder(YoutubeStream['url'], channelClass.video_location)
     channelClass.recording_status = "Starting Recording."
@@ -68,11 +70,11 @@ def openStream(channelClass, YoutubeStream):
                                                                                                 "Recording at "
                                     + YoutubeStream['stream_resolution'] +
                                     ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
-
-    if DownloadThumbnail() is True and channelClass.privateStream is not True:
-        thread = Thread(target=channelClass.download_thumbnail, name=channelClass.channel_name)
-        thread.daemon = True  # needed control+C to work.
-        thread.start()
+    if sharedDataHandler:
+        if sharedDataHandler.getValue('DownloadThumbnail') is True and channelClass.privateStream is not True:
+            thread = Thread(target=channelClass.download_thumbnail, name=channelClass.channel_name)
+            thread.daemon = True  # needed control+C to work.
+            thread.start()
 
     if channelClass.TestUpload:
         sleep(10)

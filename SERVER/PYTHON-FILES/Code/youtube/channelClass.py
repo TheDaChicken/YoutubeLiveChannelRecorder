@@ -9,7 +9,7 @@ from time import sleep
 
 from .heatbeat import is_live
 from . import set_global_youtube_variables, generate_cpn
-from ..dataHandler import UploadThumbnail, get_upload_settings
+# from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note, crash_warning
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
 from ..utils.parser import parse_json
@@ -122,7 +122,8 @@ class ChannelInfo:
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
 
-    def __init__(self, channel_id, SharedVariables=None):
+    def __init__(self, channel_id, SharedVariables=None, cachedDataHandler=None):
+        self.cachedDataHandler = cachedDataHandler
         self.channel_id = channel_id
         self.SharedVariables = SharedVariables
 
@@ -349,7 +350,7 @@ class ChannelInfo:
                     if self.YoutubeStream is None:
                         self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
                     if self.YoutubeStream is not None:
-                        fully_recorded = self.openStream(self.YoutubeStream)
+                        fully_recorded = self.openStream(self.YoutubeStream, sharedDataHandler=self.cachedDataHandler)
                         self.YoutubeStream = None
                         if fully_recorded:
                             thread = Thread(target=self.start_upload, name=self.channel_name)
@@ -386,8 +387,8 @@ class ChannelInfo:
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
 
-    def openStream(self, YoutubeStream):
-        return openStream(self, YoutubeStream)
+    def openStream(self, YoutubeStream, sharedDataHandler=None):
+        return openStream(self, YoutubeStream, sharedDataHandler)
 
     def getYoutubeStreamInfo(self, recordingHeight=None):
         return getYoutubeStreamInfo(self, recordingHeight=recordingHeight)

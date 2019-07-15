@@ -6,8 +6,6 @@ from flask import request, redirect, Flask, url_for, jsonify
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
     google_account_logout
 from .utils.windowsNotification import show_windows_toast_notification
-from .dataHandler import add_channel_config, DownloadThumbnail, loadData, saveData, UploadVideos, save_username, \
-    save_credentials, clear_credentials, get_username, remove_channel_config
 from .log import info
 
 
@@ -42,7 +40,13 @@ app = FlaskCustom(__name__)
 
 
 def loadServer(port, cert=None, key=None):
-    sleep(1.5)
+    # Importing cached data handler before setting up shared, imports None.
+    # This is to fix that problem.
+    global cached_data_handler
+    from . import cached_data_handler as data_handler
+    cached_data_handler = data_handler
+
+    sleep(1.41)
     try:
         from gevent.pywsgi import WSGIServer as WSGIServer
     except ImportError:
@@ -91,7 +95,8 @@ def add_channel():
     del channel_array
     ok, message = run_channel(channel_id)
     if ok:
-        add_channel_config(channel_id)  # NEEDS TO ADD CHANNEL TO CONFIG
+        # NEEDS TO ADD CHANNEL TO CONFIG
+        cached_data_handler.addValueList('channel_ids', channel_id)
         info(channel_id + " has been added to the list of channels.")
         return Response(None)
     else:
@@ -112,7 +117,6 @@ def remove_channel():
                         status="server-error", status_code=500)
     channel_array = channel_array[0]
     if 'error' not in channel_array:
-        print(channel_array['class'].get('channel_id'))
         channel_array['class'].close()
         thread_class = channel_array['thread_class']
         try:
@@ -120,10 +124,10 @@ def remove_channel():
             sleep(1.0)
             if thread_class.is_alive():
                 thread_class.close()
-                return Response("Unable to Terminate.", status_code="server-error", status=500)
+                return Response("Unable to Terminate.", status="server-error", status_code=500)
         except Exception as e:
-            return Response("Cannot Remove Channel. " + str(e), status_code="server-error", status=500)
-    remove_channel_config(channel_array['class'].get('channel_id'))
+            return Response("Cannot Remove Channel. " + str(e), status="server-error", status_code=500)
+    cached_data_handler.removeValueList('channel_ids', channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
     sleep(.01)
     info(channel_id + " has been removed.")
@@ -150,19 +154,19 @@ def channelInfo():
             })
         else:
             json['channel'][channel_class.get('channel_id')].update({
-                    'name': channel_class.get('channel_name'),
-                    'is_alive': process_class.is_alive() if process_class is not None else False,
+                'name': channel_class.get('channel_name'),
+                'is_alive': process_class.is_alive() if process_class is not None else False,
             })
             if process_class.is_alive():
                 json['channel'][channel_class.get('channel_id')].update({
-                        'video_id': channel_class.get('video_id'),
-                        'live': channel_class.get('live_streaming'),
-                        'privateStream': channel_class.get('privateStream'),
-                        'live_scheduled': channel_class.get('live_scheduled'),
-                        'broadcastId': channel_class.get('broadcastId'),
-                        'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
-                        'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
-                        if channel_class.get('last_heartbeat') is not None else None,
+                    'video_id': channel_class.get('video_id'),
+                    'live': channel_class.get('live_streaming'),
+                    'privateStream': channel_class.get('privateStream'),
+                    'live_scheduled': channel_class.get('live_scheduled'),
+                    'broadcastId': channel_class.get('broadcastId'),
+                    'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
+                    'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
+                    if channel_class.get('last_heartbeat') is not None else None,
                 })
                 if channel_class.get('live_streaming') is True:
                     json['channel'][channel_class.get('channel_id')].update({
@@ -184,7 +188,7 @@ def channelInfo():
 def getQuickSetting():
     json = {
         'settings': {
-            'DownloadThumbnail': DownloadThumbnail()
+            'DownloadThumbnail': cached_data_handler.getValue('DownloadThumbnail')
         }
     }
     return Response(json)
@@ -196,18 +200,15 @@ def swapDownloadThumbnail():
         return Response("Bad Request. You may want to update your client!", status='client-error',
                         status_code=400)
     if request.method == 'POST':
-        yaml_config = loadData()
-        if 'DownloadThumbnail' not in yaml_config:
+        if 'DownloadThumbnail' not in cached_data_handler.getDict():
             return Response("Failed to find DownloadThumbnail in data file. It's really broken. :P",
                             status="server-error", status_code=500)
-        if yaml_config['DownloadThumbnail'] is True:
-            yaml_config['DownloadThumbnail'] = False
-        elif yaml_config['DownloadThumbnail'] is False:
-            yaml_config['DownloadThumbnail'] = True
+        if cached_data_handler.getValue('DownloadThumbnail') is True:
+            cached_data_handler.setValue('DownloadThumbnail', False)
+        elif cached_data_handler.getValue('DownloadThumbnail') is False:
+            cached_data_handler.setValue('DownloadThumbnail', True)
 
-        info('DownloadThumbnail has been set to: ' + str(yaml_config['DownloadThumbnail']))
-        saveData(yaml_config)
-        del yaml_config
+        info('DownloadThumbnail has been set to: ' + str(cached_data_handler.getValue('DownloadThumbnail')))
         return Response(None)
 
 
@@ -216,14 +217,14 @@ def swapDownloadThumbnail():
 def getUploadSetting():
     json = {
         'settings': {
-            'UploadLiveStreams': UploadVideos(),
-            'DownloadThumbnail': DownloadThumbnail()
+            'UploadLiveStreams': cached_data_handler.getValue('UploadLiveStreams'),
+            'DownloadThumbnail': cached_data_handler.getValue('DownloadThumbnail'),
         }
     }
     return Response(json)
 
 
-# TODO CHANGE STATE VARIABLE TO session['state']
+# TODO CHANGE STATE VARIABLE TO some session['state']
 state = None
 
 
@@ -236,14 +237,11 @@ def youtube_get_login_url():
     return Response(url)
 
 
-state = None
-
-
 @app.route('/login')
 def youtube_login():
-    from .youtubeAPI import does_account_exists, get_account_login_in_link
-    if does_account_exists():
-        return Response("Youtube account already logged-in", mimetype='text/plain', status=500)
+    from .youtubeAPI import get_account_login_in_link
+    if 'youtube_api_credentials' not in cached_data_handler:
+        return Response("Youtube account already logged-in", status='client-error', status_code=500)
     url = url_for('YoutubeLoginCallBack', _external=True)
     global state
     link, state = get_account_login_in_link(url)
@@ -258,15 +256,15 @@ def youtube_login_call_back():
     url = url_for('YoutubeLoginCallBack', _external=True)
     credentials = redirect_credentials(authorization_response, state, url)
     username = get_youtube_account_user_name(credentials_build(credentials))
-    save_username(username)
-    save_credentials(credentials)
+    cached_data_handler.setValue('youtube_api_account_username', username)
+    cached_data_handler.setValue('youtube_api_credentials', credentials)
     state = None
     return Response(None)
 
 
 @app.route('/logout')
 def youtube_log_out():
-    if clear_credentials() is True:
+    if cached_data_handler.deleteKey('youtube_api_credentials') is True:
         return Response(None)
     else:
         return Response("There are no Youtube Account logged-in, to log out.",
@@ -276,11 +274,10 @@ def youtube_log_out():
 # For Getting Login-in Youtube Account info
 @app.route('/getUploadInfo')
 def YoutubeLoginInfo():
-    from .youtubeAPI import does_account_exists
     json = {
         'info': {
-            'YoutubeAccountName': get_username(),
-            'YoutubeAccountLogin-in': does_account_exists(),
+            'YoutubeAccountName': cached_data_handler.getValue('youtube_api_account_username'),
+            'YoutubeAccountLogin-in': 'youtube_api_credentials' not in cached_data_handler.getDict(),
         }
     }
     return Response(json)
@@ -291,7 +288,7 @@ def YoutubeLoginInfo():
 def YoutubeTestUpload():
     channel_id = request.args.get('channel_id')
     if channel_id is None:
-        return Response("You need Channel_ID in args.", mimetype='text/plain', status=500)
+        return Response("You need Channel_ID in args.", status='client-error', status_code=500)
     ok, message = upload_test_run(channel_id)
     if ok:
         info(channel_id + " has been added for test uploading.")
@@ -305,7 +302,7 @@ def Youtube_Login_FULLY():
     username = request.args.get('username')
     password = request.args.get('password')
     if username is None or password is None:
-        return Response("You need username and password in args.", mimetype='text/plain', status=500)
+        return Response("You need username and password in args.", status='client-error', status_code=500)
     ok, message = google_account_login(username, password)
     if ok:
         return Response(None)
@@ -340,7 +337,7 @@ def listStreams():
 def uploadVideo():
     stream_name = request.args.get('stream_name')
     if stream_name is None:
-        return Response("You need stream_name in args.", mimetype='text/plain', status=500)
+        return Response("You need stream_name in args.", status='client-error', status_code=500)
     from os import path, getcwd
     stream_folder = path.join(getcwd(), "RecordedStreams")
     from flask import send_from_directory

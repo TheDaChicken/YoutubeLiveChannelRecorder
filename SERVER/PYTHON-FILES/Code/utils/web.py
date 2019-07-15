@@ -64,7 +64,7 @@ def __build__cookies(cookies=None):
         try:
             cj.load(custom_list=cookies)
         except LoadError as e:
-            if 'format file' in str(e):
+            if 'format' in str(e):
                 print("")
                 warning("The Cookies File corrupted, deleting...")
                 os.remove("cookies.txt")

@@ -1,9 +1,10 @@
 import os
 from multiprocessing import Process
-from multiprocessing import managers
+from multiprocessing.managers import BaseManager, Namespace
 
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website, __build__cookies
+from .dataHandler import CacheDataHandler
 from .log import warning, verbose
 
 """
@@ -19,19 +20,36 @@ channel_main_array = []
 ServerClass = None
 
 baseManagerChannelInfo = None  # type: BaseManager
+baseManagerDataHandler = None  # type: BaseManager
+
 shareable_variables = None  # type: Namespace
+cached_data_handler = None  # type: CacheDataHandler
 
 
-def setupShared():
+def setupSharedVariables():
     global baseManagerChannelInfo
+    global baseManagerDataHandler
     global shareable_variables
-    managers.BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
-    baseManagerChannelInfo = managers.BaseManager()
-    baseManagerChannelInfo.start()
-    shareable_variables = managers.Namespace()
+    global cached_data_handler
+
+    BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
+    BaseManager.register('CacheDataHandler', CacheDataHandler)
+
+    # Regular Shared Variables
+    shareable_variables = Namespace()
     shareable_variables.DebugMode = False
 
-    # Cache Cookies.
+    # start baseManager for channelInfo.
+    baseManagerChannelInfo = BaseManager()
+    baseManagerChannelInfo.start()
+
+    # Cache Data File. (Data Cache is in a class)
+    baseManagerDataHandler = BaseManager()
+    baseManagerDataHandler.start()
+    cached_data_handler = baseManagerDataHandler.CacheDataHandler()
+
+    # Cache Cookies in shareable_variables. (Cookies are cached in a list)
+    # Cannot make into global class due to problems.
     from .utils.web import __build__cookies
     cookieHandler = __build__cookies()
     cookies_ = cookieHandler.get_cookie_list()
@@ -47,8 +65,8 @@ class HandlerChannelInfo(ChannelInfo):
 
     """
 
-    def __init__(self, channel_id, SharedVariables):
-        super().__init__(channel_id, SharedVariables)
+    def __init__(self, channel_id, SharedVariables, cachedDataHandler=None):
+        super().__init__(channel_id, SharedVariables, cachedDataHandler)
 
     def get(self, variable_name):
         return getattr(self, variable_name)
@@ -61,7 +79,8 @@ class HandlerChannelInfo(ChannelInfo):
 
 
 def run_channel(channel_id, startup=False):
-    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables)
+    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
+                                                                     cachedDataHandler=cached_data_handler)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool

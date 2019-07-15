@@ -1,7 +1,8 @@
 import os
+import traceback
 
-from .log import info, stopped, warning
-from .dataHandler import loadData, get_credentials
+from .log import info, stopped, warning, error_warning
+from . import cached_data_handler
 
 import random
 import time
@@ -65,19 +66,12 @@ VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 
-def get_youtube_client(ignoreConfig=False):
-    data_ = loadData()
-    if does_account_exists():
-        ok = False
-        if not ignoreConfig and data_['UploadLiveStreams']:
-            ok = True
-        elif ignoreConfig:
-            ok = True
-        if ok:
-            info("Found Youtube Account login in. Getting Youtube Upload Client.")
-            youtube_client = credentials_build(data_['credentials'])
-            del data_
-            return youtube_client
+def __get_youtube_api_credentials():
+    if 'credentials' in cached_data_handler.getDict():
+        info("Found Youtube Account login in. Getting Youtube Upload Client.")
+        youtube_client = credentials_build(cached_data_handler.getValue('youtube_api_credentials'))
+        return youtube_client
+    return None
 
 
 def get_account_login_in_link(redirect_url):
@@ -87,7 +81,7 @@ def get_account_login_in_link(redirect_url):
     # flow.redirect_uri = flask.url_for('oauth2callback', _external=True)
     flow.redirect_uri = redirect_url
 
-    if not does_account_exists():
+    if 'youtube_api_credentials' not in cached_data_handler.getDict():
         authorization_url, state = flow.authorization_url(
             # Enable offline access so that you can refresh an access token without
             # re-prompting the user for permission. Recommended for web server apps.
@@ -104,7 +98,7 @@ def get_account_login_in_link(redirect_url):
 
 
 def redirect_credentials(authorization_response, state, url):
-    def credentials_to_dict(credentials):
+    def credentials_to_dict():
         return {'token': credentials.token,
                 'refresh_token': credentials.refresh_token,
                 'token_uri': credentials.token_uri,
@@ -117,27 +111,21 @@ def redirect_credentials(authorization_response, state, url):
     flow.redirect_uri = url
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
-    return credentials_to_dict(credentials)
+    return credentials_to_dict()
 
 
 def credentials_build(credentials):
     credentials = Credentials(**credentials)
-
-    if build is not None:
+    if build:
         try:
             b = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
                       credentials=credentials)
-        except Exception as e:
-            warning(str(e))
+        except Exception:
+            error_warning(traceback.format_exc())
             warning("Unable to build Youtube API Client.")
             return None
-    return b
-
-
-def does_account_exists():
-    if get_credentials() is None:
-        return False
-    return True
+        return b
+    return None
 
 
 # Now Youtube Stuff.

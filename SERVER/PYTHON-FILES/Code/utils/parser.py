@@ -1,7 +1,7 @@
 import re
 import traceback
 
-from ..log import warning, stopped, crash_warning, error_warning
+from ..log import warning, stopped, error_warning
 import json
 
 
