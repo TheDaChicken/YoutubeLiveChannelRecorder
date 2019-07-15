@@ -171,4 +171,6 @@ def download_json(url, headers=None, data=None, transform_source=None, SharedVar
 
 def download_m3u8_formats(m3u8_url):
     m3u8_doc = download_website(m3u8_url)
-    return parse_m3u8_formats(m3u8_doc)
+    if m3u8_doc:
+        return parse_m3u8_formats(m3u8_doc)
+    return None
