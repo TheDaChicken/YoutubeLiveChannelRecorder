@@ -88,6 +88,8 @@ def add_channel():
     channel_id = request.args.get('channel_id')
     if channel_id is None:
         return Response("You need Channel_ID in args.", status="client-error", status_code=400)
+    if channel_id is '':
+        return Response('You need to specify a valid channel id.', status='client-error', status_code=400)
     channel_array = [channel_ for channel_ in channel_main_array
                      if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
                      channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
