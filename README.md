@@ -14,7 +14,7 @@
 ### CREDITS
   
   Thanks to people of [youtube-dl!](https://github.com/ytdl-org/youtube-dl/)
-  Youtube-dl helped me get a head start!
+  Some code came from youtube-dl.
 
 ### EXAMPLE STREAM RECORDINGS (ORIGINAL DELETED) 
   
