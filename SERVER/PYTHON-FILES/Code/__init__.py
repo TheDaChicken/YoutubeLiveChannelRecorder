@@ -34,7 +34,6 @@ def setupShared():
     # Cache Cookies.
     from .utils.web import __build__cookies
     cookieHandler = __build__cookies()
-    cookieHandler.load()
     cookies_ = cookieHandler.get_cookie_list()
     if cookies_:
         shareable_variables.CachedCookieList = cookies_
