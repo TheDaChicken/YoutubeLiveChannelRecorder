@@ -56,13 +56,13 @@ def try_get(src, getter, expected_type=None):
 
 def getTimeZone():
     try:
-        import tzlocal as tzlocal
+        import tzlocal as local
     except ImportError:
-        tzlocal = None
+        local = None
         warning("Unable to use TIMEZONE PLACEHOLDER IF TZLOCAL IS NOT INSTALLED.")
-    if tzlocal:
+    if local:
         try:
-            return tzlocal.get_localzone().zone
+            return local.get_localzone().zone
         except Exception as e:
             warning(e)
             return None
