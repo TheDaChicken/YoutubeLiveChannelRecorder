@@ -9,7 +9,6 @@ from time import sleep
 
 from .heatbeat import is_live
 from . import set_global_youtube_variables, generate_cpn
-# from ..dataHandler import UploadThumbnail, get_upload_settings
 from ..log import verbose, stopped, warning, info, note, crash_warning
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
 from ..utils.parser import parse_json
@@ -424,9 +423,14 @@ class ChannelInfo:
 
     # Uploading
     def start_upload(self):
+        def get_upload_settings(channel_name):
+            upload_settings = self.cachedDataHandler.getValue('UploadSettings')
+            if channel_name in upload_settings:
+                return upload_settings[channel_name]
+            return upload_settings[None]
         # Allows to get the most updated client without saving it, since it might change.
-        from ..youtubeAPI import get_youtube_client, initialize_upload, upload_thumbnail
-        youtube_client = get_youtube_client(ignoreConfig=self.TestUpload)
+        from ..youtubeAPI import __get_youtube_api_credentials, initialize_upload, upload_thumbnail
+        youtube_client = __get_youtube_api_credentials()
         if youtube_client:
             verbose("Starting Upload Thread ...")
             note("Closing the python script stops the upload.")
@@ -437,7 +441,7 @@ class ChannelInfo:
                                                     self._replace_variables('\n'.join(settings['description'])),
                                                     self._replace_variables(settings['tags']),
                                                     settings['CategoryID'], settings['privacyStatus'])
-                if UploadThumbnail() is True:
+                if self.cachedDataHandler.getValue('UploadThumbnail') is True:
                     info("Uploading Thumbnail for {0}".format(self.channel_name))
                     sleep(1.5)
                     upload_thumbnail(youtube_client, upload_video_id,
