@@ -1,3 +1,4 @@
+import traceback
 from threading import Thread
 from time import sleep
 
@@ -6,7 +7,7 @@ from flask import request, redirect, Flask, url_for, jsonify
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
     google_account_logout
 from .utils.windowsNotification import show_windows_toast_notification
-from .log import info
+from .log import info, error_warning
 
 
 # THIS FILE CONTAINS SERVER RELATED STUFF
@@ -126,6 +127,7 @@ def remove_channel():
                 thread_class.close()
                 return Response("Unable to Terminate.", status="server-error", status_code=500)
         except Exception as e:
+            error_warning(traceback.format_exc())
             return Response("Cannot Remove Channel. " + str(e), status="server-error", status_code=500)
     cached_data_handler.removeValueList('channel_ids', channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
