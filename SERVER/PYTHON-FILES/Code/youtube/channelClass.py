@@ -9,7 +9,7 @@ from time import sleep
 
 from .heatbeat import is_live
 from . import set_global_youtube_variables, generate_cpn
-from ..log import verbose, stopped, warning, info, note, crash_warning
+from ..log import verbose, stopped, warning, info, note, crash_warning, error_warning
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
@@ -447,8 +447,8 @@ class ChannelInfo:
                     upload_thumbnail(youtube_client, upload_video_id,
                                      self.thumbnail_location)
                     info("Thumbnail Done Uploading!")
-            except Exception as e:
-                warning(e)
+            except Exception:
+                error_warning(traceback.format_exc())
                 warning("Unable to upload stream to Youtube.")
 
     def _replace_variables(self, text):
