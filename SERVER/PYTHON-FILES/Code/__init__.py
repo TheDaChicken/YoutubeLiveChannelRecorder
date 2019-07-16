@@ -86,7 +86,6 @@ def run_channel(channel_id, startup=False):
         del ok_bool
         del error_message
         channel_holder_class.registerCloseEvent()
-        # check_streaming_channel_thread.daemon = True  # needed control+C to work.
         channel_name = channel_holder_class.get("channel_name")
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
                                                  name="{0} - Heartbeat Thread".format(channel_name))
@@ -100,22 +99,20 @@ def run_channel(channel_id, startup=False):
 
 
 def upload_test_run(channel_id, returnMessage=False):
-    # TODO UPDATE.
-    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables)
+    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
+                                                                     cachedDataHandler=cached_data_handler)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
         del error_message
 
         if not channel_holder_class.is_live():
-            del channel_holder_class
             return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
 
         channel_holder_class.registerCloseEvent()
         channel_name = channel_holder_class.get("channel_name")
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
                                                  name="{0} - Heartbeat Thread".format(channel_name), args=(True,))
-        check_streaming_channel_thread.daemon = True  # needed control+C to work.
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         if returnMessage is True:
@@ -126,7 +123,7 @@ def upload_test_run(channel_id, returnMessage=False):
         else:
             warning(error_message)
             channel_main_array.append({'class': channel_holder_class, "error": error_message})
-    return channel_holder_class
+    return [True, "OK"]
 
 
 # VERY BETA

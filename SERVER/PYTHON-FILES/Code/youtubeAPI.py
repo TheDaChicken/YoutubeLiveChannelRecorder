@@ -2,7 +2,6 @@ import os
 import traceback
 
 from .log import info, stopped, warning, error_warning
-from . import cached_data_handler
 
 import random
 import time
@@ -66,15 +65,16 @@ VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 
-def __get_youtube_api_credentials():
-    if 'credentials' in cached_data_handler.getDict():
+def get_youtube_api_credentials(cached_data_handler):
+    if 'youtube_api_credentials' in cached_data_handler.getDict():
         info("Found Youtube Account login in. Getting Youtube Upload Client.")
         youtube_client = credentials_build(cached_data_handler.getValue('youtube_api_credentials'))
         return youtube_client
     return None
 
 
-def get_account_login_in_link(redirect_url):
+def get_account_login_in_link(redirect_url, cached_data_handler):
+    from . import cached_data_handler
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, scopes=YOUTUBE_READ_WRITE_SCOPE)
 

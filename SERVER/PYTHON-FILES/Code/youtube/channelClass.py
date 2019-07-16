@@ -429,8 +429,8 @@ class ChannelInfo:
                 return upload_settings[channel_name]
             return upload_settings[None]
         # Allows to get the most updated client without saving it, since it might change.
-        from ..youtubeAPI import __get_youtube_api_credentials, initialize_upload, upload_thumbnail
-        youtube_client = __get_youtube_api_credentials()
+        from ..youtubeAPI import get_youtube_api_credentials, initialize_upload, upload_thumbnail
+        youtube_client = get_youtube_api_credentials(self.cachedDataHandler)
         if youtube_client:
             verbose("Starting Upload Thread ...")
             note("Closing the python script stops the upload.")

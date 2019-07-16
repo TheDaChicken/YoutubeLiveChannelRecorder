@@ -236,19 +236,19 @@ state = None
 
 @app.route('/getLoginURL')
 def youtube_get_login_url():
-    from flask import Response, url_for
-    url = url_for('YoutubeLogin', _external=True) + "?unlockCode=" + "OK"
+    from flask import url_for
+    url = url_for('youtube_login', _external=True) + "?unlockCode=" + "OK"
     return Response(url)
 
 
 @app.route('/login')
 def youtube_login():
     from .youtubeAPI import get_account_login_in_link
-    if 'youtube_api_credentials' not in cached_data_handler:
+    if 'youtube_api_credentials' in cached_data_handler.getDict():
         return Response("Youtube account already logged-in", status='client-error', status_code=500)
-    url = url_for('YoutubeLoginCallBack', _external=True)
+    url = url_for('youtube_login_call_back', _external=True)
     global state
-    link, state = get_account_login_in_link(url)
+    link, state = get_account_login_in_link(url, cached_data_handler)
     return redirect(link)
 
 
@@ -257,7 +257,7 @@ def youtube_login_call_back():
     from .youtubeAPI import credentials_build, get_youtube_account_user_name, redirect_credentials
     authorization_response = request.url
     global state
-    url = url_for('YoutubeLoginCallBack', _external=True)
+    url = url_for('youtube_login_call_back', _external=True)
     credentials = redirect_credentials(authorization_response, state, url)
     username = get_youtube_account_user_name(credentials_build(credentials))
     cached_data_handler.setValue('youtube_api_account_username', username)
@@ -281,7 +281,7 @@ def YoutubeLoginInfo():
     json = {
         'info': {
             'YoutubeAccountName': cached_data_handler.getValue('youtube_api_account_username'),
-            'YoutubeAccountLogin-in': 'youtube_api_credentials' not in cached_data_handler.getDict(),
+            'YoutubeAccountLogin-in': 'youtube_api_credentials' in cached_data_handler.getDict(),
         }
     }
     return Response(json)
