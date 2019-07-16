@@ -222,7 +222,7 @@ def getUploadSetting():
     json = {
         'settings': {
             'UploadLiveStreams': cached_data_handler.getValue('UploadLiveStreams'),
-            'DownloadThumbnail': cached_data_handler.getValue('DownloadThumbnail'),
+            'UploadThumbnail': cached_data_handler.getValue('UploadThumbnail'),
         }
     }
     return Response(json)
