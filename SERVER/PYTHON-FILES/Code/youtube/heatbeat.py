@@ -1,7 +1,7 @@
 import traceback
 from time import sleep
 
-from ..log import warning, YoutubeReply, stopped
+from ..log import warning, YoutubeReply, stopped, error_warning
 from ..utils.other import get_highest_thumbnail, try_get
 from ..utils.web import download_json
 
@@ -97,10 +97,9 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
                 return False
             warning("The Program couldn't find any value that matches the normal heartbeat. Returning False.")
         return False
-    except Exception as e1:
+    except Exception:
         warning("Error occurred when doing Heartbeat.")
-        warning("Exception type: " + str(type(e1)) + ", " + str(e1) +
-                "\nTraceback: " + traceback.format_exc())
+        error_warning(traceback.format_exc())
         return 1
 
 
