@@ -102,6 +102,7 @@ if __name__ == '__main__':
                             privateStream = channelInfo.get('privateStream')
                             sponsor_on_channel = channelInfo.get('sponsor_on_channel')
                             live_scheduled = channelInfo.get('live_scheduled')
+                            video_id = channelInfo.get('video_id')
                             if live is None:
                                 message.append("{0} [INTERNET OFFLINE]".format(Fore.LIGHTBLUE_EX))
                             elif live is True:
@@ -109,6 +110,8 @@ if __name__ == '__main__':
                                 message.append("{0} Status: {1}".format(Fore.LIGHTRED_EX,
                                                                         recording_status if recording_status is not None
                                                                         else 'UNKNOWN.'))
+                                if video_id:
+                                    message.append("{0} [VIDEO ID: {1}]".format(Fore.LIGHTMAGENTA_EX, video_id))
                                 if broadcastId:
                                     message.append("{0} [RECORDING BROADCAST ID: {1}]".format(Fore.LIGHTYELLOW_EX,
                                                                                               broadcastId))
