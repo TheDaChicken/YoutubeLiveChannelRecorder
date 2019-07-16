@@ -12,7 +12,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
     Checks if channel is live using the normal Youtube heartbeat.
     Also sets heartbeat related variables.
 
-    :type cookies: MozillaCookieJar
+    :param SharedVariables: something lol
     :type channel_Class: ChannelInfo
     :type alreadyChecked: bool
     """
