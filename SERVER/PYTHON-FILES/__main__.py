@@ -3,7 +3,7 @@ import multiprocessing
 from time import sleep
 from Code.utils.other import try_get
 from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setupSharedVariables
-from Code.log import stopped, warning, disable_youtube_reply
+from Code.log import stopped, warning, disable_youtube_reply, note
 from Code.serverHandler import run_server
 # from Code.dataHandler import createDataFile, loadData, doesDataExist
 
@@ -28,6 +28,8 @@ if __name__ == '__main__':
     # FOR SSL
     key = try_get(cached_data_handler, lambda x: x.getValue('ssl_key'), str)
     cert = try_get(cached_data_handler, lambda x: x.getValue('ssl_cert'), str)
+
+    note("The delay between checking different channels is given by YouTube. The delay may change.")
 
     if not check_internet():
         stopped("Not able to access the internet!")
