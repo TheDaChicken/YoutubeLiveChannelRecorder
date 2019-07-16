@@ -441,9 +441,9 @@ class ChannelInfo:
                                                     self._replace_variables('\n'.join(settings['description'])),
                                                     self._replace_variables(settings['tags']),
                                                     settings['CategoryID'], settings['privacyStatus'])
+                sleep(3)
                 if self.cachedDataHandler.getValue('UploadThumbnail') is True:
                     info("Uploading Thumbnail for {0}".format(self.channel_name))
-                    sleep(1.5)
                     upload_thumbnail(youtube_client, upload_video_id,
                                      self.thumbnail_location)
                     info("Thumbnail Done Uploading!")
