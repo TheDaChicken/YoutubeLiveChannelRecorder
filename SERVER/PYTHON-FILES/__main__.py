@@ -29,7 +29,7 @@ if __name__ == '__main__':
     key = try_get(cached_data_handler, lambda x: x.getValue('ssl_key'), str)
     cert = try_get(cached_data_handler, lambda x: x.getValue('ssl_cert'), str)
 
-    note("The delay between checking different channels is given by YouTube. The delay may change.")
+    note("The delay between checking if channels are live is given by YouTube. The delay may change.")
 
     if not check_internet():
         stopped("Not able to access the internet!")
