@@ -1,5 +1,5 @@
 # YoutubeLiveChannelRecorder
-  Records Youtube Livestreams for a certain channels in a list automatically until specific channel removed from the list!
+  Records Youtube Livestreams for given channels automatically!
   
 ### NOTE
   This is a server program. You will need to use the client in order to control this program.
