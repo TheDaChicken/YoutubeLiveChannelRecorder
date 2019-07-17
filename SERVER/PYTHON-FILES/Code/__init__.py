@@ -98,7 +98,7 @@ def run_channel(channel_id, startup=False):
         return [False, error_message]
 
 
-def upload_test_run(channel_id, returnMessage=False):
+def upload_test_run(channel_id, startup=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
                                                                      cachedDataHandler=cached_data_handler)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
@@ -115,15 +115,11 @@ def upload_test_run(channel_id, returnMessage=False):
                                                  name="{0} - Heartbeat Thread".format(channel_name), args=(True,))
         check_streaming_channel_thread.start()
         channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
-        if returnMessage is True:
-            return [True, "OK"]
+        return [True, "OK"]
     else:
-        if returnMessage is True:
-            return [False, error_message]
-        else:
-            warning(error_message)
-            channel_main_array.append({'class': channel_holder_class, "error": error_message})
-    return [True, "OK"]
+        if startup:
+            channel_main_array.append({'class': channel_holder_class, "error": error_message, 'thread_class': None})
+        return [False, error_message]
 
 
 # VERY BETA
