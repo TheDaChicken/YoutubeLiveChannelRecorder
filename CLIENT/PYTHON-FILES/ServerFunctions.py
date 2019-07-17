@@ -94,6 +94,12 @@ def youtube_fully_login(ip, port, username, password):
     return format_response(html_reply)
 
 
+def update_data_cache(ip, port):
+    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/updateDataCache",
+                               Headers=DefaultHeaders)
+    return format_response(html_reply)
+
+
 def youtube_fully_logout(ip, port):
     html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/youtubeLOGout",
                                Headers=DefaultHeaders)

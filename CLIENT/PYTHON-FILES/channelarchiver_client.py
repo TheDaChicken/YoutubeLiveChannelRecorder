@@ -7,7 +7,7 @@ from colorama import Fore
 
 from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
-    get_youtube_api_info, youtube_login, youtube_logout, test_upload
+    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache
 from utils import stringToInt
 from log import info, stopped, warning, EncoderLog
 
@@ -338,16 +338,23 @@ if __name__ == '__main__':
                                                                       'YoutubeAccountLogin-in').get('description')))
                     print(''.join(message))
                     loopNumber += 1
-                    message = ["    {0}{1}: {2}{3} ".format(Fore.LIGHTCYAN_EX, str(loopNumber),
-                                                            Fore.WHITE,
-                                                            'Test Upload',
-                                                            Fore.LIGHTRED_EX,
-                                                            Fore.LIGHTYELLOW_EX),
-                               '{0}[ADDS CHANNEL ID TO TEST UPLOAD LIST]'.format(Fore.LIGHTRED_EX),
-                               "\n         {0}{1}".format(Fore.WHITE, "Records a channel for a few seconds. Then "
-                                                                      "tries uploading that through the YouTube API. "
-                                                                      "")]
+                    message = ["    {0}{1}: {2}{3} {4}[ADDS CHANNEL ID TO TEST UPLOAD LIST]"
+                               "\n         "
+                               "{5}{6}Records a channel for a few seconds. Then tries uploading that through the "
+                               "YouTube API.".format(
+                        Fore.LIGHTCYAN_EX, str(loopNumber), Fore.WHITE, 'Test Upload', Fore.LIGHTRED_EX,
+                        Fore.LIGHTYELLOW_EX, Fore.LIGHTRED_EX, Fore.WHITE)]
                     print(''.join(message))
+                loopNumber += 1
+                message = ["    {0}{1}: {2}{3} ".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                        Fore.WHITE,
+                                                        'Refresh Data File Cache',
+                                                        Fore.LIGHTRED_EX,
+                                                        Fore.LIGHTYELLOW_EX),
+                           '{0}[REFRESH]'.format(Fore.LIGHTRED_EX),
+                           "\n         {0}{1}".format(Fore.WHITE,
+                                                      "Refreshes the cache created from the data.yml file.")]
+                print(''.join(message))
                 print("  - Type a specific number to do the specific action. - ")
                 option = stringToInt(input(":"))
                 if option:
@@ -446,6 +453,17 @@ if __name__ == '__main__':
                         else:
                             server_settings = reply  # type: dict
                             server_youtube_api_info = reply2  # type: dict
+                    elif option == (server_settings_amount + 3):
+                        print("")
+                        print("")
+                        sleep(.5)
+                        print(Fore.LIGHTRED_EX + "Updating the cache..")
+                        ok, reply = update_data_cache(serverIP, serverPort)
+                        if not ok:
+                            print("")
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            input("Press enter to go back to Selection.")
                 else:
                     print(Fore.LIGHTRED_EX + "That is not a number!")
                     print("")

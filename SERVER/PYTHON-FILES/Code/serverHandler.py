@@ -232,6 +232,13 @@ def YoutubeAPILoginInfo():
     return Response(json)
 
 
+# For Getting Login-in Youtube Account info
+@app.route('/updateDataCache')
+def updateDataCache():
+    cached_data_handler.updateCache()
+    return Response(None)
+
+
 # TODO CHANGE STATE VARIABLE TO some session['state']
 
 state = None
