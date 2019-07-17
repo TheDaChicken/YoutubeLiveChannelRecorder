@@ -7,7 +7,7 @@ from colorama import Fore
 
 from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
-    get_youtube_api_info, youtube_login, youtube_logout
+    get_youtube_api_info, youtube_login, youtube_logout, test_upload
 from utils import stringToInt
 from log import info, stopped, warning, EncoderLog
 
@@ -337,6 +337,17 @@ if __name__ == '__main__':
                                                                   server_youtube_api_info.get(
                                                                       'YoutubeAccountLogin-in').get('description')))
                     print(''.join(message))
+                    loopNumber += 1
+                    message = ["    {0}{1}: {2}{3} ".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                            Fore.WHITE,
+                                                            'Test Upload',
+                                                            Fore.LIGHTRED_EX,
+                                                            Fore.LIGHTYELLOW_EX),
+                               '{0}[ADDS CHANNEL ID TO TEST UPLOAD LIST]'.format(Fore.LIGHTRED_EX),
+                               "\n         {0}{1}".format(Fore.WHITE, "Records a channel for a few seconds. Then "
+                                                                      "tries uploading that through the YouTube API. "
+                                                                      "")]
+                    print(''.join(message))
                 print("  - Type a specific number to do the specific action. - ")
                 option = stringToInt(input(":"))
                 if option:
@@ -382,6 +393,44 @@ if __name__ == '__main__':
                                 print("")
                                 print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                                 sleep(3.5)
+                        ok, reply = get_server_settings(serverIP, serverPort)
+                        ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
+                        if not ok:
+                            print("")
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        elif not ok2:
+                            print("")
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply2)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        else:
+                            server_settings = reply  # type: dict
+                            server_youtube_api_info = reply2  # type: dict
+                    elif option == (server_settings_amount + 2):
+                        if server_youtube_api_info:
+                            if not server_youtube_api_info.get('YoutubeAccountLogin-in').get('value'):
+                                print("")
+                                warning("There is no YouTube Account Logged into the YouTube API.\nIts best to use "
+                                        "Test Upload with a YouTube Account Logged into the YouTube API.")
+                                input("Press enter to keep going.")
+                                print("")
+                                print("")
+                        print("To Find The Channel_IDs USE THIS: ")
+                        print("https://commentpicker.com/youtube-channel-id.php")
+                        temp_channel_id = input("Channel ID: ")
+                        ok, reply = test_upload(serverIP, serverPort, temp_channel_id)
+                        del temp_channel_id
+                        print("")
+                        print("")
+                        if not ok:
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        else:
+                            print(Fore.LIGHTGREEN_EX + "Channel has now been added.")
+                        print("")
+                        input("Press enter to go back to Selection.")
+                        # Refresh
                         ok, reply = get_server_settings(serverIP, serverPort)
                         ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
                         if not ok:
