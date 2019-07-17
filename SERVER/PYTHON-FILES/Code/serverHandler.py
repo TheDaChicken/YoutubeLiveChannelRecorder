@@ -187,48 +187,53 @@ def channelInfo():
     return Response(json)
 
 
-# CHANGING SETTINGS
-@app.route('/getQuickSettings')
-def getQuickSetting():
-    json = {
-        'settings': {
-            'DownloadThumbnail': cached_data_handler.getValue('DownloadThumbnail')
-        }
-    }
-    return Response(json)
-
-
-@app.route('/swap/DownloadThumbnail', methods=['GET', 'POST'])
-def swapDownloadThumbnail():
+@app.route('/swap/<name>', methods=['GET', 'POST'])
+def swapDownloadThumbnail(name):
     if request.method == 'GET':
         return Response("Bad Request. You may want to update your client!", status='client-error',
                         status_code=400)
     if request.method == 'POST':
-        if 'DownloadThumbnail' not in cached_data_handler.getDict():
-            return Response("Failed to find DownloadThumbnail in data file. It's really broken. :P",
+        if name not in cached_data_handler.getDict():
+            return Response("Failed to find {0} in data file. It's really broken. :P".format(name),
                             status="server-error", status_code=500)
-        if cached_data_handler.getValue('DownloadThumbnail') is True:
-            cached_data_handler.setValue('DownloadThumbnail', False)
-        elif cached_data_handler.getValue('DownloadThumbnail') is False:
-            cached_data_handler.setValue('DownloadThumbnail', True)
+        if cached_data_handler.getValue(name) is True:
+            cached_data_handler.setValue(name, False)
+        elif cached_data_handler.getValue(name) is False:
+            cached_data_handler.setValue(name, True)
 
-        info('DownloadThumbnail has been set to: ' + str(cached_data_handler.getValue('DownloadThumbnail')))
+        info('{0} has been set to: {1}'.format(name, str(cached_data_handler.getValue(name))))
         return Response(None)
 
 
 # For Upload Settings
-@app.route('/getUploadSettings')
-def getUploadSetting():
+@app.route('/getServerSettings')
+def getSetting():
     json = {
-        'settings': {
-            'UploadLiveStreams': cached_data_handler.getValue('UploadLiveStreams'),
-            'UploadThumbnail': cached_data_handler.getValue('UploadThumbnail'),
-        }
+        'DownloadThumbnail': {'value': cached_data_handler.getValue('DownloadThumbnail'),
+                              'description': 'Downloads the thumbnail from the original stream.'},
+        'UploadLiveStreams': {'value': cached_data_handler.getValue('UploadLiveStreams'),
+                              'description':
+                                  'Auto uploads recorded YouTube Live streams to YouTube using the YouTube API.'},
+        'UploadThumbnail': {'value': cached_data_handler.getValue('UploadThumbnail'),
+                            'description':
+                                'Uploads the thumbnail from the original stream to the auto uploaded YouTube version.'},
+    }
+    return Response(json)
+
+
+# For Getting Login-in Youtube Account info
+@app.route('/getYouTubeAPIInfo')
+def YoutubeAPILoginInfo():
+    json = {
+        'YoutubeAccountName': {'value': cached_data_handler.getValue('youtube_api_account_username')},
+        'YoutubeAccountLogin-in': {'value': 'youtube_api_credentials' in cached_data_handler.getDict(),
+                                   'description': 'Login to the YouTube API to upload the auto uploads to your channel.'},
     }
     return Response(json)
 
 
 # TODO CHANGE STATE VARIABLE TO some session['state']
+
 state = None
 
 
@@ -266,25 +271,14 @@ def youtube_login_call_back():
     return Response(None)
 
 
-@app.route('/logout')
+@app.route('/logoutYouTubeAPI')
 def youtube_log_out():
-    if cached_data_handler.deleteKey('youtube_api_credentials') is True:
+    if 'youtube_api_credentials' in cached_data_handler.getDict():
+        cached_data_handler.deleteKey('youtube_api_credentials')
         return Response(None)
     else:
         return Response("There are no Youtube Account logged-in, to log out.",
                         status="server-error", status_code=500)
-
-
-# For Getting Login-in Youtube Account info
-@app.route('/getUploadInfo')
-def YoutubeLoginInfo():
-    json = {
-        'info': {
-            'YoutubeAccountName': cached_data_handler.getValue('youtube_api_account_username'),
-            'YoutubeAccountLogin-in': 'youtube_api_credentials' in cached_data_handler.getDict(),
-        }
-    }
-    return Response(json)
 
 
 # Test Uploading

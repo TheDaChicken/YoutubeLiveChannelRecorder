@@ -34,6 +34,8 @@ def download_website(url, Headers=None, RequestMethod='GET'):
     except (TimeoutError, OSError) as e:
         if 'closed' in str(e):  # ERROR IN OSError.
             return 504
+        if 'CERTIFICATE_VERIFY_FAILED' in str(e):  # ERROR IN URLError.
+            return 2
         return None
     except Exception as e4:
         warning("Unable to request HTTP website.")
@@ -69,3 +71,11 @@ def download_json(url, Headers=None, RequestMethod='GET'):
         return res
     json_string = res
     return parse_json(json_string)
+
+
+def stringToInt(string):
+    try:
+        okay = int(string)
+        return okay
+    except ValueError:
+        return None

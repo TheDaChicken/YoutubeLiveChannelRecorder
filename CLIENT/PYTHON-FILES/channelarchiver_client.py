@@ -3,11 +3,13 @@ import platform
 import re
 from time import sleep
 
-from log import info, stopped, warning, EncoderLog
 from colorama import Fore
-from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, get_settings, swap_settings, \
-    get_youtube_settings, get_youtube_info, youtube_login, youtube_logout, test_upload, youtube_fully_login, \
-    youtube_fully_logout, listRecordings, playbackRecording, downloadRecording
+
+from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, youtube_fully_login, \
+    youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
+    get_youtube_api_info, youtube_login, youtube_logout
+from utils import stringToInt
+from log import info, stopped, warning, EncoderLog
 
 serverIP = None
 serverPort = None
@@ -88,7 +90,8 @@ if __name__ == '__main__':
 
                         message = ["    {0}{1}: {2}{3}".format(Fore.LIGHTCYAN_EX, str(loopNumber),
                                                                Fore.WHITE,
-                                                               channel_name if channel_name is not None else channel_id)]
+                                                               channel_name
+                                                               if channel_name is not None else channel_id)]
                         if channel_name is None:
                             if 'error' in channelInfo:
                                 message.append("{0} [FAILED GETTING YOUTUBE DATA]".format(Fore.LIGHTRED_EX))
@@ -208,7 +211,24 @@ if __name__ == '__main__':
                     else:
                         channel_info = reply
                 elif option is "4":
-                    Screen = "Settings"
+                    info("Getting Server Settings")
+                    ok, reply = get_server_settings(serverIP, serverPort)
+                    info("Getting Youtube API Info")
+                    ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
+                    if not ok:
+                        print("")
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                    elif not ok2:
+                        print("")
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply2)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                    else:
+                        server_settings = reply
+                        server_youtube_api_info = reply2
+                        Screen = "Settings"
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
                     info("Now Checking.")
                     Screen = "NotificationHold"
@@ -275,149 +295,69 @@ if __name__ == '__main__':
                 elif option is "6":
                     Screen = "View-Recording"
             elif Screen is "Settings":
-                print("")
-                print("1) Upload Settings")
-                print("2) Boolean Settings")
-                option = input(":")
-                if option is "2":
-                    info("Getting Settings.")
-                    ok, settings = get_settings(serverIP, serverPort)
-                    if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
-                        print("")
-                        input("Press enter to go back to Selection.")
-                    elif settings == 404:
-                        warning("It seems this server doesn't support getQuickSettings.")
-                        sleep(2.5)
-                    else:
-                        Screen = "BooleanSettings"
-                if option is "1":
-                    info("Getting Settings.")
-                    ok, settings = get_youtube_settings(serverIP, serverPort)
-                    ok2, info = get_youtube_info(serverIP, serverPort)
-                    if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
-                        print("")
-                        input("Press enter to go back to Selection.")
-                    elif not ok2:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + info)
-                        print("")
-                        input("Press enter to go back to Selection.")
-                    elif settings == 404 or info == 404:
-                        warning("It seems this server doesn't support UploadSettings.")
-                        sleep(2.5)
-                    else:
-                        Screen = "UploadSettings"
-            elif Screen is "BooleanSettings":
-                clearScreen()
-                print("")
-                print("")
-                print(Fore.LIGHTGREEN_EX + "List of Settings:")
-                setting_array = []
-                loopNumber = 1
-                for setting in settings['settings']:
-                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + setting +
-                          Fore.LIGHTRED_EX + ": " + str(settings['settings'][setting]) + Fore.LIGHTYELLOW_EX +
-                          " [SWITCH BOOLEAN]")
-                    setting_array.append(setting)
-                    loopNumber += 1
-                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.LIGHTRED_EX + "EXIT" +
-                      Fore.LIGHTRED_EX + ": " + " " + Fore.LIGHTYELLOW_EX + " [EXITS TO THE MAIN MENU]")
-                exit_number = len(setting_array) + 1
-                print("")
-                print(Fore.LIGHTBLUE_EX + "  Type a setting number to do the specific action provided.")
-                option = input(":")
-                is_number = True
-                try:
-                    int(option)
-                except ValueError:
-                    print(Fore.LIGHTRED_EX + "That is not a number!")
-                    is_number = False
-                    sleep(3.5)
-                if is_number:
-                    option = int(option)
-                    if option == exit_number:
-                        Screen = "Main"
-                    else:
-                        is_good_index = True
-                        try:
-                            setting = setting_array[option - 1]
-                        except IndexError:
-                            print(Fore.LIGHTRED_EX + "Sorry, that number is out of range of the numbers listed!")
-                            sleep(3.5)
-                            is_good_index = False
-                        if is_good_index:
-                            ok, reply = swap_settings(serverIP, serverPort, setting)
-                            print("")
-                            print("")
-                            if not ok:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                sleep(3.5)
-                            if reply == 404:
-                                print(Fore.LIGHTRED_EX + "Sorry, the Server, doesn't support that type of setting"
-                                                         " to be changed!")
-                                sleep(3.5)
-                            else:
-                                info("Getting Settings.")
-                                ok, settings = get_settings(serverIP, serverPort)
-                                if not ok:
-                                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
-                                    print("")
-                                    input("Press enter to go back to Selection.")
-            elif Screen is "UploadSettings":
                 clearScreen()
                 print("")
                 print(Fore.LIGHTMAGENTA_EX + "List of Settings:")
-
                 print("")
-
-                if info['info']['YoutubeAccountLogin-in']:
-                    print("    " + Fore.LIGHTCYAN_EX + str(1) + ": " + Fore.WHITE + "YoutubeAccount USING YOUTUBE API" +
-                          Fore.LIGHTRED_EX + ": " + str(info['info']['YoutubeAccountLogin-in'])
-                          + Fore.LIGHTYELLOW_EX + " [SIGN OUT (" + info['info']['YoutubeAccountName'] + ")]")
-                else:
-                    if settings['settings']['UploadLiveStreams']:
-                        print("    " + Fore.LIGHTCYAN_EX + str(1) + ": " + Fore.WHITE + "YoutubeAccount" +
-                              Fore.LIGHTRED_EX + ": " + str(info['info']['YoutubeAccountLogin-in'])
-                              + Fore.LIGHTYELLOW_EX + " [LOGIN-IN] " + Fore.LIGHTRED_EX +
-                              "[NEEDED FOR UploadLiveStreams TO WORK]")
+                loopNumber = 1
+                server_settings_amount = len(server_settings)
+                server_settings_list = list(map(str, server_settings))
+                for server_setting_name in server_settings_list:
+                    if server_settings.get(server_setting_name):
+                        message = ["    {0}{1}: {2}{3}: {4}{5}{6} [SWITCH]".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                                                   Fore.WHITE,
+                                                                                   server_setting_name,
+                                                                                   Fore.LIGHTMAGENTA_EX,
+                                                                                   str(server_settings.get(
+                                                                                       server_setting_name).get(
+                                                                                       'value')),
+                                                                                   Fore.LIGHTCYAN_EX)]
+                        if 'description' in server_settings.get(server_setting_name):
+                            message.append("\n         {0}{1}".format(Fore.WHITE,
+                                                                      server_settings.get(
+                                                                          server_setting_name).get('description')))
+                        loopNumber += 1
+                        print(''.join(message))
+                if server_youtube_api_info:
+                    message = ["    {0}{1}: {2}{3}: {4}{5}{6} ".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                                       Fore.WHITE,
+                                                                       'YouTube Account USING YOUTUBE API',
+                                                                       Fore.LIGHTRED_EX,
+                                                                       str(server_youtube_api_info.get(
+                                                                           'YoutubeAccountLogin-in').get(
+                                                                           'value')),
+                                                                       Fore.LIGHTYELLOW_EX)]
+                    if server_youtube_api_info.get('YoutubeAccountLogin-in').get('value'):
+                        message.append('[SIGN OUT ({0})]'.format(server_youtube_api_info.get('YoutubeAccountName').
+                                                                 get('value')))
                     else:
-                        print("    " + Fore.LIGHTCYAN_EX + str(1) + ": " + Fore.WHITE + "YoutubeAccount" +
-                              Fore.LIGHTRED_EX + ": " + str(info['info']['YoutubeAccountLogin-in'])
-                              + Fore.LIGHTYELLOW_EX + " [LOGIN-IN] " + Fore.LIGHTRED_EX +
-                              "[UploadLiveStreams NEEDS TO BE ENABLED FOR THIS TO WORK]")
-                print("")
-                if info['info']['YoutubeAccountLogin-in']:
-                    print("    " + Fore.LIGHTCYAN_EX + str(2) + ": " + Fore.WHITE + "TestUpload" +
-                          Fore.LIGHTRED_EX + ": " + ""
-                          + Fore.LIGHTYELLOW_EX + "[RECORDS A CHANNEL FOR A FEW SECONDS]")
-                else:
-                    print("    " + Fore.LIGHTCYAN_EX + str(2) + ": " + Fore.WHITE + "TestUpload" +
-                          Fore.LIGHTRED_EX + ": " + ""
-                          + Fore.LIGHTRED_EX + "[DISABLED. NEED YOUTUBE ACCOUNT LOGIN-IN]")
-                loopNumber = 3
-                for setting in settings['settings']:
-                    print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + setting +
-                          Fore.LIGHTRED_EX + ": " + str(settings['settings'][setting]) + Fore.LIGHTYELLOW_EX +
-                          " [SWITCH BOOLEAN]")
-                    loopNumber += 1
-
-                print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.LIGHTRED_EX + "EXIT" +
-                      Fore.LIGHTRED_EX + ": " + " " + Fore.LIGHTYELLOW_EX + " [EXITS TO THE MAIN MENU]")
-                print("")
-                print(Fore.LIGHTBLUE_EX + "    Type a setting number to do the specific action provided.")
-                option = input(":")
-                is_number = True
-                try:
-                    int(option)
-                except ValueError:
-                    print(Fore.LIGHTRED_EX + "That is not a number!")
-                    is_number = False
-                    sleep(3.5)
-                if is_number:
-                    option = int(option)
-                    if option == 1:
-                        if not info['info']['YoutubeAccountLogin-in']:
+                        message.append('[LOGIN]')
+                    if 'description' in server_youtube_api_info.get('YoutubeAccountLogin-in'):
+                        message.append("\n         {0}{1}".format(Fore.WHITE,
+                                                                  server_youtube_api_info.get(
+                                                                      'YoutubeAccountLogin-in').get('description')))
+                    print(''.join(message))
+                print("  - Type a specific number to do the specific action. - ")
+                option = stringToInt(input(":"))
+                if option:
+                    if option < server_settings_amount or option == server_settings_amount:
+                        ok, reply = swap_settings(serverIP, serverPort, server_settings_list[option - 1])
+                        if not ok:
+                            print("")
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        info("Getting Server Settings")
+                        ok, reply = get_server_settings(serverIP, serverPort)
+                        if not ok:
+                            print("")
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            input("Press enter to go back to Selection.")
+                        else:
+                            server_settings = reply  # type: dict
+                    elif option == (server_settings_amount + 1):
+                        if not server_youtube_api_info.get('YoutubeAccountLogin-in').get('value'):
                             ok, reply = youtube_login(serverIP, serverPort)
                             print("")
                             print("")
@@ -442,53 +382,25 @@ if __name__ == '__main__':
                                 print("")
                                 print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                                 sleep(3.5)
-                        ok, settings = get_youtube_settings(serverIP, serverPort)
-                        ok2, info = get_youtube_info(serverIP, serverPort)
+                        ok, reply = get_server_settings(serverIP, serverPort)
+                        ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
                         if not ok:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
                             print("")
-                            input("Press enter to go back to Selection.")
-                        elif not ok2:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + info)
-                            print("")
-                            input("Press enter to go back to Selection.")
-                    if option == 2:
-                        print("To Find The Channel_IDs USE THIS: ")
-                        print("https://commentpicker.com/youtube-channel-id.php")
-                        temp_channel_id = input("Channel ID: ")
-                        ok, reply = test_upload(serverIP, serverPort, temp_channel_id)
-                        del temp_channel_id
-                        print("")
-                        print("")
-                        if not ok:
                             print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                        else:
-                            print(Fore.LIGHTGREEN_EX + "Channel has now been added.")
-                        print("")
-                        input("Press enter to go back to Selection.")
-                        # Refresh
-                        ok, settings = get_youtube_settings(serverIP, serverPort)
-                        ok2, info = get_youtube_info(serverIP, serverPort)
-                        if not ok:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + settings)
                             print("")
                             input("Press enter to go back to Selection.")
                         elif not ok2:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + info)
+                            print("")
+                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply2)
                             print("")
                             input("Press enter to go back to Selection.")
-                    if option > 2:
-                        sn = len(settings['settings']) + 2
-                        if sn + 1 == option:
-                            # Refresh
-                            ok, reply = get_channel_info(serverIP, serverPort)
-                            if not ok:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                print("")
-                                input("Press enter to go back to Selection.")
-                            else:
-                                channel_info = reply
-                                Screen = "Main"
+                        else:
+                            server_settings = reply  # type: dict
+                            server_youtube_api_info = reply2  # type: dict
+                else:
+                    print(Fore.LIGHTRED_EX + "That is not a number!")
+                    print("")
+                    input("Press enter to go back to Selection.")
             elif Screen is "View-Recording":
                 print("")
                 ok, recordingList = listRecordings(serverIP, serverPort)
@@ -508,6 +420,7 @@ if __name__ == '__main__':
                         input("Press enter to go back to Selection.")
                     else:
                         channel_info = reply
+                    del recordingList
                     Screen = "Main"
                 else:
                     loopNumber = 1
@@ -589,9 +502,10 @@ if __name__ == '__main__':
                                                 print("===================")
                                                 print("")
                                                 print(
-                                                    "    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX, frames
-                                                    if frames is not None else
-                                                    'Unknown'))
+                                                    "    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX,
+                                                                                           frames
+                                                                                           if frames is not None else
+                                                                                           'Unknown'))
                                                 print("    {0}DOWNLOADED VIDEO TIME: {1}".format(Fore.LIGHTMAGENTA_EX,
                                                                                                  time[0] if len(
                                                                                                      time) is not 0

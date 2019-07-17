@@ -47,8 +47,8 @@ def get_channel_info(ip, port):
     return format_response(html_reply)
 
 
-def get_settings(ip, port):
-    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/getQuickSettings",
+def get_server_settings(ip, port):
+    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/getServerSettings",
                                Headers=DefaultHeaders)
     return format_response(html_reply)
 
@@ -60,14 +60,8 @@ def swap_settings(ip, port, setting_name):
     return format_response(html_reply)
 
 
-def get_youtube_settings(ip, port):
-    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/getUploadSettings",
-                               Headers=DefaultHeaders)
-    return format_response(html_reply)
-
-
-def get_youtube_info(ip, port):
-    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/getUploadInfo",
+def get_youtube_api_info(ip, port):
+    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/getYouTubeAPIInfo",
                                Headers=DefaultHeaders)
     return format_response(html_reply)
 
@@ -79,7 +73,7 @@ def youtube_login(ip, port):
 
 
 def youtube_logout(ip, port):
-    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/logout",
+    html_reply = download_json(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/logoutYouTubeAPI",
                                Headers=DefaultHeaders)
     return format_response(html_reply)
 
