@@ -9,7 +9,6 @@ from ..log import stopped, warning, verbose, error_warning
 import httplib2
 from urllib3.exceptions import TimeoutError
 
-
 #
 #
 # LITTLE BIT OF THIS CODE IN THIS FILE IS IN YOUTUBE-DL.
@@ -17,32 +16,34 @@ from urllib3.exceptions import TimeoutError
 #
 
 
+try:
+    from urllib.request import urlopen, Request
+    from urllib.error import URLError
+    from urllib.request import HTTPCookieProcessor, build_opener
+    from http.cookiejar import MozillaCookieJar, LoadError, Cookie
+except ImportError:
+    Request = None
+    URLError = None
+    HTTPCookieProcessor = None
+    build_opener = None
+    MozillaCookieJar = None
+    LoadError = None
+    stopped("Unsupported version of Python. You need Version 3 :<")
+
+
 def __build_opener(cj):
     """
     :type cj: MozillaCookieJar
     """
-
     # BUILD OPENER
-    try:
-        from urllib.request import HTTPCookieProcessor, build_opener
-    except ImportError:
-        HTTPCookieProcessor = None
-        build_opener = None
-        stopped("Unsupported version of Python. You need Version 3 :<")
-
     opener = build_opener(HTTPCookieProcessor(cj))
     return opener
 
 
 def __build__cookies(cookies=None):
-    try:
-        from http.cookiejar import MozillaCookieJar, LoadError, Cookie
-    except ImportError:
-        MozillaCookieJar = None
-        LoadError = None
-        stopped("Unsupported version of Python. You need Version 3 :<")
-
     class CustomCookieJar(MozillaCookieJar):
+        _cookies = None
+
         def load(self, custom_list=None, **kwargs):
             """
             Allows to load list of Cookies instead of keep loading a cookie file, if needed.
@@ -89,14 +90,6 @@ def download_website(url, headers=None, data=None, SharedVariables=None):
         headers = {}
     cj = __build__cookies(SharedVariables.CachedCookieList if SharedVariables is not None else None)
     opener = __build_opener(cj)
-
-    try:
-        from urllib.request import urlopen, Request
-        from urllib.error import URLError
-    except ImportError:
-        Request = None
-        URLError = None
-        stopped("Unsupported version of Python. You need Version 3 :<")
 
     from .. import UserAgent
     if "User-Agent" not in headers:
