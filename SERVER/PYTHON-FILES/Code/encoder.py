@@ -82,7 +82,7 @@ class Encoder:
         if self.Headers:
             for header in self.Headers:
                 command.extend(["-headers", '{0}: {1}'.format(header, self.Headers[header])])
-        command.extend(["-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
+        command.extend(["-re", "-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
                         "-movflags", "faststart", "-metadata",
                         "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
                         "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])
