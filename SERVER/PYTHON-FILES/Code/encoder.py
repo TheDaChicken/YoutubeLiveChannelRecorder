@@ -46,6 +46,9 @@ class Encoder:
         return True
 
     def __run__Encoder_Concat(self, videoInput, videoLocation):
+        """
+        TODO WORK ON THIS.
+        """
         self.running = None
         verbose("Opening FFmpeg.")
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
