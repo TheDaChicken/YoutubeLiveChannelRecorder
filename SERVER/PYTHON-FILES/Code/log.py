@@ -26,18 +26,15 @@ def warning(text):
 
 
 def crash_warning(text):
-    sys.stdout.write("{0}[CRASH WARNING] {1}{2}\n".format(Fore.LIGHTYELLOW_EX, Fore.RESET, text))
+    sys.stdout.write("{0}[CRASH WARNING] {1}{2}\n".format(
+        Fore.LIGHTYELLOW_EX, Fore.RESET, text))
     sys.stdout.flush()
 
 
 def error_warning(text):
-    sys.stdout.write("{0}[ERROR WARNING] {1}{2}\n".format(Fore.LIGHTYELLOW_EX, Fore.RESET, text))
+    sys.stdout.write("{0}[ERROR WARNING] {1}{2}\n".format(
+        Fore.LIGHTYELLOW_EX, Fore.RESET, text))
     sys.stdout.flush()
-
-
-def disable_youtube_reply():
-    global Reply
-    Reply = False
 
 
 def YoutubeReply(text):
@@ -47,7 +44,8 @@ def YoutubeReply(text):
 
 
 def EncoderLog(text):
-    sys.stdout.write("{0}[ENCODER] {1}{2}\n".format(Fore.LIGHTGREEN_EX, Fore.RESET, text))
+    sys.stdout.write("{0}[ENCODER] {1}{2}\n".format(
+        Fore.LIGHTGREEN_EX, Fore.RESET, text))
     sys.stdout.flush()
 
 

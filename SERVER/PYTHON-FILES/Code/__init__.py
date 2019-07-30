@@ -2,6 +2,7 @@ import os
 from multiprocessing import Process
 from multiprocessing.managers import BaseManager, Namespace
 
+from .youtubeAPI.uploadQueue import uploadQueue, QueueHolder
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website, __build__cookies
 from .dataHandler import CacheDataHandler
@@ -24,6 +25,7 @@ baseManagerDataHandler = None  # type: BaseManager
 
 shareable_variables = None  # type: Namespace
 cached_data_handler = None  # type: CacheDataHandler
+queue_holder = None
 
 
 def setupSharedVariables():
@@ -31,9 +33,11 @@ def setupSharedVariables():
     global baseManagerDataHandler
     global shareable_variables
     global cached_data_handler
+    global queue_holder
 
     BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
     BaseManager.register('CacheDataHandler', CacheDataHandler)
+    BaseManager.register('QueueHolder', QueueHolder)
 
     # Regular Shared Variables
     shareable_variables = Namespace()
@@ -47,6 +51,7 @@ def setupSharedVariables():
     baseManagerDataHandler = BaseManager()
     baseManagerDataHandler.start()
     cached_data_handler = baseManagerDataHandler.CacheDataHandler()
+    queue_holder = baseManagerDataHandler.QueueHolder()
 
     # Cache Cookies in shareable_variables. (Cookies are cached in a list)
     # Cannot make into global class due to problems.
@@ -65,8 +70,8 @@ class HandlerChannelInfo(ChannelInfo):
 
     """
 
-    def __init__(self, channel_id, SharedVariables, cachedDataHandler=None):
-        super().__init__(channel_id, SharedVariables, cachedDataHandler)
+    def __init__(self, channel_id, shareableVariables, cachedDataHandler, queue_holder):
+        super().__init__(channel_id, shareableVariables, cachedDataHandler, queue_holder)
 
     def get(self, variable_name):
         return getattr(self, variable_name)
@@ -80,7 +85,7 @@ class HandlerChannelInfo(ChannelInfo):
 
 def run_channel(channel_id, startup=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
-                                                                     cachedDataHandler=cached_data_handler)
+                                                                     cached_data_handler, queue_holder)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
@@ -90,17 +95,19 @@ def run_channel(channel_id, startup=False):
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
                                                  name="{0} - Heartbeat Thread".format(channel_name))
         check_streaming_channel_thread.start()
-        channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
+        channel_main_array.append(
+            {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         return [True, "OK"]
     else:
         if startup:
-            channel_main_array.append({'class': channel_holder_class, "error": error_message, 'thread_class': None})
+            channel_main_array.append(
+                {'class': channel_holder_class, "error": error_message, 'thread_class': None})
         return [False, error_message]
 
 
 def upload_test_run(channel_id, startup=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
-                                                                     cachedDataHandler=cached_data_handler)
+                                                                     cached_data_handler, queue_holder)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
     if ok_bool:
         del ok_bool
@@ -114,12 +121,21 @@ def upload_test_run(channel_id, startup=False):
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
                                                  name="{0} - Heartbeat Thread".format(channel_name), args=(True,))
         check_streaming_channel_thread.start()
-        channel_main_array.append({'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
+        channel_main_array.append(
+            {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         return [True, "OK"]
     else:
         if startup:
-            channel_main_array.append({'class': channel_holder_class, "error": error_message, 'thread_class': None})
+            channel_main_array.append(
+                {'class': channel_holder_class, "error": error_message, 'thread_class': None})
         return [False, error_message]
+
+
+def run_youtube_queue_thread():
+    if cached_data_handler.getValue('UploadLiveStreams'):
+        uploadThread = Process(target=uploadQueue,
+                               name="Upload Thread.", args=(cached_data_handler, queue_holder,))
+        uploadThread.start()
 
 
 # VERY BETA

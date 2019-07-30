@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from threading import Thread
 from time import sleep
+import json
 
 from ..dataHandler import CacheDataHandler
 from ..encoder import Encoder
@@ -31,15 +32,15 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
     # Sets video_locations and thumbnail (if you have it enabled
 
     filename = channelClass.create_filename(channelClass.video_id)
-    channelClass.video_location = os.path.join("RecordedStreams", filename + '.mp4')
+    channelClass.video_location = os.path.join("RecordedStreams", '{0}.mp4'.format(filename))
     if sharedDataHandler:
         if sharedDataHandler.getValue('DownloadThumbnail'):
-            channelClass.thumbnail_location = os.path.join("RecordedStreams", filename + '.jpg')
+            channelClass.thumbnail_location = os.path.join("RecordedStreams", '{0}.jpg'.format(filename))
 
-    channelClass.EncoderClass = Encoder(YoutubeStream['url'], channelClass.video_location)
+    channelClass.EncoderClass = Encoder()
     channelClass.recording_status = "Starting Recording."
 
-    ok = channelClass.EncoderClass.start_recording()
+    ok = channelClass.EncoderClass.start_recording(YoutubeStream['HLSStreamURL'], channelClass.video_location)
 
     if not ok:
         channelClass.recording_status = "Failed To Start Recording."
@@ -65,16 +66,50 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
 
     channelClass.recording_status = "Recording."
 
-    show_windows_toast_notification("Live Recording Notifications", channelClass.channel_name + " is live and is now "
-                                                                                                "recording. \n"
-                                                                                                "Recording at "
-                                    + YoutubeStream['stream_resolution'] +
-                                    ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
+    show_windows_toast_notification("Live Recording Notifications", "{0} is live and is now "
+                                                                    "recording. \n"
+                                                                    "Recording at "
+                                                                    "{1}{2}".format(channelClass.channel_name,
+                                                                                    YoutubeStream['stream_resolution'],
+                                                                                    "\n[SPONSOR STREAM]" if channelClass
+                                                                                    .sponsor_only_stream else ''))
     if sharedDataHandler:
         if sharedDataHandler.getValue('DownloadThumbnail') is True and channelClass.privateStream is not True:
             thread = Thread(target=channelClass.download_thumbnail, name=channelClass.channel_name)
             thread.daemon = True  # needed control+C to work.
             thread.start()
+
+    # Adds to the temp upload list.
+
+    if channelClass.video_id in channelClass.video_list:
+        temp_dict = channelClass.video_list.get(channelClass.video_id)  # type: dict
+        if 'file_location' in temp_dict:
+            file_location = temp_dict['file_location']  # type: list
+            file_location.append(channelClass.video_id)
+    else:
+        dict_ = {'video_id': channelClass.video_id, 'video_data': YoutubeStream,
+                 'channel_data': {
+                     'channel_name': channelClass.channel_name,
+                     'channel_id': channelClass.channel_id,
+                 }, 'file_location': [channelClass.video_location],
+                 'thumbnail_location': channelClass.thumbnail_location,
+                 }
+        video_data = dict_.get('video_data')
+        if video_data:
+            video_data.update(
+                {'start_time_string': str(channelClass.start_date.strftime("%d/%m/%Y %I:%M %p"))}
+            )
+        # Write YouTube Stream info to json.
+        with open('{0}.json'.format(filename), 'w', encoding='utf-8') as f:
+            json.dump(dict_, f, ensure_ascii=False, indent=4)
+        if video_data:
+            # cannot have start date object in json file.
+            video_data.update(
+                {'start_date': channelClass.start_date}
+            )
+        channelClass.video_list.update({
+            channelClass.video_id: dict_
+        })
 
     if channelClass.TestUpload:
         sleep(10)
@@ -113,16 +148,19 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
                         # Starts the recording back if internet was offline.
                         channelClass.recording_status = "Starting Recording."
                         channelClass.EncoderClass.start_recording(videoLocation=os.path.join("RecordedStreams",
-                                                                                             channelClass.create_filename(
+                                                                                             channelClass.
+                                                                                             create_filename(
                                                                                                  channelClass.video_id)
                                                                                              + '.mp4'))
                         channelClass.recording_status = "Recording."
-                        show_windows_toast_notification("Live Recording Notifications",
-                                                        channelClass.channel_name + " is live and is now "
-                                                                                    "recording. \n"
-                                                                                    "Recording at "
-                                                        + YoutubeStream['stream_resolution'] +
-                                                        ("\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream else ''))
+                        show_windows_toast_notification("Live Recording Notifications", "{0} is live "
+                                                                                        "and is now recording. \n"
+                                                                                        "Recording at "
+                                                                                        "{1}{2}".
+                                                        format(channelClass.channel_name,
+                                                               YoutubeStream['stream_resolution'],
+                                                               "\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream
+                                                               else ''))
                     else:
                         channelClass.recording_status = "Crashed."
                         show_windows_toast_notification("Live Recording Notifications", "FFMPEG CRASHED ON " +
@@ -195,9 +233,12 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
         f = get_format_from_data(formats, recordingHeight)
         youtube_stream_info = {
             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-            'url': f['url'],
+            'HLSManifestURL': manifest_url,
+            'DashManifestURL': str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str)),
+            'HLSStreamURL': f['url'],
             'title': try_get(video_info, lambda x: x['title'][0], str),
             'description': player_response['videoDetails']['shortDescription'],
+            'video_id': channelInfo.video_id
         }
         return youtube_stream_info
     return None

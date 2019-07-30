@@ -75,12 +75,14 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
             channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
             video_id = get_video_id(liveStreamAbilityRenderer)
             if video_id:
-                channel_Class.video_id = video_id
+                if video_id != channel_Class.video_id:
+                    channel_Class.video_id = video_id
 
         if channel_Class.live_scheduled is True:
             channel_Class.live_scheduled_time = get_schedule_time(liveStreamAbilityRenderer)
         if 'stop_heartbeat' in json:
             sleep(.5)
+            channel_Class.add_youtube_queue()
             channel_Class.loadVideoData()
             return False
         if 'status' in json:  # Sometimes status is removed and causes an error.
@@ -88,6 +90,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
                 return True
             if "stop" in json['status']:
                 sleep(.29)
+                channel_Class.add_youtube_queue()
                 channel_Class.loadVideoData()
                 return False
             if "error" in json['status']:
@@ -147,5 +150,5 @@ def get_broadcast_id(liveStreamAbilityRenderer):
 
 
 def get_video_id(liveStreamAbilityRenderer):
-    broadcastId = try_get(liveStreamAbilityRenderer, lambda x: x['videoId'], str)
-    return broadcastId
+    videoID = try_get(liveStreamAbilityRenderer, lambda x: x['videoId'], str)
+    return videoID

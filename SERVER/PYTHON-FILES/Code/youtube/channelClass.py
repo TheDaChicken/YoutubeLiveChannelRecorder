@@ -4,7 +4,6 @@ import re
 import traceback
 from datetime import datetime
 from multiprocessing.managers import Namespace
-from threading import Thread
 from time import sleep
 
 from .heatbeat import is_live
@@ -78,6 +77,7 @@ class ChannelInfo:
     SharedVariables = False
     sharedCookies = False
     crashed_traceback = None
+    queue_holder = None
 
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
     pollDelayMs = 8000
@@ -107,6 +107,9 @@ class ChannelInfo:
     # USED FOR UPLOADING
     video_location = None
 
+    # USED FOR UPLOADING TO HOLD MORE THAN ONE RECORDING.
+    video_list = {}
+
     # THUMBNAIL
     thumbnail_location = None
     thumbnail_url = None
@@ -121,10 +124,11 @@ class ChannelInfo:
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
 
-    def __init__(self, channel_id, SharedVariables=None, cachedDataHandler=None):
-        self.cachedDataHandler = cachedDataHandler
+    def __init__(self, channel_id, SharedVariables=None, cachedDataHandler=None, queue_holder=None):
         self.channel_id = channel_id
         self.SharedVariables = SharedVariables
+        self.cachedDataHandler = cachedDataHandler
+        self.queue_holder = queue_holder
 
     def loadYoutubeData(self):
         html = download_website("https://www.youtube.com/channel/{0}/live".
@@ -257,7 +261,10 @@ class ChannelInfo:
                             self.thumbnail_url = get_highest_thumbnail(thumbnails)
                         self.YoutubeStream = {
                             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                            'url': f['url'],
+                            'HLSManifestURL': manifest_url,
+                            'DashManifestURL': str(
+                                try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str)),
+                            'HLSStreamURL': f['url'],
                             'title': videoDetails['title'],
                             'description': videoDetails['shortDescription'],
                         }
@@ -349,15 +356,12 @@ class ChannelInfo:
                     if self.YoutubeStream is None:
                         self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
                     if self.YoutubeStream is not None:
-                        fully_recorded = self.openStream(self.YoutubeStream, sharedDataHandler=self.cachedDataHandler)
+                        ok = self.openStream(self.YoutubeStream, sharedDataHandler=self.cachedDataHandler)
                         self.YoutubeStream = None
-                        if fully_recorded:
-                            thread = Thread(target=self.start_upload, name=self.channel_name)
-                            thread.daemon = True  # needed control+C to work.
-                            thread.start()
-                            if self.TestUpload:
-                                thread.join()
-                                stopped("Test upload completed!")  # Kinda of closes the whole Thread :P
+                        if ok:
+                            if TestUpload:
+                                self.add_youtube_queue()
+                                stopped("")
                         sleep(2.5)
                     else:
                         self.recording_status = "Unable to get Youtube Stream Info."
@@ -372,6 +376,19 @@ class ChannelInfo:
         except Exception:
             self.crashed_traceback = traceback.format_exc()
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
+
+    def add_youtube_queue(self):
+        """
+
+        To add videos to be uploaded in the YouTube Queue.
+
+        """
+        if len(self.video_list) != 0:
+            print(self.queue_holder)
+            if self.queue_holder:
+                verbose("Adding streams to youtube upload queue.")
+                self.queue_holder.addQueue(self.video_list)
+                self.video_list.clear()
 
     def is_live(self, alreadyChecked=False):
         if self.SharedVariables:
@@ -404,7 +421,7 @@ class ChannelInfo:
                 file_name = "{3} - '{4}' - {0}-{1}-{2}_{5}".format(now.month, now.day, now.year, self.channel_name,
                                                                    video_id,
                                                                    amount)
-            path = os.path.join("RecordedStreams", file_name + '.mp4')
+            path = os.path.join("RecordedStreams", '{0}.mp4'.format(file_name))
             if not os.path.isfile(path):
                 verbose("Found Good Filename.")
                 return file_name
@@ -423,11 +440,18 @@ class ChannelInfo:
 
     # Uploading
     def start_upload(self):
+        """
+
+        Old Start Upload function.
+        TODO REMOVE THIS unless new uploadQueue is bad.
+
+        """
         def get_upload_settings(channel_name):
             upload_settings = self.cachedDataHandler.getValue('UploadSettings')
             if channel_name in upload_settings:
                 return upload_settings[channel_name]
             return upload_settings[None]
+
         # Allows to get the most updated client without saving it, since it might change.
         from ..youtubeAPI import get_youtube_api_credentials, initialize_upload, upload_thumbnail
         youtube_client = get_youtube_api_credentials(self.cachedDataHandler)

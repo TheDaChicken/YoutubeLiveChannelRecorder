@@ -1,8 +1,6 @@
 import os
 import traceback
-
-from .log import info, stopped, warning, error_warning
-
+from ..log import info, stopped, warning, error_warning, crash_warning
 import random
 import time
 
@@ -11,55 +9,40 @@ try:
 except ImportError:
     client = None
     stopped("Unsupported version of Python. You need Version 3 :<")
-
 try:
-    import httplib2
-except ImportError:
-    httplib2 = None
-    stopped("Sorry :/ Upload Video Needs httplib2 installed!")
-
-try:
+    from httplib2 import HttpLib2Error
     from apiclient.discovery import build
     from apiclient.errors import HttpError
     from apiclient.http import MediaFileUpload
-except ImportError:
-    build = None
-    HttpError = None
-    MediaFileUpload = None
-    stopped("Sorry :/ You need to install using pip: google-api-python-client for using Youtube API")
-
-try:
     from oauth2client.client import flow_from_clientsecrets
     from oauth2client.file import Storage
     from oauth2client.tools import run_flow
-except ImportError:
-    stopped("Sorry :/ Upload Video Needs oauth2client installed!")
-
-try:
     from google.oauth2.credentials import Credentials
-except ImportError:
-    Credentials = None
-    stopped("Sorry :/ Upload Video Needs google-auth installed!")
-
-try:
     from google_auth_oauthlib.flow import Flow
 except ImportError:
+    HttpLib2Error = None
+    build = None
+    HttpError = None
+    MediaFileUpload = None
+    Credentials = None
     Flow = None
-    stopped("Sorry :/ You need to install using pip: google-auth-oauthlib for using Youtube API")
+    crash_warning(traceback.format_exc())
+    stopped("Missing required packages for YouTube API uploading!")
 
-httplib2.RETRIES = 1
+
 MAX_RETRIES = 10
-RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, client.NotConnected,
+RETRIABLE_EXCEPTIONS = (HttpLib2Error, IOError, client.NotConnected,
                         client.IncompleteRead, client.ImproperConnectionState,
                         client.CannotSendRequest, client.CannotSendHeader,
                         client.ResponseNotReady, client.BadStatusLine)
+
 RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
-CLIENT_SECRETS_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "client_id.json")
+CLIENT_SECRETS_FILE = os.path.join(os.getcwd(), "client_id.json")
 YOUTUBE_READ_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 MISSING_CLIENT_SECRETS_MESSAGE = "WARNING: Please configure OAuth 2.0. Information at the Developers Console " \
-                                 "https://console.developers.google.com/ "
+                                 "https://console.developers.google.com/"
 VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -73,14 +56,10 @@ def get_youtube_api_credentials(cached_data_handler):
     return None
 
 
-def get_account_login_in_link(redirect_url, cached_data_handler):
-    from . import cached_data_handler
+def get_youtube_api_login_link(redirect_url, cached_data_handler):
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE, scopes=YOUTUBE_READ_WRITE_SCOPE)
-
-    # flow.redirect_uri = flask.url_for('oauth2callback', _external=True)
+        CLIENT_SECRETS_FILE, scopes=YOUTUBE_READ_WRITE_SCOPE, message=MISSING_CLIENT_SECRETS_MESSAGE)
     flow.redirect_uri = redirect_url
-
     if 'youtube_api_credentials' not in cached_data_handler.getDict():
         authorization_url, state = flow.authorization_url(
             # Enable offline access so that you can refresh an access token without
@@ -90,14 +69,11 @@ def get_account_login_in_link(redirect_url, cached_data_handler):
             include_granted_scopes='true',
             # Allows refresh_token to be always in the authorization url
             prompt='consent')
-        # device_id and device_name allows a private ip to be used.
-
-        # &device_id=1&device_name=Web
         return [authorization_url + "", state]
     return [None, None]
 
 
-def redirect_credentials(authorization_response, state, url):
+def get_request_credentials(authorization_response, state, url):
     def credentials_to_dict():
         return {'token': credentials.token,
                 'refresh_token': credentials.refresh_token,
@@ -116,16 +92,15 @@ def redirect_credentials(authorization_response, state, url):
 
 def credentials_build(credentials):
     credentials = Credentials(**credentials)
-    if build:
-        try:
-            b = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-                      credentials=credentials)
-        except Exception:
-            error_warning(traceback.format_exc())
-            warning("Unable to build Youtube API Client.")
-            return None
-        return b
-    return None
+    try:
+        if build:
+            b = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials)
+            return b
+        return None
+    except Exception:
+        error_warning(traceback.format_exc())
+        warning("Unable to build Youtube API Client.")
+        return None
 
 
 # Now Youtube Stuff.
@@ -135,7 +110,6 @@ def initialize_upload(youtubeClient, file_location, title, description, keywords
     tags = None
     if keywords:
         tags = keywords.split(",")
-
     body = dict(
         snippet=dict(
             title=title,
@@ -147,7 +121,6 @@ def initialize_upload(youtubeClient, file_location, title, description, keywords
             privacyStatus=privacyStatus
         )
     )
-
     # Call the API's videos.insert method to create and upload the video.
     insert_request = youtubeClient.videos().insert(
         part=",".join(body.keys()),
@@ -165,13 +138,12 @@ def initialize_upload(youtubeClient, file_location, title, description, keywords
         # 1024 * 1024 (1 megabyte).
         media_body=MediaFileUpload(file_location, chunksize=-1, resumable=True)
     )
-
-    return resumable_upload(insert_request, file_location)
+    return __resumable_upload(insert_request, file_location)
 
 
 # This method implements an exponential backoff strategy to resume a
 # failed upload.
-def resumable_upload(insert_request, file_location):
+def __resumable_upload(insert_request, file_location):
     response = None
     error = None
     retry = 0
@@ -183,7 +155,7 @@ def resumable_upload(insert_request, file_location):
                 info(file_location + " was successfully uploaded with video id of '%s'." % response['id'])
                 return response['id']
             else:
-                exit("The upload failed with an unexpected response: %s" % response)
+                warning("The upload failed with an unexpected response: %s" % response)
         except HttpError as e:
             if e.resp.status in RETRIABLE_STATUS_CODES:
                 error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
@@ -197,12 +169,12 @@ def resumable_upload(insert_request, file_location):
             warning(error)
             retry += 1
             if retry > MAX_RETRIES:
-                stopped("No longer attempting to retry. Couldn't upload " + file_location + ".")
-
-            max_sleep = 2 ** retry
-            sleep_seconds = random.random() * max_sleep
-            warning("Sleeping %f seconds and then retrying upload..." % sleep_seconds)
-            time.sleep(sleep_seconds)
+                info("No longer attempting to retry. Couldn't upload " + file_location + ".")
+            else:
+                max_sleep = 2 ** retry
+                sleep_seconds = random.random() * max_sleep
+                warning("Sleeping %f seconds and then retrying upload..." % sleep_seconds)
+                time.sleep(sleep_seconds)
 
 
 # Call the API's thumbnails.set method to upload the thumbnail image and

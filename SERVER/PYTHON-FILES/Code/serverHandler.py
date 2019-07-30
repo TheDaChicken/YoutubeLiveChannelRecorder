@@ -1,8 +1,10 @@
+import os
 import traceback
+from os import path, getcwd
 from threading import Thread
 from time import sleep
 
-from flask import request, redirect, Flask, url_for, jsonify
+from flask import request, redirect, Flask, url_for, jsonify, send_from_directory
 
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
     google_account_logout
@@ -55,7 +57,8 @@ def loadServer(port, cert=None, key=None):
     if WSGIServer is None:
         info("To disable this warning, install gevent pip package!")
         ssl_context = ((cert, key) if cert and key else None)
-        app.run(host='0.0.0.0', threaded=True, port=port, ssl_context=ssl_context)
+        app.run(host='0.0.0.0', threaded=True,
+                port=port, ssl_context=ssl_context)
     else:
         if cert and key:
             http_server = WSGIServer(('', port), app, certfile=cert, keyfile=key,
@@ -63,7 +66,8 @@ def loadServer(port, cert=None, key=None):
         else:
             http_server = WSGIServer(('', port), app)
         info("Server started. Hosted on port: {0}".format(port) + "!")
-        show_windows_toast_notification("ChannelArchiver Server", "ChannelArchiver server started")
+        show_windows_toast_notification(
+            "ChannelArchiver Server", "ChannelArchiver server started")
         http_server.serve_forever()
 
 
@@ -131,7 +135,8 @@ def remove_channel():
         except Exception as e:
             error_warning(traceback.format_exc())
             return Response("Cannot Remove Channel. " + str(e), status="server-error", status_code=500)
-    cached_data_handler.removeValueList('channel_ids', channel_array['class'].get('channel_id'))
+    cached_data_handler.removeValueList(
+        'channel_ids', channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
     sleep(.01)
     info(channel_id + " has been removed.")
@@ -196,12 +201,23 @@ def swapDownloadThumbnail(name):
         if name not in cached_data_handler.getDict():
             return Response("Failed to find {0} in data file. It's really broken. :P".format(name),
                             status="server-error", status_code=500)
-        if cached_data_handler.getValue(name) is True:
-            cached_data_handler.setValue(name, False)
-        elif cached_data_handler.getValue(name) is False:
-            cached_data_handler.setValue(name, True)
+        if name == "UploadLiveStreams":
+            # Check for client secret file before doing something that uses the YouTube API.
+            if cached_data_handler.getValue(name) is False:
+                CLIENT_SECRETS_FILE = os.path.join(
+                    os.getcwd(), "client_id.json")
+                if not path.exists(CLIENT_SECRETS_FILE):
+                    return Response("WARNING: Please configure OAuth 2.0. \nInformation at the Developers Console " +
+                                    "https://console.developers.google.com/", status='server-error', status_code=500)
 
-        info('{0} has been set to: {1}'.format(name, str(cached_data_handler.getValue(name))))
+        if type(cached_data_handler.getValue(name)) is bool:
+            cached_data_handler.setValue(name, (not cached_data_handler.getValue(name)))
+        else:
+            return Response('Value is not a bool. Cannot invert type, {0}.'.format(
+                str(type(cached_data_handler.getValue(name)))))
+
+        info('{0} has been set to: {1}'.format(
+            name, str(cached_data_handler.getValue(name))))
         return Response(None)
 
 
@@ -255,22 +271,27 @@ def youtube_get_login_url():
 
 @app.route('/login')
 def youtube_login():
-    from .youtubeAPI import get_account_login_in_link
+    # Check for client secret file...
+    CLIENT_SECRETS_FILE = os.path.join(os.getcwd(), "client_id.json")
+    if not path.exists(CLIENT_SECRETS_FILE):
+        return Response("WARNING: Please configure OAuth 2.0. Information at the Developers Console " +
+                        "https://console.developers.google.com/", status='server-error', status_code=500)
+    from .youtubeAPI import get_youtube_api_login_link
     if 'youtube_api_credentials' in cached_data_handler.getDict():
         return Response("Youtube account already logged-in", status='client-error', status_code=500)
     url = url_for('youtube_login_call_back', _external=True)
     global state
-    link, state = get_account_login_in_link(url, cached_data_handler)
+    link, state = get_youtube_api_login_link(url, cached_data_handler)
     return redirect(link)
 
 
 @app.route('/login/callback')
 def youtube_login_call_back():
-    from .youtubeAPI import credentials_build, get_youtube_account_user_name, redirect_credentials
+    from .youtubeAPI import credentials_build, get_youtube_account_user_name, get_request_credentials
     authorization_response = request.url
     global state
     url = url_for('youtube_login_call_back', _external=True)
-    credentials = redirect_credentials(authorization_response, state, url)
+    credentials = get_request_credentials(authorization_response, state, url)
     username = get_youtube_account_user_name(credentials_build(credentials))
     cached_data_handler.setValue('youtube_api_account_username', username)
     cached_data_handler.setValue('youtube_api_credentials', credentials)
@@ -293,7 +314,7 @@ def youtube_log_out():
 def YoutubeTestUpload():
     channel_id = request.args.get('channel_id')
     if channel_id is None:
-        return Response("You need Channel_ID in args.", status='client-error', status_code=500)
+        return Response("You need Channel_ID in args.", status='client-error', status_code=400)
     ok, message = upload_test_run(channel_id)
     if ok:
         info(channel_id + " has been added for test uploading.")
@@ -307,7 +328,7 @@ def Youtube_Login_FULLY():
     username = request.args.get('username')
     password = request.args.get('password')
     if username is None or password is None:
-        return Response("You need username and password in args.", status='client-error', status_code=500)
+        return Response("You need username and password in args.", status='client-error', status_code=400)
     ok, message = google_account_login(username, password)
     if ok:
         return Response(None)
@@ -324,11 +345,11 @@ def Youtube_Logout_FULLY():
         return Response(message, status="server-error", status_code=500)
 
 
-# Playback recordings and downloading them.
+# Playback recordings / downloading them.
 
 @app.route('/listRecordings')
 def listStreams():
-    from os import path, getcwd, walk
+    from os import walk
     recorded_streams_dir = path.join(getcwd(), "RecordedStreams")
     list_recordings = []
     for (dir_path, dir_names, file_names) in walk(recorded_streams_dir):
@@ -338,14 +359,12 @@ def listStreams():
     return Response(list_recordings)
 
 
-@app.route('/playStream')
+@app.route('/playRecording')
 def uploadVideo():
     stream_name = request.args.get('stream_name')
     if stream_name is None:
-        return Response("You need stream_name in args.", status='client-error', status_code=500)
-    from os import path, getcwd
+        return Response("You need stream_name in args.", status='client-error', status_code=400)
     stream_folder = path.join(getcwd(), "RecordedStreams")
-    from flask import send_from_directory
     return send_from_directory(directory=stream_folder, filename=stream_name)
 
 

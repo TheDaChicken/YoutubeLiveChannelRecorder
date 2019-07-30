@@ -118,7 +118,7 @@ def playbackRecording(ip, port, RecordingName):
         from urllib.parse import urlencode
     except ImportError:
         stopped("Unsupported version of Python. You need Version 3 :<")
-    FFplay = FFplay(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playStream?" + urlencode(
+    FFplay = FFplay(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playRecording?" + urlencode(
         {'stream_name': RecordingName}),
                     Headers=DefaultHeaders)
     FFplay.start_playback()
@@ -131,8 +131,19 @@ def downloadRecording(ip, port, RecordingName):
         from urllib.parse import urlencode
     except ImportError:
         stopped("Unsupported version of Python. You need Version 3 :<")
-    FFmpeg = FFmpeg(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playStream?" + urlencode(
+    FFmpeg = FFmpeg(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playRecording?" + urlencode(
         {'stream_name': RecordingName}),
                     RecordingName, Headers=DefaultHeaders)
     FFmpeg.start_recording()
     return FFmpeg
+
+
+def playHLSStream(url):
+    from encoder import FFplay
+    try:
+        from urllib.parse import urlencode
+    except ImportError:
+        stopped("Unsupported version of Python. You need Version 3 :<")
+    FFplay = FFplay(url, Headers=DefaultHeaders)
+    FFplay.start_playback()
+    return FFplay

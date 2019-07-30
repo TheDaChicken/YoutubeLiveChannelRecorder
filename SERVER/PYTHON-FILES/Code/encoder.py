@@ -3,58 +3,44 @@ import subprocess
 from threading import Thread
 from time import sleep
 
+from datetime import datetime
+
 from .log import verbose, info, EncoderLog, warning
 
 
 class Encoder:
     """
-    
+
     FFmpeg Handler Class.
-    
-    :type video_url: str
-    :type video_location: str
+
     :type crashFunction: function
     """
 
-    video_url = None
-    video_location = None
-    process = None
-    running = None
-    crashFunction = None
-    Headers = None
-
-    def __init__(self, videoInput, videoLocation, crashFunction=None, Headers=None):
-        self.videoInput = videoInput
-        self.video_location = videoLocation
+    def __init__(self, crashFunction=None, Headers=None,
+                 EnableHLSOutputStream=False):
         self.crashFunction = crashFunction
         self.Headers = Headers
+        self.EnableHLSOutputStream = EnableHLSOutputStream
 
-    def start_recording(self, videoInput=None, videoLocation=None):
-        if videoInput is not None:
-            self.videoInput = videoInput
-        if videoLocation is not None:
-            self.video_location = videoLocation
-        self.__run_Encoder(self.videoInput, self.video_location)
+    def start_recording(self, videoInput, videoLocation):
+        self.__run_Encoder(videoInput, videoLocation)
         self.__hold()
         if not self.running:
             return False
         info("Recording Started.")
         return True
 
-    def merge_streams(self, videoInput=None, videoLocation=None):
-        if videoInput is not None:
-            self.videoInput = videoInput
-        if videoLocation is not None:
-            self.video_location = videoLocation
-
+    def merge_streams(self, videoInput, videoLocation):
         concat_file = os.path.join(os.getcwd(), 'temp_concat.txt')
         with open(concat_file, 'w') as file:
-            file.write('# this is a comment')
+            now = datetime.now()
+            file.write('# Automated Concat File Created At: {0}.\n'.format(
+                str(now.strftime("%d/%m/%Y %I:%M %p"))))
             for video in videoInput:
                 if video:
-                    file.write('file \'{0}\''.format(video))
+                    file.write('file \'{0}\'\n'.format(video))
             file.close()
-        self.__run__Encoder_Concat(concat_file, self.video_location)
+        self.__run__Encoder_Concat(concat_file, videoLocation)
         self.__hold()
         if not self.running:
             return False
@@ -67,11 +53,14 @@ class Encoder:
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
         if self.Headers:
             for header in self.Headers:
-                command.extend(["-headers", '{0}: {1}'.format(header, self.Headers[header])])
-        command.extend(["-f", "concat", "-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy", videoLocation])
+                command.extend(
+                    ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
+        command.extend(["-f", "concat", "-y", "-i", videoInput,
+                        "-c:v", "copy", "-c:a", "copy", videoLocation])
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
-        encoder_crash_handler = Thread(target=self.__crashHandler, name="FFMPEG Crash Handler.")
+        encoder_crash_handler = Thread(
+            target=self.__crashHandler, name="FFMPEG Crash Handler.")
         encoder_crash_handler.daemon = True  # needed control+C to work.
         encoder_crash_handler.start()
 
@@ -81,14 +70,16 @@ class Encoder:
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
         if self.Headers:
             for header in self.Headers:
-                command.extend(["-headers", '{0}: {1}'.format(header, self.Headers[header])])
+                command.extend(
+                    ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
         command.extend(["-re", "-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
                         "-movflags", "faststart", "-metadata",
                         "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
                         "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
-        encoder_crash_handler = Thread(target=self.__crashHandler, name="FFMPEG Crash Handler.")
+        encoder_crash_handler = Thread(
+            target=self.__crashHandler, name="FFMPEG Crash Handler.")
         encoder_crash_handler.daemon = True  # needed control+C to work.
         encoder_crash_handler.start()
 
@@ -119,7 +110,8 @@ class Encoder:
             import datetime
             now = datetime.datetime.now()
             logfile.write("\n")
-            logfile.write("" + str(now.year) + ", " + str(now.day) + "/" + str(now.month) + " FFMPEG CRASH\n")
+            logfile.write("" + str(now.year) + ", " + str(now.day) +
+                          "/" + str(now.month) + " FFMPEG CRASH\n")
             del now
             del datetime
             logfile.write("\n")
@@ -137,4 +129,5 @@ class Encoder:
                 # wait until kill.
                 self.process.wait()
             except subprocess:
-                warning("There was a problem terminating FFmpeg. It might be because it already closed. Oh NO")
+                warning(
+                    "There was a problem terminating FFmpeg. It might be because it already closed. Oh NO")
