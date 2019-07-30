@@ -140,10 +140,14 @@ class ChannelInfo:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
                 self.channel_id)]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
-        ok, message = self.loadChannelData(html_code=html, yt_player_config=yt_player_config)
+        player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+        videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+        ok, message = self.loadChannelData(html_code=html, yt_player_config=yt_player_config,
+                                           player_response=player_response, videoDetails=videoDetails)
         if not ok:
             return [ok, message]
-        ok, message = self.loadVideoData(html=html, yt_player_config=yt_player_config)
+        ok, message = self.loadVideoData(html=html, yt_player_config=yt_player_config,
+                                         player_response=player_response, videoDetails=videoDetails)
         if not self.privateStream:
             set_global_youtube_variables(html_code=html)
 
@@ -154,7 +158,7 @@ class ChannelInfo:
         return [ok, message]
 
     # Loads the Youtube Channel Data.
-    def loadChannelData(self, html_code=None, yt_player_config=None):
+    def loadChannelData(self, html_code=None, yt_player_config=None, player_response=None, videoDetails=None):
         if not html_code and not yt_player_config:
             html_code = download_website("https://www.youtube.com/channel/{0}/live".
                                          format(self.channel_id), SharedVariables=self.SharedVariables)
@@ -164,8 +168,6 @@ class ChannelInfo:
             if html_code == 404:
                 return [False, "Failed getting Channel Data! \"" +
                         self.channel_id + "\" doesn't exist as a channel id!"]
-        if type(html_code) is int:
-            warning("" + str(html_code))
         verbose("Getting Channel Name of " + self.channel_id + ".")
         endpoint_type = get_endpoint_type(html_code)
         if endpoint_type:
@@ -183,28 +185,43 @@ class ChannelInfo:
                     yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
                 if yt_player_config:
                     if "is_live_destination" in yt_player_config:
-                        self.channel_name = yt_player_config['author']
+                        if not videoDetails:
+                            if not player_response:
+                                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+                            videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                        if videoDetails:
+                            self.channel_name = videoDetails['author']
+                        else:
+                            return [False, "Unable to get videoDetails."]
                     else:
                         warning("Found a stream, the stream seemed to be a non-live stream.")
                 else:
-                    stopped("Unable to get yt player config.")
+                    warning("Unable to get yt player config.")
             else:
                 warning("Unrecognized endpoint type. Endpoint Type: {0}".format(endpoint_type))
                 if not yt_player_config:
                     yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
                 if yt_player_config:
                     if "is_live_destination" in yt_player_config:
-                        return yt_player_config['author']
+                        if not videoDetails:
+                            if not player_response:
+                                player_response = parse_json(
+                                    try_get(yt_player_config, lambda x: x['player_response'], str))
+                            videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                        if videoDetails:
+                            self.channel_name = videoDetails['author']
+                        else:
+                            return [False, "Unable to get videoDetails."]
                     else:
                         warning("Found a stream, the stream seemed to be a non-live stream.")
                 else:
-                    stopped("Unable to get yt player config.")
+                    warning("Unable to get yt player config.")
 
         if self.channel_name is None:
             return [False, "Failed Getting " + self.channel_id + " channel_name."]
         return [True, "OK"]
 
-    def loadVideoData(self, html=None, yt_player_config=None):
+    def loadVideoData(self, html=None, yt_player_config=None, player_response=None, videoDetails=None):
         """
 
         This is used to grab video information from the YouTube Channel Live site, like video_id,
@@ -227,7 +244,12 @@ class ChannelInfo:
             yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
         if yt_player_config:
             if "is_live_destination" in yt_player_config:
-                self.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
+                if not videoDetails:
+                    if not player_response:
+                        player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+                    videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                if videoDetails:
+                    self.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
                 self.privateStream = False
                 if not self.video_id:
                     return [False, "Unable to find video id in the YouTube player config!"]
@@ -239,7 +261,8 @@ class ChannelInfo:
 
         if not self.privateStream:
             # TO AVOID REPEATING REQUESTS.
-            player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+            if not player_response:
+                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
             if player_response:
                 # playabilityStatus is legit heartbeat all over again..
                 playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
