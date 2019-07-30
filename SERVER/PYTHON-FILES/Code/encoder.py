@@ -16,11 +16,9 @@ class Encoder:
     :type crashFunction: function
     """
 
-    def __init__(self, crashFunction=None, Headers=None,
-                 EnableHLSOutputStream=False):
+    def __init__(self, crashFunction=None, Headers=None):
         self.crashFunction = crashFunction
         self.Headers = Headers
-        self.EnableHLSOutputStream = EnableHLSOutputStream
 
     def start_recording(self, videoInput, videoLocation):
         self.__run_Encoder(videoInput, videoLocation)
