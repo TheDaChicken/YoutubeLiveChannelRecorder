@@ -55,7 +55,6 @@ if __name__ == '__main__':
         ok, error_message = run_channel(channel_id, startup=True)
         if not ok:
             warning(error_message)
-        sleep(.10)
 
     run_server(port, key=key, cert=cert)
 
