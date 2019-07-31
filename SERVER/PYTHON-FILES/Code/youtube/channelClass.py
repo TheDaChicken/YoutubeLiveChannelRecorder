@@ -175,10 +175,9 @@ class ChannelInfo:
                 array = re.findall('property="og:title" content="(.+?)"', html_code)
                 if array:
                     channel_name = array[0]
-                    warning(
-                        channel_name + " has the live stream "
-                                       "currently unlisted or private, or only for members. "
-                                       "Using safeguard. This may not be the best to leave on.\n")
+                    warning("{0} has the live stream "
+                            "currently unlisted or private, or only for members. "
+                            "Using safeguard. This may not be the best to leave on.\n".format(channel_name))
                     self.channel_name = channel_name
             elif endpoint_type == 'watch':
                 if not yt_player_config:
@@ -187,7 +186,8 @@ class ChannelInfo:
                     if "is_live_destination" in yt_player_config:
                         if not videoDetails:
                             if not player_response:
-                                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+                                player_response = parse_json(
+                                    try_get(yt_player_config, lambda x: x['player_response'], str))
                             videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                         if videoDetails:
                             self.channel_name = videoDetails['author']
@@ -213,7 +213,7 @@ class ChannelInfo:
                         else:
                             return [False, "Unable to get videoDetails."]
                     else:
-                        return[False, "Found a stream, the stream seemed to be a non-live stream."]
+                        return [False, "Found a stream, the stream seemed to be a non-live stream."]
                 else:
                     return [False, "Unable to get yt player config."]
 
@@ -286,7 +286,7 @@ class ChannelInfo:
                             'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
                             'HLSManifestURL': manifest_url,
                             'DashManifestURL': str(
-                                try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str)),
+                                try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
                             'HLSStreamURL': f['url'],
                             'title': videoDetails['title'],
                             'description': videoDetails['shortDescription'],
@@ -469,6 +469,7 @@ class ChannelInfo:
         TODO REMOVE THIS unless new uploadQueue is bad.
 
         """
+
         def get_upload_settings(channel_name):
             upload_settings = self.cachedDataHandler.getValue('UploadSettings')
             if channel_name in upload_settings:
