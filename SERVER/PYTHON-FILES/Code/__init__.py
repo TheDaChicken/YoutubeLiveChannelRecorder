@@ -6,7 +6,7 @@ from .youtubeAPI.uploadQueue import uploadQueue, QueueHolder
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website, __build__cookies
 from .dataHandler import CacheDataHandler
-from .log import warning, verbose
+from .log import verbose
 
 """
 :type channel_main_array: array
@@ -156,8 +156,8 @@ def stop_youtube_queue_thread():
 
 # VERY BETA
 def google_account_login(username, password):
-    from .GoogleLogin import login
-    return login(username, passwords)
+    from .youtube.login import login
+    return login(username, password)
 
 
 def google_account_logout():
