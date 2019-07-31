@@ -1,10 +1,16 @@
 # YoutubeLiveChannelRecorder
-  Records Youtube Livestreams for given channels automatically! Technically this doesn't record, it downloads stream, but whatever.
+  Records Youtube Livestreams for given channels automatically! Technically this program doesn't record, it downloads the stream, but whatever.
   
 ### NOTE
   This is a server program. You will need to use the client in order to control this program.
   This program is tested on PYTHON VERSION 3.7.2.
   This program does not work anything below PYTHON VERSION 3.
+
+### LIMITATIONS (AS OF RIGHT NOW)
+  Resolution change mid in stream causes recording to stop working as ffmpeg hangs.
+
+### PROBLEMS (AS OF RIGHT NOW)
+  Quick stop and start streaming causes the recording to stop but fail to start recording again.
 
 ### Inspiration
   
