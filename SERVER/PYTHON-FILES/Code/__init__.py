@@ -26,6 +26,7 @@ baseManagerDataHandler = None  # type: BaseManager
 shareable_variables = None  # type: Namespace
 cached_data_handler = None  # type: CacheDataHandler
 queue_holder = None
+uploadThread = None
 
 
 def setupSharedVariables():
@@ -131,17 +132,32 @@ def upload_test_run(channel_id, startup=False):
         return [False, error_message]
 
 
-def run_youtube_queue_thread():
-    if cached_data_handler.getValue('UploadLiveStreams'):
-        uploadThread = Process(target=uploadQueue,
-                               name="Upload Thread.", args=(cached_data_handler, queue_holder,))
-        uploadThread.start()
+def run_youtube_queue_thread(skipValueCheck=False):
+    global uploadThread
+    if not uploadThread:
+        if skipValueCheck or cached_data_handler.getValue('UploadLiveStreams'):
+            uploadThread = Process(target=uploadQueue,
+                                   name="Upload Thread.", args=(cached_data_handler, queue_holder,))
+            uploadThread.start()
+            return [True, "OK"]
+    return [False, "Already started."]
+
+
+def stop_youtube_queue_thread():
+    global uploadThread
+    if uploadThread:
+        uploadThread.terminate()
+        uploadThread.join()  # wait until done.
+        uploadThread.close()
+        uploadThread = None
+        return [True, "OK"]
+    return [False, "Welp, already stopped."]
 
 
 # VERY BETA
 def google_account_login(username, password):
     from .GoogleLogin import login
-    return login(username, password)
+    return login(username, passwords)
 
 
 def google_account_logout():

@@ -7,7 +7,7 @@ from time import sleep
 from flask import request, redirect, Flask, url_for, jsonify, send_from_directory
 
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
-    google_account_logout
+    google_account_logout, run_youtube_queue_thread, stop_youtube_queue_thread
 from .utils.windowsNotification import show_windows_toast_notification
 from .log import info, error_warning
 
@@ -201,17 +201,30 @@ def swapDownloadThumbnail(name):
         if name not in cached_data_handler.getDict():
             return Response("Failed to find {0} in data file. It's really broken. :P".format(name),
                             status="server-error", status_code=500)
-        if name == "UploadLiveStreams":
-            # Check for client secret file before doing something that uses the YouTube API.
-            if cached_data_handler.getValue(name) is False:
-                CLIENT_SECRETS_FILE = os.path.join(
-                    os.getcwd(), "client_id.json")
-                if not path.exists(CLIENT_SECRETS_FILE):
-                    return Response("WARNING: Please configure OAuth 2.0. \nInformation at the Developers Console " +
-                                    "https://console.developers.google.com/", status='server-error', status_code=500)
 
         if type(cached_data_handler.getValue(name)) is bool:
-            cached_data_handler.setValue(name, (not cached_data_handler.getValue(name)))
+            swap_value = (not cached_data_handler.getValue(name))
+            if name == "UploadLiveStreams":
+                # Check for client secret file before doing something that uses the YouTube API.
+                if cached_data_handler.getValue(name) is False:
+                    CLIENT_SECRETS_FILE = os.path.join(
+                        os.getcwd(), "client_id.json")
+                    if not path.exists(CLIENT_SECRETS_FILE):
+                        return Response(
+                            "WARNING: Please configure OAuth 2.0. \nInformation at the Developers Console " +
+                            "https://console.developers.google.com/", status='server-error', status_code=500)
+                # RUN QUEUE THREAD WHEN ENABLED>
+                if swap_value:
+                    okay = run_youtube_queue_thread(skipValueCheck=True)
+                    if not okay:
+                        return Response('Unable to start upload Queue Thread.',
+                                        status="server-error", status_code=500)
+                if not swap_value:
+                    okay = stop_youtube_queue_thread()
+                    if not okay:
+                        return Response('Unable to stop upload Queue Thread.',
+                                        status="server-error", status_code=500)
+            cached_data_handler.setValue(name, swap_value)
         else:
             return Response('Value is not a bool. Cannot invert type, {0}.'.format(
                 str(type(cached_data_handler.getValue(name)))))

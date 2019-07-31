@@ -23,6 +23,7 @@ class QueueHolder:
 
 
 def uploadQueue(cached_data_handler, queue_holder):
+    info("Upload Queue Started.")
     encoder = Encoder()
     while True:
         queue = queue_holder.getQueue()
