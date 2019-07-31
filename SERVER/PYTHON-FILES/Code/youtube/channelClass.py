@@ -194,9 +194,9 @@ class ChannelInfo:
                         else:
                             return [False, "Unable to get videoDetails."]
                     else:
-                        warning("Found a stream, the stream seemed to be a non-live stream.")
+                        return [False, "Found a stream, the stream seemed to be a non-live stream."]
                 else:
-                    warning("Unable to get yt player config.")
+                    return [False, "Unable to get yt player config."]
             else:
                 warning("Unrecognized endpoint type. Endpoint Type: {0}".format(endpoint_type))
                 if not yt_player_config:
@@ -213,9 +213,9 @@ class ChannelInfo:
                         else:
                             return [False, "Unable to get videoDetails."]
                     else:
-                        warning("Found a stream, the stream seemed to be a non-live stream.")
+                        return[False, "Found a stream, the stream seemed to be a non-live stream."]
                 else:
-                    warning("Unable to get yt player config.")
+                    return [False, "Unable to get yt player config."]
 
         if self.channel_name is None:
             return [False, "Failed Getting " + self.channel_id + " channel_name."]
