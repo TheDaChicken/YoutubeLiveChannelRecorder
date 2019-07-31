@@ -53,6 +53,8 @@ def login(username, password):
             'f.req': json.dumps(f_req),
             'flowName': 'GlifWebSignIn',
             'flowEntry': 'ServiceLogin',
+            # TODO: reverse actual botguard identifier generation algo
+            'bgRequest': '["identifier",""]',
         })
 
         return download_json(
