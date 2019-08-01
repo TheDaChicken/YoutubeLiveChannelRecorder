@@ -35,12 +35,12 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
             return [False, "Failed getting Video Data! \"" +
                     video_id + "\" doesn't exist as a video id!"]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+        videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
         if yt_player_config:
             if "live_playback" not in yt_player_config:
                 return [False, "Found a Non-Valid Youtube Live Stream."]
             else:
-                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
-                videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                 channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
                 if not channel_class.video_id:
                     return [False, "Unable to find video id in the YouTube player config!"]

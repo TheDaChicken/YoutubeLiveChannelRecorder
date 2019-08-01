@@ -242,12 +242,12 @@ class ChannelInfo:
                                "{0}\" doesn't exist as a channel id!".format(self.channel_id)]
         if not yt_player_config:
             yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        if not player_response:
+            player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+        if not videoDetails:
+            videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
         if yt_player_config:
             if "is_live_destination" in yt_player_config:
-                if not videoDetails:
-                    if not player_response:
-                        player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
-                    videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                 if videoDetails:
                     self.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
                 self.privateStream = False
@@ -261,8 +261,6 @@ class ChannelInfo:
 
         if not self.privateStream:
             # TO AVOID REPEATING REQUESTS.
-            if not player_response:
-                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
             if player_response:
                 # playabilityStatus is legit heartbeat all over again..
                 playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
