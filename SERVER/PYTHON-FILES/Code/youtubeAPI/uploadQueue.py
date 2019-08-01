@@ -37,13 +37,13 @@ def uploadQueue(cached_data_handler, queue_holder):
                 if len(file_location) < 2:
                     uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location[0],
                                   thumbnail_location)
-                    queue_holder.removeQueue(video_id)
                 else:
                     # TODO MERGE FILES OR SOMETHING
                     now = video_data.get('start_date')  # type: datetime
                     for file_ in file_location:
                         uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_,
                                       thumbnail_location)
+                queue_holder.removeQueue(video_id)
         sleep(2)
 
 
