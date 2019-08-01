@@ -39,14 +39,15 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
             if "live_playback" not in yt_player_config:
                 return [False, "Found a Non-Valid Youtube Live Stream."]
             else:
-                channel_class.video_id = try_get(yt_player_config, lambda x: x['video_id'], str)
+                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+                videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
                 if not channel_class.video_id:
                     return [False, "Unable to find video id in the YouTube player config!"]
         else:
             return [False, "Unable to find YT Player Config."]
 
         # TO AVOID REPEATING REQUESTS.
-        player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
         if player_response:
             # playabilityStatus is legit heartbeat all over again..
             playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
@@ -60,14 +61,13 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
                 if formats is None or len(formats) is 0:
                     return [False, "There were no formats found! Even when the streamer is live."]
                 f = get_format_from_data(formats, None)
-                videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                 thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
                 if thumbnails:
                     channel_class.thumbnail_url = get_highest_thumbnail(thumbnails)
                 channel_class.YoutubeStream = {
                     'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
                     'HLSStreamURL': f['url'],
-                    'title': videoDetails['title'],
+                    'title': try_get(videoDetails, lambda x: x['title'], str),
                     'description': videoDetails['shortDescription'],
                 }
 

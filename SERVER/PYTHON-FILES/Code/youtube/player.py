@@ -217,6 +217,7 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
         return video_info_website
     video_info = parse_qs(video_info_website)
     player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
+    video_details = try_get(player_response, lambda x: x['videoDetails'], dict)
 
     if player_response:
         if "streamingData" not in player_response:
@@ -236,8 +237,9 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
             'HLSManifestURL': manifest_url,
             'DashManifestURL': str(try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
             'HLSStreamURL': f['url'],
-            'title': try_get(video_info, lambda x: x['title'][0], str),
-            'description': player_response['videoDetails']['shortDescription'],
+            'title': try_get(video_info, lambda x: ['title'][0], str) or try_get(
+                video_details, lambda x: x['title'], str),
+            'description': try_get(video_details, lambda x: x['shortDescription'], str),
             'video_id': channelInfo.video_id
         }
         return youtube_stream_info

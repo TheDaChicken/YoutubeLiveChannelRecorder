@@ -278,7 +278,8 @@ class ChannelInfo:
                         if formats is None or len(formats) is 0:
                             return [False, "There were no formats found! Even when the streamer is live."]
                         f = get_format_from_data(formats, None)
-                        videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                        if not videoDetails:
+                            videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                         thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
                         if thumbnails:
                             self.thumbnail_url = get_highest_thumbnail(thumbnails)
@@ -288,7 +289,7 @@ class ChannelInfo:
                             'DashManifestURL': str(
                                 try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
                             'HLSStreamURL': f['url'],
-                            'title': videoDetails['title'],
+                            'title': try_get(videoDetails, lambda x: x['title'], str),
                             'description': videoDetails['shortDescription'],
                         }
 
