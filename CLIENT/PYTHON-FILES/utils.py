@@ -60,9 +60,8 @@ def parse_json(json_string):
     import json
     try:
         return json.loads(json_string)
-    except TypeError as ve:
-        errmsg = '%s: Failed to parse JSON. This might just be a python bug.'
-        warning(errmsg)
+    except Exception:
+        return None
 
 
 def download_json(url, Headers=None, RequestMethod='GET'):

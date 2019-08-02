@@ -7,7 +7,7 @@ from time import sleep
 from flask import request, redirect, Flask, url_for, jsonify, send_from_directory
 
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
-    google_account_logout, run_youtube_queue_thread, stop_youtube_queue_thread
+    google_account_logout, run_youtube_queue_thread, stop_youtube_queue_thread, run_channel_with_video_id
 from .utils.windowsNotification import show_windows_toast_notification
 from .log import info, error_warning
 
@@ -139,9 +139,33 @@ def remove_channel():
         'channel_ids', channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
     sleep(.01)
-    info(channel_id + " has been removed.")
+    info("{0} has been removed.".format(channel_id))
     del channel_array
     return Response(None)
+
+
+@app.route('/addVideoID')
+def add_video_id():
+    video_id = request.args.get('video_id')
+    if video_id is None:
+        return Response("You need VIDEO_ID in args.", status="client-error", status_code=400)
+    if video_id is '':
+        return Response('You need to specify a valid video id.', status='client-error', status_code=400)
+    channel_array = [channel_ for channel_ in channel_main_array
+                     if video_id.casefold() == channel_['class'].get('video_id').casefold() or
+                     video_id.casefold() == channel_['class'].get('video_id').casefold()]
+    if len(channel_array) is not 0:
+        return Response("Video Already in list!", status="server-error", status_code=500)
+    del channel_array
+    ok, message = run_channel_with_video_id(video_id)
+    if ok:
+        # VIDEO ID UNNEEDED.
+        # NEEDS TO ADD CHANNEL TO CONFIG
+        # cached_data_handler.addValueList('channel_ids', video_id)
+        # info("{0} has been added to the list of channels.".format(video_id))
+        return Response(None)
+    else:
+        return Response(message, status="server-error", status_code=500)
 
 
 @app.route('/channelInfo')

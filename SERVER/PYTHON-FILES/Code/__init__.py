@@ -132,6 +132,28 @@ def upload_test_run(channel_id, startup=False):
         return [False, error_message]
 
 
+def run_channel_with_video_id(video_id, startup=False):
+    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(None, shareable_variables,
+                                                                     cached_data_handler, queue_holder)
+    ok_bool, error_message = channel_holder_class.loadYoutubeData(video_id=video_id)
+    if ok_bool:
+        del ok_bool
+        del error_message
+        channel_holder_class.registerCloseEvent()
+        channel_name = channel_holder_class.get("channel_name")
+        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
+                                                 name="{0} - Heartbeat Thread".format(channel_name))
+        check_streaming_channel_thread.start()
+        channel_main_array.append(
+            {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
+        return [True, "OK"]
+    else:
+        if startup:
+            channel_main_array.append(
+                {'class': channel_holder_class, "error": error_message, 'thread_class': None})
+        return [False, error_message]
+
+
 def run_youtube_queue_thread(skipValueCheck=False):
     global uploadThread
     if not uploadThread:

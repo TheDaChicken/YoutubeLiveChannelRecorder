@@ -130,9 +130,14 @@ class ChannelInfo:
         self.cachedDataHandler = cachedDataHandler
         self.queue_holder = queue_holder
 
-    def loadYoutubeData(self):
-        html = download_website("https://www.youtube.com/channel/{0}/live".
-                                format(self.channel_id), SharedVariables=self.SharedVariables)
+    def loadYoutubeData(self, video_id=None):
+        if video_id:
+            html = download_website("https://www.youtube.com/watch?v={0}".
+                                    format(video_id), SharedVariables=self.SharedVariables)
+            self.video_id = video_id
+        else:
+            html = download_website("https://www.youtube.com/channel/{0}/live".
+                                    format(self.channel_id), SharedVariables=self.SharedVariables)
         if html is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
@@ -140,8 +145,14 @@ class ChannelInfo:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
                 self.channel_id)]
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        if not yt_player_config:
+            return [False, "Failed to get YouTube Player Config."]
         player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+        if not player_response:
+            return [False, "Failed to get Player Response."]
         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+        if not videoDetails:
+            return [False, "Failed to get Video Details."]
         ok, message = self.loadChannelData(html_code=html, yt_player_config=yt_player_config,
                                            player_response=player_response, videoDetails=videoDetails)
         if not ok:
@@ -168,7 +179,8 @@ class ChannelInfo:
             if html_code == 404:
                 return [False, "Failed getting Channel Data! \"" +
                         self.channel_id + "\" doesn't exist as a channel id!"]
-        verbose("Getting Channel Name of " + self.channel_id + ".")
+        if self.channel_id:
+            verbose("Getting Channel Name of {0}.".format(str(self.channel_id)))
         endpoint_type = get_endpoint_type(html_code)
         if endpoint_type:
             if endpoint_type == 'browse':
@@ -183,14 +195,16 @@ class ChannelInfo:
                 if not yt_player_config:
                     yt_player_config = try_get(get_yt_player_config(html_code), lambda x: x['args'], dict)
                 if yt_player_config:
-                    if "is_live_destination" in yt_player_config:
+                    if "live_default_broadcast" in yt_player_config:
                         if not videoDetails:
                             if not player_response:
                                 player_response = parse_json(
                                     try_get(yt_player_config, lambda x: x['player_response'], str))
                             videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                         if videoDetails:
-                            self.channel_name = videoDetails['author']
+                            self.channel_name = try_get(videoDetails, lambda x: x['author'], str)
+                            if not self.channel_id:
+                                self.channel_id = try_get(videoDetails, lambda x: x['channelId'], str)
                         else:
                             return [False, "Unable to get videoDetails."]
                     else:
@@ -247,7 +261,7 @@ class ChannelInfo:
         if not videoDetails:
             videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
         if yt_player_config:
-            if "is_live_destination" in yt_player_config:
+            if "live_default_broadcast" in yt_player_config:
                 if videoDetails:
                     self.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
                 self.privateStream = False

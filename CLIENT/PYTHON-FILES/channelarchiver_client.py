@@ -3,13 +3,11 @@ import platform
 import re
 from time import sleep
 
-from colorama import Fore
-
 from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
-    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache
+    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id
 from utils import stringToInt
-from log import info, stopped, warning, EncoderLog
+from log import info, stopped, warning, EncoderLog, Fore
 
 serverIP = None
 serverPort = None
@@ -155,6 +153,7 @@ if __name__ == '__main__':
                 else:
                     print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
                 print(" 6) {0}View Recordings.".format(Fore.LIGHTYELLOW_EX))
+                print(" 7) Add Channel (USING VIDEO ID).")
                 if toaster is not None and 'localhost' not in serverIP:
                     print(" N) Holds console, shows Windows 10 Toast Notification every time a stream goes live.")
                 print("  - Type a specific number to do the specific action. - ")
@@ -298,6 +297,28 @@ if __name__ == '__main__':
                             channel_info = reply
                 elif option is "6":
                     Screen = "View-Recording"
+                elif option is "7":
+                    print("")
+                    temp_channel_id = input("Video ID: ")
+                    ok, reply = add_video_id(serverIP, serverPort, temp_channel_id)
+                    del temp_channel_id
+                    print("")
+                    print("")
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                    else:
+                        print(Fore.LIGHTGREEN_EX + "Video ID has now been added.")
+                    print("")
+                    input("Press enter to go back to Selection.")
+                    # Refresh
+                    info("Getting Server Info.")
+                    ok, reply = get_channel_info(serverIP, serverPort)
+                    if not ok:
+                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("")
+                        input("Press enter to go back to Selection.")
+                    else:
+                        channel_info = reply
             elif Screen is "Settings":
                 clearScreen()
                 print("")

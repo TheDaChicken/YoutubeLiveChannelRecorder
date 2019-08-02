@@ -1,4 +1,4 @@
-from logging import warning
+from ..log import warning
 
 
 #

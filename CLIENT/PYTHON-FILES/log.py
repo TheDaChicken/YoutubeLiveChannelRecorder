@@ -27,7 +27,8 @@ def YoutubeReply(text):
 
 
 def stopped(text):
-    print(Fore.LIGHTRED_EX + "{}".format(text))
+    if text:
+        print(Fore.LIGHTRED_EX + "{}".format(text))
     from time import sleep
     sleep(5)
     sys.exit(1)
