@@ -80,11 +80,17 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
 
         if channel_Class.live_scheduled is True:
             channel_Class.live_scheduled_time = get_schedule_time(liveStreamAbilityRenderer)
-        if 'stop_heartbeat' in json or ('ended' in try_get(json, lambda x: x['reason'], str)):
+        status = try_get(json, lambda x: x['status'], str)
+        reason = try_get(json, lambda x: x['reason'], str)
+        if 'stop_heartbeat' in json:
             channel_Class.add_youtube_queue()
             channel_Class.loadVideoData()
             return False
-        status = try_get(json, lambda x: x['status'], str)
+        if reason:
+            if "ended" in reason:
+                channel_Class.add_youtube_queue()
+                channel_Class.loadVideoData()
+                return False
         if status:  # Sometimes status is removed and causes an error.
             if "ok" in status:
                 return True
