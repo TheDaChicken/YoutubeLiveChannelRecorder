@@ -84,17 +84,18 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
             channel_Class.add_youtube_queue()
             channel_Class.loadVideoData()
             return False
-        if 'status' in json:  # Sometimes status is removed and causes an error.
-            if "ok" in json['status']:
+        status = try_get(json, lambda x: x['status'], str)
+        if status:  # Sometimes status is removed and causes an error.
+            if "ok" in status:
                 return True
-            if "stop" in json['status']:
+            if "stop" in status:
                 channel_Class.add_youtube_queue()
                 channel_Class.loadVideoData()
                 return False
-            if "error" in json['status']:
+            if "error" in status:
                 warning("Getting the Live Data, failed on Youtube's Side. Youtube Replied with: " + json['reason'])
                 return False
-            if "live_stream_offline" in json['status']:
+            if "live_stream_offline" in status:
                 return False
             warning("The Program couldn't find any value that matches the normal heartbeat. Returning False.")
         return False
