@@ -248,7 +248,7 @@ if __name__ == '__main__':
                     info("Now Checking.")
                     Screen = "NotificationHold"
                 elif option is "5":
-                    if channel_info['YoutubeLogin'] is False:
+                    if youtube['YoutubeLogin'] is False:
                         print("")
                         print("")
                         print("")
