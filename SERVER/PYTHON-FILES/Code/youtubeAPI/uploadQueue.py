@@ -2,14 +2,15 @@ import traceback
 from datetime import datetime
 from time import sleep
 
-from ..log import info, error_warning, warning
+from ..log import info, error_warning, warning, crash_warning
 from ..utils.other import getTimeZone
 from ..youtubeAPI import get_youtube_api_credentials, initialize_upload, upload_thumbnail
 from ..encoder import Encoder
 
 
-class QueueHolder:
+class QueueHandler:
     _queue = {}
+    _stats = 'RUNNING'
 
     def getQueue(self):
         return self._queue
@@ -20,30 +21,43 @@ class QueueHolder:
     def addQueue(self, update):
         self._queue.update(update)
 
+    def updateStatus(self, status):
+        self._stats = status
+
+    def getStatus(self):
+        return self._stats
+
 
 def uploadQueue(cached_data_handler, queue_holder):
     info("Upload Queue Started.")
     encoder = Encoder()
-    while True:
-        queue = queue_holder.getQueue()
-        if len(queue) != 0:
-            for video_id in queue:
-                video_info = queue.get(video_id)  # type: dict
-                video_data = video_info.get('video_data')  # type: dict
-                channel_data = video_info.get('channel_data')  # type: dict
-                file_location = video_info.get('file_location')  # type: list
-                thumbnail_location = video_info.get('thumbnail_location')
-                if len(file_location) < 2:
-                    uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location[0],
-                                  thumbnail_location)
-                else:
-                    # TODO MERGE FILES OR SOMETHING
-                    now = video_data.get('start_date')  # type: datetime
-                    for file_ in file_location:
-                        uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_,
+    try:
+        while True:
+            queue = queue_holder.getQueue()
+            if len(queue) != 0:
+                for video_id in queue:
+                    video_info = queue.get(video_id)  # type: dict
+                    video_data = video_info.get('video_data')  # type: dict
+                    channel_data = video_info.get('channel_data')  # type: dict
+                    file_location = video_info.get('file_location')  # type: list
+                    thumbnail_location = video_info.get('thumbnail_location')
+                    if len(file_location) < 2:
+                        queue_holder.updateStatus('Uploading \'{0}\' recording to YouTube.'.format(video_id))
+                        uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location[0],
                                       thumbnail_location)
-                queue_holder.removeQueue(video_id)
-        sleep(2)
+                    else:
+                        # TODO MERGE FILES OR SOMETHING
+                        now = video_data.get('start_date')  # type: datetime
+                        for file_ in file_location:
+                            queue_holder.updateStatus('Uploading \'{0}\' recordings to YouTube.'.format(video_id))
+                            uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_,
+                                          thumbnail_location)
+                    queue_holder.removeQueue(video_id)
+            else:
+                queue_holder.updateStatus('RUNNING')
+            sleep(2)
+    except Exception:
+        crash_warning("{0}:\n{1}".format("Queue Process", traceback.format_exc()))
 
 
 def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location, thumbnail_location):
@@ -103,6 +117,8 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
             upload_thumbnail(youtube_client, upload_video_id,
                              thumbnail_location)
             info("Thumbnail Done Uploading!")
+        return True
     except Exception:
         error_warning(traceback.format_exc())
         warning("Unable to upload stream to Youtube.")
+        return False

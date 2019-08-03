@@ -67,8 +67,8 @@ def add_video_id(ip, port, video_id):
     return __server_reply(ip, port, function_name, arguments)
 
 
-def get_channel_info(ip, port):
-    function_name = 'channelInfo'
+def get_server_info(ip, port):
+    function_name = 'serverInfo'
     arguments = {}
     return __server_reply(ip, port, function_name, arguments)
 

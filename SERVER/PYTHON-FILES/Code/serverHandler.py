@@ -1,15 +1,14 @@
 import os
 import traceback
 from os import path, getcwd
-from threading import Thread
 from time import sleep
 
 from flask import request, redirect, Flask, url_for, jsonify, send_from_directory
 
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
     google_account_logout, run_youtube_queue_thread, stop_youtube_queue_thread, run_channel_with_video_id
-from .utils.windowsNotification import show_windows_toast_notification
 from .log import info, error_warning
+from .utils.windowsNotification import show_windows_toast_notification
 
 
 # THIS FILE CONTAINS SERVER RELATED STUFF
@@ -41,15 +40,18 @@ class FlaskCustom(Flask):
 
 app = FlaskCustom(__name__)
 
+cached_data_handler = None
 
-def loadServer(port, cert=None, key=None):
+
+def loadServer(cached_data_handler_, port, cert=None, key=None):
+    # Global Variables.
+    global cached_data_handler
+    cached_data_handler = cached_data_handler_
+
     # Importing cached data handler before setting up shared, imports None.
     # This is to fix that problem.
-    global cached_data_handler
-    from . import cached_data_handler as data_handler
-    cached_data_handler = data_handler
-
-    sleep(1.41)
+    app.register_error_handler(500, server_internal_error)
+    app.register_error_handler(404, unable_to_find)
     try:
         from gevent.pywsgi import WSGIServer as WSGIServer
     except ImportError:
@@ -137,7 +139,7 @@ def remove_channel():
             return Response("Cannot Remove Channel. " + str(e), status="server-error", status_code=500)
     cached_data_handler.removeValueList(
         'channel_ids', channel_array['class'].get('channel_id'))
-    channel_main_array.remove(channel_array)
+    channel_main_array.channel_holder_array.remove(channel_array)
     sleep(.01)
     info("{0} has been removed.".format(channel_id))
     del channel_array
@@ -168,28 +170,26 @@ def add_video_id():
         return Response(message, status="server-error", status_code=500)
 
 
-@app.route('/channelInfo')
-def channelInfo():
-    json = {
-        'YoutubeLogin': is_google_account_login_in(),
+@app.route('/serverInfo')
+def serverInfo():
+    channelInfo = {
         'channel': {}
     }
-
     for channel in channel_main_array:
         channel_class = channel['class']
         process_class = channel['thread_class']
-        json['channel'].update({channel_class.get('channel_id'): {}})
+        channelInfo['channel'].update({channel_class.get('channel_id'): {}})
         if 'error' in channel:
-            json['channel'][channel_class.get('channel_id')].update({
+            channelInfo['channel'][channel_class.get('channel_id')].update({
                 'error': channel['error'],
             })
         else:
-            json['channel'][channel_class.get('channel_id')].update({
+            channelInfo['channel'][channel_class.get('channel_id')].update({
                 'name': channel_class.get('channel_name'),
                 'is_alive': process_class.is_alive() if process_class is not None else False,
             })
             if process_class.is_alive():
-                json['channel'][channel_class.get('channel_id')].update({
+                channelInfo['channel'][channel_class.get('channel_id')].update({
                     'video_id': channel_class.get('video_id'),
                     'live': channel_class.get('live_streaming'),
                     'privateStream': channel_class.get('privateStream'),
@@ -200,18 +200,29 @@ def channelInfo():
                     if channel_class.get('last_heartbeat') is not None else None,
                 })
                 if channel_class.get('live_streaming') is True:
-                    json['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_class.get('channel_id')].update({
                         'recording_status': channel_class.get('recording_status')
                     })
                 if channel_class.get('live_scheduled') is True:
-                    json['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_class.get('channel_id')].update({
                         'live_scheduled_time': channel_class.get('live_scheduled_time')
                     })
             elif not process_class.is_alive():
-                json['channel'][channel_class.get('channel_id')].update({
+                channelInfo['channel'][channel_class.get('channel_id')].update({
                     'crashed_traceback': channel_class.get('crashed_traceback')
                 })
-    return Response(json)
+    from . import uploadThread, queue_holder
+    return Response({
+        'channelInfo': channelInfo,
+        'youtube': {'YoutubeLogin': is_google_account_login_in()},
+        'youtubeAPI': {
+            'uploadQueue': {
+                'enabled': cached_data_handler.getValue('UploadLiveStreams'),
+                'is_alive': uploadThread.is_alive() if uploadThread is not None else None,
+                'status': queue_holder.getStatus(),
+            }
+        },
+    })
 
 
 @app.route('/swap/<name>', methods=['GET', 'POST'])
@@ -412,13 +423,3 @@ def server_internal_error(e):
 def unable_to_find(e):
     return Response("The requested URL was not found on this server.",
                     status="client-error", status_code=404)
-
-
-def run_server(port, cert=None, key=None):
-    app.register_error_handler(500, server_internal_error)
-    app.register_error_handler(404, unable_to_find)
-    load_server_thread = Thread(target=loadServer,
-                                name="Server Thread",
-                                args=(port, cert, key,))
-    load_server_thread.daemon = True  # needed control+C to work.
-    load_server_thread.start()

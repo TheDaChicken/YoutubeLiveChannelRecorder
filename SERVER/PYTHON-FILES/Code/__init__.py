@@ -1,16 +1,13 @@
 import os
 from multiprocessing import Process
 from multiprocessing.managers import BaseManager, Namespace
+from threading import Thread
 
-from .youtubeAPI.uploadQueue import uploadQueue, QueueHolder
+from .youtubeAPI.uploadQueue import uploadQueue, QueueHandler
 from .youtube.channelClass import ChannelInfo
 from .utils.web import download_website, __build__cookies
 from .dataHandler import CacheDataHandler
 from .log import verbose
-
-"""
-:type channel_main_array: array
-"""
 
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
             'Chrome/75.0.3770.100 Safari/537.36'
@@ -38,7 +35,7 @@ def setupSharedVariables():
 
     BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
     BaseManager.register('CacheDataHandler', CacheDataHandler)
-    BaseManager.register('QueueHolder', QueueHolder)
+    BaseManager.register('QueueHandler', QueueHandler)
 
     # Regular Shared Variables
     shareable_variables = Namespace()
@@ -52,7 +49,9 @@ def setupSharedVariables():
     baseManagerDataHandler = BaseManager()
     baseManagerDataHandler.start()
     cached_data_handler = baseManagerDataHandler.CacheDataHandler()
-    queue_holder = baseManagerDataHandler.QueueHolder()
+
+    # Global Queue Holder.
+    queue_holder = baseManagerDataHandler.QueueHandler()
 
     # Cache Cookies in shareable_variables. (Cookies are cached in a list)
     # Cannot make into global class due to problems.
@@ -61,6 +60,16 @@ def setupSharedVariables():
     cookies_ = cookieHandler.get_cookie_list()
     if cookies_:
         shareable_variables.CachedCookieList = cookies_
+
+
+class HandlerChannelList:
+    list_ = []
+
+    def add(self, object_):
+        self.list_.append(object_)
+
+    def remove(self, object_):
+        self.list_.remove(object_)
 
 
 class HandlerChannelInfo(ChannelInfo):
@@ -152,6 +161,15 @@ def run_channel_with_video_id(video_id, startup=False):
             channel_main_array.append(
                 {'class': channel_holder_class, "error": error_message, 'thread_class': None})
         return [False, error_message]
+
+
+def run_server(port, cert=None, key=None):
+    from .serverHandler import loadServer
+    load_server_thread = Thread(target=loadServer,
+                                name="Server Thread",
+                                args=(cached_data_handler, port, cert, key,))
+    load_server_thread.daemon = True  # needed control+C to work.
+    load_server_thread.start()
 
 
 def run_youtube_queue_thread(skipValueCheck=False):

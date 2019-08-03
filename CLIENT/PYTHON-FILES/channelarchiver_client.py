@@ -3,7 +3,7 @@ import platform
 import re
 from time import sleep
 
-from ServerFunctions import check_server, get_channel_info, add_channel, remove_channel, youtube_fully_login, \
+from ServerFunctions import check_server, get_server_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
     get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id
 from utils import stringToInt
@@ -67,20 +67,25 @@ if __name__ == '__main__':
         setTitle('YoutubeLiveChannelRecorder [Connected to Server: ' + serverIP + " Port: " + serverPort + "]")
         info("Server Running.")
         info("Getting Server Info.")
-        ok, channel_info = get_channel_info(serverIP, serverPort)
+        ok, serverInfo = get_server_info(serverIP, serverPort)
         if not ok:
-            stopped("Error Response from Server: " + channel_info)
+            stopped("Error Response from Server: " + serverInfo)
         Screen = "Main"
         while True:
             if Screen is "Main":
+                channel_info = serverInfo.get('channelInfo')
+                youtube = serverInfo.get('youtube')
+                youtubeAPI = serverInfo.get('youtubeAPI')
+                if youtubeAPI:
+                    uploadQueue = youtubeAPI.get('uploadQueue')
+
                 loopNumber = 1
                 clearScreen()
                 print("")
                 if len(channel_info['channel']) is 0:
                     print(Fore.LIGHTMAGENTA_EX + "No Channels currently added in the list.")
                 else:
-                    print(Fore.LIGHTMAGENTA_EX + "List of Channels:")
-                    print("")
+                    print("{0}List of Channels:\n".format(Fore.LIGHTMAGENTA_EX))
                     for channel_id in channel_info['channel']:
                         channelInfo = channel_info['channel'][channel_id]
                         channel_name = channelInfo.get('name')
@@ -142,12 +147,19 @@ if __name__ == '__main__':
                         # USING JOIN INSTEAD OF += ON STRING BECAUSE JOIN IS FASTER.
                         print(''.join(message))
                         loopNumber += 1
-                print("")
-                print(" 1) Refresh Channel List.")
-                print(" 2) Add Channel")
-                print(" 3) Remove Channel")
-                print(" 4) Change Settings")
-                if 'YoutubeLogin' in channel_info and channel_info['YoutubeLogin'] is False:
+                if uploadQueue and uploadQueue.get('enabled'):
+                    is_alive = uploadQueue.get('is_alive')
+                    if is_alive:
+                        status = uploadQueue.get('status')
+                    elif is_alive is None:
+                        status = 'Starting up.'
+                    elif is_alive is False:
+                        status = 'Crashed.'
+                    print("\n{0}YouTube Upload Queue:".format(Fore.LIGHTMAGENTA_EX))
+                    print("    {0}Status: {1}{2}".format(Fore.LIGHTGREEN_EX, Fore.LIGHTRED_EX, status))
+
+                print("\n 1) Refresh Channel List.\n 2) Add Channel\n 3) Remove Channel\n 4) Change Settings")
+                if 'YoutubeLogin' in youtube and youtube['YoutubeLogin'] is False:
                     print(" 5) " + Fore.LIGHTRED_EX + "Login to Youtube (FOR SPONSOR ONLY STREAMS) [VERY BUGGY] "
                                                       "")
                 else:
@@ -160,13 +172,13 @@ if __name__ == '__main__':
                 option = input(":")
                 if option is "1":  # Just Refresh
                     info("Getting Server Info.")
-                    ok, reply = get_channel_info(serverIP, serverPort)
+                    ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
                         print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
-                        channel_info = reply
+                        serverInfo = reply
                 elif option is "2":  # ADDING CHANNELS
                     print("To Find The Channel_IDs USE THIS: ")
                     print("https://commentpicker.com/youtube-channel-id.php")
@@ -183,13 +195,13 @@ if __name__ == '__main__':
                     input("Press enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
-                    ok, reply = get_channel_info(serverIP, serverPort)
+                    ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
                         print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
-                        channel_info = reply
+                        serverInfo = reply
                 elif option is "3":  # REMOVE CHANNELS (BETA ON SERVER)
                     print("  To Find The Channel_IDs USE THIS: ")
                     print("  https://commentpicker.com/youtube-channel-id.php")
@@ -206,13 +218,13 @@ if __name__ == '__main__':
                     input("Press enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
-                    ok, reply = get_channel_info(serverIP, serverPort)
+                    ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
                         print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
-                        channel_info = reply
+                        serverInfo = reply
                 elif option is "4":
                     info("Getting Server Settings")
                     ok, reply = get_server_settings(serverIP, serverPort)
@@ -264,13 +276,13 @@ if __name__ == '__main__':
                         input("Press enter to go back to Selection.")
                         print("")
                         info("Getting Server Info.")
-                        ok, reply = get_channel_info(serverIP, serverPort)
+                        ok, reply = get_server_info(serverIP, serverPort)
                         if not ok:
                             print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                             print("")
                             input("Press enter to go back to Selection.")
                         else:
-                            channel_info = reply
+                            serverInfo = reply
                     elif channel_info['YoutubeLogin'] is True:
                         print("")
                         print("")
@@ -288,13 +300,13 @@ if __name__ == '__main__':
                         input("Press enter to go back to Selection.")
                         print("")
                         info("Getting Server Info.")
-                        ok, reply = get_channel_info(serverIP, serverPort)
+                        ok, reply = get_server_info(serverIP, serverPort)
                         if not ok:
                             print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                             print("")
                             input("Press enter to go back to Selection.")
                         else:
-                            channel_info = reply
+                            serverInfo = reply
                 elif option is "6":
                     Screen = "View-Recording"
                 elif option is "7":
@@ -312,13 +324,13 @@ if __name__ == '__main__':
                     input("Press enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
-                    ok, reply = get_channel_info(serverIP, serverPort)
+                    ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
                         print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
-                        channel_info = reply
+                        serverInfo = reply
             elif Screen is "Settings":
                 clearScreen()
                 print("")
@@ -505,7 +517,7 @@ if __name__ == '__main__':
                     print("")
                     input("Press enter to go back to Selection.")
                     info("Getting Server Info.")
-                    ok, reply = get_channel_info(serverIP, serverPort)
+                    ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
                         print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                         print("")
@@ -619,12 +631,13 @@ if __name__ == '__main__':
                                     break
             elif Screen is "NotificationHold":
                 channel_info_last = channel_info
-                ok, reply = get_channel_info(serverIP, serverPort)
+                ok, reply = get_server_info(serverIP, serverPort)
                 if not ok:
                     print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                     print("")
                 else:
-                    channel_info = reply
+                    serverInfo = reply
+                channel_info = serverInfo.get('channelInfo')
                 for channel in channel_info['channels']:
                     channelInfo = channel_info['channel'][channel]
                     channelInfo_last = channel_info_last['channel'][channel]
