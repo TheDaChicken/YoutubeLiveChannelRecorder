@@ -80,8 +80,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
 
         if channel_Class.live_scheduled is True:
             channel_Class.live_scheduled_time = get_schedule_time(liveStreamAbilityRenderer)
-        if 'stop_heartbeat' in json:
-            sleep(.5)
+        if 'stop_heartbeat' in json or ('ended' in try_get(json, lambda x: x['reason'], str)):
             channel_Class.add_youtube_queue()
             channel_Class.loadVideoData()
             return False
