@@ -172,14 +172,12 @@ def add_video_id():
 def channelInfo():
     json = {
         'YoutubeLogin': is_google_account_login_in(),
-        'channels': [],
         'channel': {}
     }
 
     for channel in channel_main_array:
         channel_class = channel['class']
         process_class = channel['thread_class']
-        json['channels'].append(channel_class.get('channel_id'))
         json['channel'].update({channel_class.get('channel_id'): {}})
         if 'error' in channel:
             json['channel'][channel_class.get('channel_id')].update({

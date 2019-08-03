@@ -76,12 +76,12 @@ if __name__ == '__main__':
                 loopNumber = 1
                 clearScreen()
                 print("")
-                if len(channel_info['channels']) is 0:
+                if len(channel_info['channel']) is 0:
                     print(Fore.LIGHTMAGENTA_EX + "No Channels currently added in the list.")
                 else:
                     print(Fore.LIGHTMAGENTA_EX + "List of Channels:")
                     print("")
-                    for channel_id in channel_info['channels']:
+                    for channel_id in channel_info['channel']:
                         channelInfo = channel_info['channel'][channel_id]
                         channel_name = channelInfo.get('name')
                         is_alive = channelInfo['is_alive']
