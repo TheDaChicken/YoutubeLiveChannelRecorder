@@ -88,7 +88,6 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
             if "ok" in json['status']:
                 return True
             if "stop" in json['status']:
-                sleep(.29)
                 channel_Class.add_youtube_queue()
                 channel_Class.loadVideoData()
                 return False
