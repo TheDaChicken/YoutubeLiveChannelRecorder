@@ -150,13 +150,13 @@ if __name__ == '__main__':
                 if uploadQueue and uploadQueue.get('enabled'):
                     is_alive = uploadQueue.get('is_alive')
                     if is_alive:
-                        status = uploadQueue.get('status')
+                        status = '{0}{1}'.format(Fore.LIGHTRED_EX, uploadQueue.get('status'))
                     elif is_alive is None:
-                        status = 'Starting up.'
+                        status = '{0}Starting up.'.format(Fore.LIGHTRED_EX)
                     elif is_alive is False:
-                        status = 'Crashed.'
+                        status = '{0}Crashed.'.format(Fore.LIGHTYELLOW_EX)
                     print("\n{0}YouTube Upload Queue:".format(Fore.LIGHTMAGENTA_EX))
-                    print("    {0}Status: {1}{2}".format(Fore.LIGHTGREEN_EX, Fore.LIGHTRED_EX, status))
+                    print("    {0}Status: {1}".format(Fore.LIGHTGREEN_EX, status))
 
                 print("\n 1) Refresh Channel List.\n 2) Add Channel\n 3) Remove Channel\n 4) Change Settings")
                 if 'YoutubeLogin' in youtube and youtube['YoutubeLogin'] is False:
