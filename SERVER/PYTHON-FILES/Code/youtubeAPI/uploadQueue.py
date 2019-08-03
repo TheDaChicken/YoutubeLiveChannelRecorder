@@ -57,6 +57,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                 queue_holder.updateStatus('RUNNING')
             sleep(2)
     except Exception:
+        queue_holder.updateStatus("Crash: {0}".format(traceback.format_exc()))
         crash_warning("{0}:\n{1}".format("Queue Process", traceback.format_exc()))
 
 

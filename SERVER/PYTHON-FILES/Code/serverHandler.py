@@ -212,15 +212,17 @@ def serverInfo():
                     'crashed_traceback': channel_class.get('crashed_traceback')
                 })
     from . import uploadThread, queue_holder
+    uploadQueue = {
+        'enabled': cached_data_handler.getValue('UploadLiveStreams'),
+        'is_alive': uploadThread.is_alive() if uploadThread is not None else None,
+    }
+    if uploadThread:
+        uploadQueue.update({'status': queue_holder.getStatus()})
     return Response({
         'channelInfo': channelInfo,
         'youtube': {'YoutubeLogin': is_google_account_login_in()},
         'youtubeAPI': {
-            'uploadQueue': {
-                'enabled': cached_data_handler.getValue('UploadLiveStreams'),
-                'is_alive': uploadThread.is_alive() if uploadThread is not None else None,
-                'status': queue_holder.getStatus(),
-            }
+            'uploadQueue': uploadQueue
         },
     })
 
