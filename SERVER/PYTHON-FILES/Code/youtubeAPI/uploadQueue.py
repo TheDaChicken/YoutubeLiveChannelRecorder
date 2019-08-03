@@ -54,7 +54,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                                           thumbnail_location)
                     queue_holder.removeQueue(video_id)
             else:
-                queue_holder.updateStatus('RUNNING')
+                queue_holder.updateStatus('Waiting.')
             sleep(2)
     except Exception:
         queue_holder.updateStatus("Crash: {0}".format(traceback.format_exc()))
