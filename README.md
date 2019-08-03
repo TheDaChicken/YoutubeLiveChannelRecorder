@@ -7,7 +7,7 @@
   This program does not work anything below PYTHON VERSION 3.
 
 ### LIMITATIONS (AS OF RIGHT NOW)
-  Resolution/fps changes in stream causes YouTube buffer and recording to stop working as ffmpeg hangs.
+  Resolution/fps changes in stream causes YouTube to buffer and recording to stop working as ffmpeg hangs.
 
 ### PROBLEMS (AS OF RIGHT NOW)
   Quick stop and start streaming causes the recording to stop but fail to start recording again.
