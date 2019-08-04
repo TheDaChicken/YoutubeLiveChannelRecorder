@@ -272,8 +272,12 @@ class ChannelInfo:
                     if player_response:
                         # playabilityStatus is legit heartbeat all over again..
                         playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-                        if playabilityStatus:
-                            if "OK" in playabilityStatus['status']:
+                        status = try_get(playabilityStatus, lambda x: x['status'], str)
+                        reason = try_get(playabilityStatus, lambda x: x['reason'], str)
+                        if playabilityStatus and status:
+                            if 'OK' in status:
+                                if reason and 'ended' in reason:
+                                    return [False, reason]
                                 if "streamingData" not in player_response:
                                     return [False, "No StreamingData, Youtube bugged out!"]
                                 manifest_url = str(
