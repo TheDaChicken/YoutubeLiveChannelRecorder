@@ -183,35 +183,44 @@ class ChannelInfo:
                     if player_response:
                         # playabilityStatus is legit heartbeat all over again..
                         playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-                        if playabilityStatus:
-                            if "OK" in playabilityStatus['status']:
-                                if "streamingData" not in player_response:
-                                    return [False, "No StreamingData, Youtube bugged out!"]
-                                manifest_url = str(
-                                    try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
-                                import json
-                                with open('default_live_streaam.json', 'w', encoding='utf-8') as f:
-                                    json.dump(player_response, f, ensure_ascii=False, indent=4)
-                                if not manifest_url:
-                                    return [False, "Unable to find HLS Manifest URL."]
-                                formats = download_m3u8_formats(manifest_url)
-                                if formats is None or len(formats) is 0:
-                                    return [False, "There were no formats found! Even when the streamer is live."]
-                                f = get_format_from_data(formats, None)
-                                if not videoDetails:
-                                    videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
-                                thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
-                                if thumbnails:
-                                    self.thumbnail_url = get_highest_thumbnail(thumbnails)
-                                self.YoutubeStream = {
-                                    'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                                    'HLSManifestURL': manifest_url,
-                                    'DashManifestURL': str(
-                                        try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
-                                    'HLSStreamURL': f['url'],
-                                    'title': try_get(videoDetails, lambda x: x['title'], str),
-                                    'description': videoDetails['shortDescription'],
-                                }
+                        status = try_get(playabilityStatus, lambda x: x['status'], str)
+                        reason = try_get(playabilityStatus, lambda x: x['reason'], str)
+                        if playabilityStatus and status:
+                            if 'OK' in status:
+                                if reason and 'ended' in reason:
+                                    return [False, reason]
+                                streamingData = try_get(player_response, lambda x: x['streamingData'], dict)
+                                if streamingData:
+                                    if 'licenseInfos' in streamingData:
+                                        licenseInfo = streamingData.get('licenseInfos')
+                                        drmFamilies = map(lambda x: x.get('drmFamily'), licenseInfo)
+                                        return [False, "This live stream contains DRM and cannot be recorded.\n"
+                                                       "DRM Families: {0}".format(', '.join(drmFamilies))]
+                                    manifest_url = str(
+                                        try_get(streamingData, lambda x: x['hlsManifestUrl'], str))
+                                    if not manifest_url:
+                                        return [False, "Unable to find HLS Manifest URL."]
+                                    formats = download_m3u8_formats(manifest_url)
+                                    if formats is None or len(formats) is 0:
+                                        return [False, "There were no formats found! Even when the streamer is live."]
+                                    f = get_format_from_data(formats, None)
+                                    if not videoDetails:
+                                        videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                                    thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
+                                    if thumbnails:
+                                        self.thumbnail_url = get_highest_thumbnail(thumbnails)
+                                    self.YoutubeStream = {
+                                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                                        'HLSManifestURL': manifest_url,
+                                        'DashManifestURL': str(
+                                            try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'],
+                                                    str)),
+                                        'HLSStreamURL': f['url'],
+                                        'title': try_get(videoDetails, lambda x: x['title'], str),
+                                        'description': videoDetails['shortDescription'],
+                                    }
+                                else:
+                                    return [False, "No StreamingData, YouTube bugged out!"]
 
         if not self.privateStream:
             set_global_youtube_variables(html_code=website_string)
@@ -278,30 +287,37 @@ class ChannelInfo:
                             if 'OK' in status:
                                 if reason and 'ended' in reason:
                                     return [False, reason]
-                                if "streamingData" not in player_response:
-                                    return [False, "No StreamingData, Youtube bugged out!"]
-                                manifest_url = str(
-                                    try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
-                                if not manifest_url:
-                                    return [False, "Unable to find HLS Manifest URL."]
-                                formats = download_m3u8_formats(manifest_url)
-                                if formats is None or len(formats) is 0:
-                                    return [False, "There were no formats found! Even when the streamer is live."]
-                                f = get_format_from_data(formats, None)
-                                if not videoDetails:
-                                    videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
-                                thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
-                                if thumbnails:
-                                    self.thumbnail_url = get_highest_thumbnail(thumbnails)
-                                self.YoutubeStream = {
-                                    'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                                    'HLSManifestURL': manifest_url,
-                                    'DashManifestURL': str(
-                                        try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
-                                    'HLSStreamURL': f['url'],
-                                    'title': try_get(videoDetails, lambda x: x['title'], str),
-                                    'description': videoDetails['shortDescription'],
-                                }
+                                streamingData = try_get(player_response, lambda x: x['streamingData'], dict)
+                                if streamingData:
+                                    if 'licenseInfos' in streamingData:
+                                        licenseInfo = streamingData.get('licenseInfos')
+                                        drmFamilies = map(lambda x: x.get('drmFamily'), licenseInfo)
+                                        return [False, "This live stream contains DRM and cannot be recorded.\n"
+                                                       "DRM Families: {0}".format(', '.join(drmFamilies))]
+                                    manifest_url = str(
+                                        try_get(streamingData, lambda x: x['hlsManifestUrl'], str))
+                                    if not manifest_url:
+                                        return [False, "Unable to find HLS Manifest URL."]
+                                    formats = download_m3u8_formats(manifest_url)
+                                    if formats is None or len(formats) is 0:
+                                        return [False, "There were no formats found! Even when the streamer is live."]
+                                    f = get_format_from_data(formats, None)
+                                    if not videoDetails:
+                                        videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
+                                    thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
+                                    if thumbnails:
+                                        self.thumbnail_url = get_highest_thumbnail(thumbnails)
+                                    self.YoutubeStream = {
+                                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                                        'HLSManifestURL': manifest_url,
+                                        'DashManifestURL': str(
+                                            try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
+                                        'HLSStreamURL': f['url'],
+                                        'title': try_get(videoDetails, lambda x: x['title'], str),
+                                        'description': videoDetails['shortDescription'],
+                                    }
+                                else:
+                                    return [False, "No StreamingData, YouTube bugged out!"]
 
         return [True, "OK"]
 
