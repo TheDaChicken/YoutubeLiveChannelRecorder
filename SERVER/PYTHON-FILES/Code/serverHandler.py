@@ -154,8 +154,8 @@ def add_video_id():
     if video_id is '':
         return Response('You need to specify a valid video id.', status='client-error', status_code=400)
     channel_array = [channel_ for channel_ in channel_main_array
-                     if video_id.casefold() == channel_['class'].get('video_id').casefold() or
-                     video_id.casefold() == channel_['class'].get('video_id').casefold()]
+                     if video_id == channel_['class'].get('video_id') or
+                     video_id == channel_['class'].get('video_id')]
     if len(channel_array) is not 0:
         return Response("Video Already in list!", status="server-error", status_code=500)
     del channel_array
