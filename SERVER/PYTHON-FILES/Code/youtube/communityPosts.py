@@ -28,7 +28,8 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
 
         :return: Nothing. It edits the class.
         """
-        website_string = download_website('https://www.youtube.com/watch?v={0}'.format(video_id))
+        website_string = download_website('https://www.youtube.com/watch?v={0}'.format(video_id),
+                                          SharedVariables=SharedVariables)
         if website_string is None:
             return [False, "Failed getting Video Data from the internet! "
                            "This means there is no good internet available!"]
