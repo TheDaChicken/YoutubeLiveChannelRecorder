@@ -37,8 +37,10 @@ def __server_reply(ip, port, function_name, arguments, RequestMethod='GET', http
     if not httpMethod:
         httpMethod = "https://" if useHTTPS else 'http://'
 
+    encoded_arguments = '?{0}'.format(urlencode(arguments)) if len(arguments) != 0 else ''
+
     website_text = download_website(
-        '{0}{1}:{2}/{3}?{4}'.format(httpMethod, ip, port, function_name, urlencode(arguments)), Headers=DefaultHeaders,
+        '{0}{1}:{2}/{3}{4}'.format(httpMethod, ip, port, function_name, encoded_arguments), Headers=DefaultHeaders,
         RequestMethod=RequestMethod)
     if type(website_text) is str:
         dict_json = parse_json(website_text)
