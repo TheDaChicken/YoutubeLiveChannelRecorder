@@ -38,7 +38,7 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
         player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
         if yt_player_config:
-            if "live_playback" not in yt_player_config:
+            if "live_default_broadcast" not in yt_player_config:
                 return [False, "Found a Non-Valid Youtube Live Stream."]
             else:
                 channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)

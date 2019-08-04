@@ -147,7 +147,7 @@ class ChannelInfo:
         yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
         player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
-        
+
         ok, message = self.loadChannelData(html_code=html, yt_player_config=yt_player_config,
                                            player_response=player_response, videoDetails=videoDetails)
         if not ok:
