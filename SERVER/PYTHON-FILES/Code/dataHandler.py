@@ -42,9 +42,8 @@ class CacheDataHandler:
         saveData(self._cache)
 
     def removeValueList(self, key_name, value):
-        if key_name in self._cache.get(key_name):
-            self._cache.get(key_name).remove(value)
-            saveData(self._cache)
+        self._cache.get(key_name).remove(value)
+        saveData(self._cache)
 
     def setValue(self, key_name, value):
         self._cache.update({

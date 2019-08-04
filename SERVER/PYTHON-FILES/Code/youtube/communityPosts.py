@@ -16,6 +16,7 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
     This is to record "sponsor only" streams. Really, it's just a unlisted stream.
 
     :type channel_class: ChannelInfo
+    :type SharedVariables: Variables shared around Processes.
     """
 
     def loadVideoData():
@@ -27,51 +28,57 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
 
         :return: Nothing. It edits the class.
         """
-        html = download_website('https://www.youtube.com/watch?v=' + video_id)
-        if html is None:
+        website_string = download_website('https://www.youtube.com/watch?v={0}'.format(video_id))
+        if website_string is None:
             return [False, "Failed getting Video Data from the internet! "
                            "This means there is no good internet available!"]
-        if html == 404:
+        if website_string == 404:
             return [False, "Failed getting Video Data! \"" +
                     video_id + "\" doesn't exist as a video id!"]
-        yt_player_config = try_get(get_yt_player_config(html), lambda x: x['args'], dict)
+        yt_player_config = try_get(get_yt_player_config(website_string), lambda x: x['args'], dict)
         player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
-        if yt_player_config:
-            if "live_default_broadcast" not in yt_player_config:
-                return [False, "Found a Non-Valid Youtube Live Stream."]
-            else:
+        if yt_player_config and videoDetails:
+            if "isLiveContent" in videoDetails and \
+                    videoDetails['isLiveContent'] and \
+                    ("isLive" in videoDetails or "isUpcoming" in videoDetails):
                 channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
-                if not channel_class.video_id:
-                    return [False, "Unable to find video id in the YouTube player config!"]
+            else:
+                return [False, "Found a stream, the stream seemed to be a non-live stream."]
         else:
-            return [False, "Unable to find YT Player Config."]
+            return [False, "Unable to get yt player config, and videoDetails."]
 
         # TO AVOID REPEATING REQUESTS.
         if player_response:
             # playabilityStatus is legit heartbeat all over again..
             playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-            if playabilityStatus is not None and "OK" in playabilityStatus['status']:
-                if "streamingData" not in player_response:
-                    return [False, "No StreamingData, Youtube bugged out!"]
-                manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
-                if not manifest_url:
-                    return [False, "Unable to find Manifest URL."]
-                formats = download_m3u8_formats(manifest_url)
-                if formats is None or len(formats) is 0:
-                    return [False, "There were no formats found! Even when the streamer is live."]
-                f = get_format_from_data(formats, None)
-                thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
-                if thumbnails:
-                    channel_class.thumbnail_url = get_highest_thumbnail(thumbnails)
-                channel_class.YoutubeStream = {
-                    'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
-                    'HLSStreamURL': f['url'],
-                    'title': try_get(videoDetails, lambda x: x['title'], str),
-                    'description': videoDetails['shortDescription'],
-                }
-        channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
-        return [True, ""]
+            status = try_get(playabilityStatus, lambda x: x['status'], str)
+            reason = try_get(playabilityStatus, lambda x: x['reason'], str)
+            if playabilityStatus and status:
+                if 'OK' in status:
+                    if reason and 'ended' in reason:
+                        return [False, reason]
+                    if "streamingData" not in player_response:
+                        return [False, "No StreamingData, Youtube bugged out!"]
+                    manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+                    if not manifest_url:
+                        return [False, "Unable to find Manifest URL."]
+                    formats = download_m3u8_formats(manifest_url)
+                    if formats is None or len(formats) is 0:
+                        return [False, "There were no formats found! Even when the streamer is live."]
+                    f = get_format_from_data(formats, None)
+                    thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
+                    if thumbnails:
+                        channel_class.thumbnail_url = get_highest_thumbnail(thumbnails)
+                    channel_class.YoutubeStream = {
+                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                        'HLSStreamURL': f['url'],
+                        'title': try_get(videoDetails, lambda x: x['title'], str),
+                        'description': videoDetails['shortDescription'],
+                    }
+                    channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
+
+        return [True, "OK"]
 
     CommunityPosts = readCommunityPosts(channel_class, SharedVariables=SharedVariables)
     if CommunityPosts:
@@ -89,13 +96,9 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
                                 already_checked_video_ids.append(video_id)
                                 ok, message = loadVideoData()
                                 if not ok:
-                                    warning(message)
-                                else:
+                                    warning("Failed stream, {0}. {1}".format(video_id, message))
+                                if ok:
                                     return True
-                            # IF ALREADY CHECK IS TOO BIG
-                            if len(already_checked_video_ids) is 5:
-                                for video_id in already_checked_video_ids:
-                                    already_checked_video_ids.remove(video_id)
     elif CommunityPosts is None:
         return None
     return False

@@ -23,9 +23,9 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         except ImportError:
             stopped("Unsupported version of Python. You need Version 3 :<")
 
-        if channel_Class.privateStream is True:
+        if not channel_Class.video_id:
             if alreadyChecked is False:
-                ok, message = channel_Class.loadVideoData()
+                ok, message = channel_Class.updateVideoData()
                 if not ok:
                     warning(message)
             return False
@@ -36,7 +36,8 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         headers = {'Accept': "*/*", 'Accept-Language': 'en-US,en;q=0.9', 'Connection': 'keep-alive', 'dnt': 1,
                    'referer': referer_url, 'x-youtube-client-name': 1}
         url_arguments = {'video_id': channel_Class.video_id, 'heartbeat_token': '',
-                         'c': (client_name if client_name is not None else 'WEB'), 'sequence_number': str(channel_Class.sequence_number)}
+                         'c': (client_name if client_name is not None else 'WEB'),
+                         'sequence_number': str(channel_Class.sequence_number)}
         if account_playback_token is not None:
             headers.update({'x-youtube-identity-token': account_playback_token})
         if page_build_label is not None:
@@ -84,19 +85,18 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         reason = try_get(json, lambda x: x['reason'], str)
         if 'stop_heartbeat' in json:
             channel_Class.add_youtube_queue()
-            channel_Class.loadVideoData()
+            channel_Class.updateVideoData()
             return False
-        if reason:
-            if "ended" in reason:
-                channel_Class.add_youtube_queue()
-                channel_Class.loadVideoData()
-                return False
+        if reason and "ended" in reason:
+            channel_Class.add_youtube_queue()
+            channel_Class.updateVideoData()
+            return False
         if status:  # Sometimes status is removed and causes an error.
             if "ok" in status:
                 return True
             if "stop" in status:
                 channel_Class.add_youtube_queue()
-                channel_Class.loadVideoData()
+                channel_Class.updateVideoData()
                 return False
             if "error" in status:
                 warning("Getting the Live Data, failed on Youtube's Side. Youtube Replied with: " + json['reason'])

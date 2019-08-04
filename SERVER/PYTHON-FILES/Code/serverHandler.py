@@ -132,14 +132,14 @@ def remove_channel():
             thread_class.terminate()
             sleep(1.0)
             if thread_class.is_alive():
-                thread_class.close()
                 return Response("Unable to Terminate.", status="server-error", status_code=500)
+            else:
+                thread_class.close()
         except Exception as e:
             error_warning(traceback.format_exc())
             return Response("Cannot Remove Channel. " + str(e), status="server-error", status_code=500)
-    cached_data_handler.removeValueList(
-        'channel_ids', channel_array['class'].get('channel_id'))
-    channel_main_array.channel_holder_array.remove(channel_array)
+    cached_data_handler.removeValueList('channel_ids', channel_array['class'].get('channel_id'))
+    channel_main_array.remove(channel_array)
     sleep(.01)
     info("{0} has been removed.".format(channel_id))
     del channel_array
