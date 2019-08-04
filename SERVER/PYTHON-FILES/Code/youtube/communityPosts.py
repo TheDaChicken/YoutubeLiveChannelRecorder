@@ -70,7 +70,8 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
                     'title': try_get(videoDetails, lambda x: x['title'], str),
                     'description': videoDetails['shortDescription'],
                 }
-        return [True, "OK"]
+        channel_class.video_id = try_get(videoDetails, lambda x: x['videoId'], str)
+        return [True, ""]
 
     CommunityPosts = readCommunityPosts(channel_class, SharedVariables=SharedVariables)
     if CommunityPosts:
