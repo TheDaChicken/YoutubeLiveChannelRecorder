@@ -337,14 +337,14 @@ class ChannelInfo:
     def get_sponsor_channel(self, html_code=None):
         from .. import is_google_account_login_in
         if is_google_account_login_in():
-            verbose("Checking if account sponsored " + self.channel_name + ".")
+            verbose("Checking if account sponsored {0}.".format(self.channel_name))
             if html_code is None:
-                html_code = download_website("https://www.youtube.com/channel/" + self.channel_id + "/live",
+                html_code = download_website("https://www.youtube.com/channel/{0}/live".format(self.channel_id),
                                              SharedVariables=self.SharedVariables)
                 if html_code is None:
                     return None
             html_code = str(html_code)
-            array = re.findall('/channel/' + self.channel_id + '/membership', html_code)
+            array = re.findall('/channel/{0}/membership'.format(self.channel_id), html_code)
             if array:
                 return True
             return False
