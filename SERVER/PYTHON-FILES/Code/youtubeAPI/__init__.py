@@ -169,7 +169,7 @@ def __resumable_upload(insert_request, file_location):
             warning(error)
             retry += 1
             if retry > MAX_RETRIES:
-                info("No longer attempting to retry. Couldn't upload " + file_location + ".")
+                info("No longer attempting to retry. Couldn't upload {0}.".format(file_location))
             else:
                 max_sleep = 2 ** retry
                 sleep_seconds = random.random() * max_sleep
