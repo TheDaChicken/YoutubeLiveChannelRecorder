@@ -210,7 +210,7 @@ class ChannelInfo:
                                     if thumbnails:
                                         self.thumbnail_url = get_highest_thumbnail(thumbnails)
                                     self.YoutubeStream = {
-                                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                                        'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                                         'HLSManifestURL': manifest_url,
                                         'DashManifestURL': str(
                                             try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'],
@@ -308,7 +308,7 @@ class ChannelInfo:
                                     if thumbnails:
                                         self.thumbnail_url = get_highest_thumbnail(thumbnails)
                                     self.YoutubeStream = {
-                                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                                        'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                                         'HLSManifestURL': manifest_url,
                                         'DashManifestURL': str(
                                             try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
@@ -413,8 +413,8 @@ class ChannelInfo:
                         self.recording_status = "Unable to get Youtube Stream Info."
                         self.live_streaming = None
                         warning("Unable to get Youtube Stream Info from this stream: ")
-                        warning("VIDEO ID: " + self.video_id)
-                        warning("CHANNEL ID: " + self.channel_id)
+                        warning("VIDEO ID: {0}".format(str(self.video_id)))
+                        warning("CHANNEL ID: {0}".format(str(self.channel_id)))
                     sleep(self.pollDelayMs / 1000)
                 if alreadyChecked:
                     alreadyChecked = False
