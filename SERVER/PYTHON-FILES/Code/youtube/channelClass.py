@@ -189,6 +189,7 @@ class ChannelInfo:
                             if 'OK' in status:
                                 if reason and 'ended' in reason:
                                     return [False, reason]
+                                self.live_streaming = True  # UPDATE SERVER VARIABLE
                                 streamingData = try_get(player_response, lambda x: x['streamingData'], dict)
                                 if streamingData:
                                     if 'licenseInfos' in streamingData:
@@ -221,6 +222,8 @@ class ChannelInfo:
                                     }
                                 else:
                                     return [False, "No StreamingData, YouTube bugged out!"]
+                            if 'live_stream_offline' in status:
+                                self.live_streaming = False  # UPDATE SERVER VARIABLE
 
         if not self.privateStream:
             set_global_youtube_variables(html_code=website_string)
