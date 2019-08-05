@@ -133,8 +133,6 @@ def remove_channel():
             sleep(1.0)
             if thread_class.is_alive():
                 return Response("Unable to Terminate.", status="server-error", status_code=500)
-            else:
-                thread_class.close()
         except Exception as e:
             error_warning(traceback.format_exc())
             return Response("Unable to remove channel. {0}".format(str(e)), status="server-error", status_code=500)
