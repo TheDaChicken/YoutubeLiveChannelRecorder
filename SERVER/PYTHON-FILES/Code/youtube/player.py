@@ -239,7 +239,7 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
             return None
         f = get_format_from_data(formats, recordingHeight)
         youtube_stream_info = {
-            'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+            'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
             'HLSManifestURL': manifest_url,
             'DashManifestURL': str(try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
             'HLSStreamURL': f['url'],
