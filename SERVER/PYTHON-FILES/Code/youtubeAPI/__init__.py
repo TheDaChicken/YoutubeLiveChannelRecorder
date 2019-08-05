@@ -58,7 +58,7 @@ def get_youtube_api_credentials(cached_data_handler):
 
 def get_youtube_api_login_link(redirect_url, cached_data_handler):
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE, scopes=YOUTUBE_READ_WRITE_SCOPE, message=MISSING_CLIENT_SECRETS_MESSAGE)
+        CLIENT_SECRETS_FILE, scopes=YOUTUBE_READ_WRITE_SCOPE)
     flow.redirect_uri = redirect_url
     if 'youtube_api_credentials' not in cached_data_handler.getDict():
         authorization_url, state = flow.authorization_url(

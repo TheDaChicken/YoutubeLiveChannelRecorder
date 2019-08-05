@@ -3,7 +3,8 @@ import traceback
 from os import path, getcwd
 from time import sleep
 
-from flask import request, redirect, Flask, url_for, jsonify, send_from_directory
+import requests
+from flask import request, redirect, Flask, url_for, jsonify, send_from_directory, session
 
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
     google_account_logout, run_youtube_queue_thread, stop_youtube_queue_thread, run_channel_with_video_id
@@ -39,6 +40,7 @@ class FlaskCustom(Flask):
 
 
 app = FlaskCustom(__name__)
+app.secret_key = 'a good key.'
 
 cached_data_handler = None
 
@@ -302,17 +304,9 @@ def updateDataCache():
     cached_data_handler.updateCache()
     return Response(None)
 
-
-# TODO CHANGE STATE VARIABLE TO some session['state']
-
-state = None
-
-
 # LOGGING INTO YOUTUBE (FOR UPLOADING)
-
 @app.route('/getLoginURL')
 def youtube_get_login_url():
-    from flask import url_for
     url = "{0}?unlockCode={1}".format(url_for('youtube_login', _external=True), "OK")
     return Response(url)
 
@@ -326,10 +320,9 @@ def youtube_login():
                         "https://console.developers.google.com/", status='server-error', status_code=500)
     from .youtubeAPI import get_youtube_api_login_link
     if 'youtube_api_credentials' in cached_data_handler.getDict():
-        return Response("Youtube account already logged-in", status='client-error', status_code=500)
+        return Response("Youtube account already logged-in", status='client-error', status_code=400)
     url = url_for('youtube_login_call_back', _external=True)
-    global state
-    link, state = get_youtube_api_login_link(url, cached_data_handler)
+    link, session['state'] = get_youtube_api_login_link(url, cached_data_handler)
     return redirect(link)
 
 
@@ -337,13 +330,17 @@ def youtube_login():
 def youtube_login_call_back():
     from .youtubeAPI import credentials_build, get_youtube_account_user_name, get_request_credentials
     authorization_response = request.url
-    global state
+    state = session.get('state')
     url = url_for('youtube_login_call_back', _external=True)
-    credentials = get_request_credentials(authorization_response, state, url)
-    username = get_youtube_account_user_name(credentials_build(credentials))
+    try:
+        credentials = get_request_credentials(authorization_response, state, url)
+        username = get_youtube_account_user_name(credentials_build(credentials))
+    except requests.exceptions.SSLError:
+        return Response("The server encountered an SSL error and was unable to complete your request.",
+                        status='server-error', status_code=500)
     cached_data_handler.setValue('youtube_api_account_username', username)
     cached_data_handler.setValue('youtube_api_credentials', credentials)
-    state = None
+    session.pop('state', None)
     return Response(None)
 
 
