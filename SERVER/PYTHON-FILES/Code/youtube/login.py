@@ -1,10 +1,10 @@
 import json
 import re
 
-from ..log import info, stopped, warning
-from ..utils.web import download_website, download_json
-from ..utils.parser import parse_html_attributes
+from ..log import info, stopped
 from ..utils.other import try_get
+from ..utils.parser import parse_html_attributes
+from ..utils.web import download_website, download_json
 
 LOGIN_URL = "https://accounts.google.com/ServiceLogin?service=youtube"
 LOOKUP_URL = 'https://accounts.google.com/_/signin/sl/lookup'

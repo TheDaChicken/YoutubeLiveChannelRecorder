@@ -132,8 +132,9 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
                         warning("- Turning off Recording -")
                     else:
                         warning("- Recording Crashed -")
-                    show_windows_toast_notification("Live Recording Notifications", "INTERNET WHEN OFFLINE DURING " +
-                                                    channelClass.channel_name + "'s live stream!")
+                    show_windows_toast_notification("Live Recording Notifications", "INTERNET WENT OFFLINE "
+                                                                                    "DURING {0}'s live stream!".
+                                                    format(channelClass.channel_name))
                 sleep(channelClass.pollDelayMs / 1000)
             else:
                 sleep(channelClass.pollDelayMs / 1000 + .9)
@@ -147,11 +148,16 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
                         offline = False
                         # Starts the recording back if internet was offline.
                         channelClass.recording_status = "Starting Recording."
-                        channelClass.EncoderClass.start_recording(videoLocation=os.path.join("RecordedStreams",
-                                                                                             channelClass.
-                                                                                             create_filename(
-                                                                                                 channelClass.video_id)
-                                                                                             + '.mp4'))
+
+                        channelClass.video_location = os.path.join("RecordedStreams",
+                                                                   channelClass.
+                                                                   create_filename(
+                                                                       channelClass.video_id)
+                                                                   + '.mp4')
+
+                        channelClass.EncoderClass.start_recording(YoutubeStream['HLSStreamURL'],
+                                                                  channelClass.video_location)
+
                         channelClass.recording_status = "Recording."
                         show_windows_toast_notification("Live Recording Notifications", "{0} is live "
                                                                                         "and is now recording. \n"

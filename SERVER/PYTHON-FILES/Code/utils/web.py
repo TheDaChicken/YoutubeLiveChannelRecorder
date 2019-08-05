@@ -4,7 +4,7 @@ from time import sleep
 
 from .parser import parse_json, parse_m3u8_formats
 
-from ..log import stopped, warning, verbose, error_warning
+from ..log import stopped, warning, error_warning
 
 import httplib2
 from urllib3.exceptions import TimeoutError

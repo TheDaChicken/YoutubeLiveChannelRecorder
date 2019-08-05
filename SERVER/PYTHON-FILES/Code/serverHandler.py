@@ -67,7 +67,7 @@ def loadServer(cached_data_handler_, port, cert=None, key=None):
                                      server_side=True)
         else:
             http_server = WSGIServer(('', port), app)
-        info("Server started. Hosted on port: {0}".format(port) + "!")
+        info("Server started. Hosted on port: {0}!".format(port))
         show_windows_toast_notification(
             "ChannelArchiver Server", "ChannelArchiver server started")
         http_server.serve_forever()
@@ -106,7 +106,7 @@ def add_channel():
     if ok:
         # NEEDS TO ADD CHANNEL TO CONFIG
         cached_data_handler.addValueList('channel_ids', channel_id)
-        info(channel_id + " has been added to the list of channels.")
+        info("{0} has been added to the list of channels.".format(channel_id))
         return Response(None)
     else:
         return Response(message, status="server-error", status_code=500)
@@ -122,7 +122,7 @@ def remove_channel():
                      if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
                      channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
     if channel_array is None or len(channel_array) is 0:
-        return Response(channel_id + " hasn't been added to the channel list, so it can't be removed.",
+        return Response("{0} hasn't been added to the channel list, so it can't be removed.".format(channel_id),
                         status="server-error", status_code=500)
     channel_array = channel_array[0]
     if 'error' not in channel_array:
@@ -137,7 +137,7 @@ def remove_channel():
                 thread_class.close()
         except Exception as e:
             error_warning(traceback.format_exc())
-            return Response("Cannot Remove Channel. " + str(e), status="server-error", status_code=500)
+            return Response("Unable to remove channel. {0}".format(str(e)), status="server-error", status_code=500)
     cached_data_handler.removeValueList('channel_ids', channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
     sleep(.01)
@@ -246,7 +246,7 @@ def swapDownloadThumbnail(name):
                         os.getcwd(), "client_id.json")
                     if not path.exists(CLIENT_SECRETS_FILE):
                         return Response(
-                            "WARNING: Please configure OAuth 2.0. \nInformation at the Developers Console " +
+                            "WARNING: Please configure OAuth 2.0. \nInformation at the Developers Console "
                             "https://console.developers.google.com/", status='server-error', status_code=500)
                 # RUN QUEUE THREAD WHEN ENABLED>
                 if swap_value:
@@ -313,7 +313,7 @@ state = None
 @app.route('/getLoginURL')
 def youtube_get_login_url():
     from flask import url_for
-    url = url_for('youtube_login', _external=True) + "?unlockCode=" + "OK"
+    url = "{0}?unlockCode={1}".format(url_for('youtube_login', _external=True), "OK")
     return Response(url)
 
 
@@ -322,7 +322,7 @@ def youtube_login():
     # Check for client secret file...
     CLIENT_SECRETS_FILE = os.path.join(os.getcwd(), "client_id.json")
     if not path.exists(CLIENT_SECRETS_FILE):
-        return Response("WARNING: Please configure OAuth 2.0. Information at the Developers Console " +
+        return Response("WARNING: Please configure OAuth 2.0. Information at the Developers Console "
                         "https://console.developers.google.com/", status='server-error', status_code=500)
     from .youtubeAPI import get_youtube_api_login_link
     if 'youtube_api_credentials' in cached_data_handler.getDict():
@@ -365,7 +365,7 @@ def YoutubeTestUpload():
         return Response("You need Channel_ID in args.", status='client-error', status_code=400)
     ok, message = upload_test_run(channel_id)
     if ok:
-        info(channel_id + " has been added for test uploading.")
+        info("{0} has been added for test uploading.".format(channel_id))
         return Response(None)
     else:
         return Response(message, status="server-error", status_code=500)

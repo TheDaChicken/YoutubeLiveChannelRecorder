@@ -1,5 +1,4 @@
 import traceback
-from time import sleep
 
 from ..log import warning, YoutubeReply, stopped, error_warning
 from ..utils.other import get_highest_thumbnail, try_get
@@ -21,6 +20,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         try:
             from urllib.parse import urlencode
         except ImportError:
+            urlencode = None
             stopped("Unsupported version of Python. You need Version 3 :<")
 
         if not channel_Class.video_id:

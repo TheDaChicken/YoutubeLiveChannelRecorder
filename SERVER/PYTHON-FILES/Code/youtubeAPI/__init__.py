@@ -69,7 +69,7 @@ def get_youtube_api_login_link(redirect_url, cached_data_handler):
             include_granted_scopes='true',
             # Allows refresh_token to be always in the authorization url
             prompt='consent')
-        return [authorization_url + "", state]
+        return [authorization_url, state]
     return [None, None]
 
 

@@ -31,11 +31,11 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
         website_string = download_website('https://www.youtube.com/watch?v={0}'.format(video_id),
                                           SharedVariables=SharedVariables)
         if website_string is None:
-            return [False, "Failed getting Video Data from the internet! "
+            return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
         if website_string == 404:
-            return [False, "Failed getting Video Data! \"" +
-                    video_id + "\" doesn't exist as a video id!"]
+            return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
+                channel_class.channel_id)]
         yt_player_config = try_get(get_yt_player_config(website_string), lambda x: x['args'], dict)
         player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
@@ -182,7 +182,7 @@ def readCommunityPosts(channel_class, SharedVariables=None):
         return None if len(messages) == 0 else messages
 
     headers = {"DNT": 1, "upgrade-insecure-requests": 1}
-    url = 'https://www.youtube.com/channel/' + channel_class.channel_id + '/community'
+    url = 'https://www.youtube.com/channel/{0}/community'.format(channel_class.channel_id)
     website = download_website(
         url,
         headers=headers, SharedVariables=SharedVariables)
