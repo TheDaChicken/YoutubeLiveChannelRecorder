@@ -109,7 +109,6 @@ if __name__ == '__main__':
                             sponsor_on_channel = channelInfo.get('sponsor_on_channel')
                             live_scheduled = channelInfo.get('live_scheduled')
                             video_id = channelInfo.get('video_id')
-                            HLSOutputStream = channelInfo.get('HLSOutputStream')
                             if live is None:
                                 message.append("{0} [INTERNET OFFLINE]".format(Fore.LIGHTBLUE_EX))
                             elif live is True:
@@ -122,9 +121,6 @@ if __name__ == '__main__':
                                 if broadcastId:
                                     message.append("{0} [RECORDING BROADCAST ID: {1}]".format(Fore.LIGHTYELLOW_EX,
                                                                                               broadcastId))
-                                if HLSOutputStream:
-                                    message.append("{0} [STREAM WATCHABLE IN HLS]".format(Fore.LIGHTYELLOW_EX,
-                                                                                          broadcastId))
                             elif live is False:
                                 if privateStream is True:
                                     message.append("{0} [PRIVATE]".format(Fore.LIGHTRED_EX))
