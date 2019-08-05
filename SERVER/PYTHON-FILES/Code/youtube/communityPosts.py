@@ -72,7 +72,7 @@ def is_live_sponsor_only_streams(channel_class, SharedVariables):
                     if thumbnails:
                         channel_class.thumbnail_url = get_highest_thumbnail(thumbnails)
                     channel_class.YoutubeStream = {
-                        'stream_resolution': '' + str(f['width']) + 'x' + str(f['height']),
+                        'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                         'HLSStreamURL': f['url'],
                         'title': try_get(videoDetails, lambda x: x['title'], str),
                         'description': videoDetails['shortDescription'],
