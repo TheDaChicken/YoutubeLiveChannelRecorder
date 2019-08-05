@@ -104,10 +104,8 @@ def add_channel():
     if len(channel_array) is not 0:
         return Response("Channel Already in list!", status="server-error", status_code=500)
     del channel_array
-    ok, message = run_channel(channel_id)
+    ok, message = run_channel(channel_id, addToData=True)
     if ok:
-        # NEEDS TO ADD CHANNEL TO CONFIG
-        cached_data_handler.addValueList('channel_ids', channel_id)
         info("{0} has been added to the list of channels.".format(channel_id))
         return Response(None)
     else:
@@ -161,12 +159,8 @@ def add_video_id():
     if len(channel_array) is not 0:
         return Response("Video Already in list!", status="server-error", status_code=500)
     del channel_array
-    ok, message = run_channel_with_video_id(video_id)
+    ok, message = run_channel_with_video_id(video_id, addToData=True)
     if ok:
-        # VIDEO ID UNNEEDED.
-        # NEEDS TO ADD CHANNEL TO CONFIG
-        # cached_data_handler.addValueList('channel_ids', video_id)
-        # info("{0} has been added to the list of channels.".format(video_id))
         return Response(None)
     else:
         return Response(message, status="server-error", status_code=500)

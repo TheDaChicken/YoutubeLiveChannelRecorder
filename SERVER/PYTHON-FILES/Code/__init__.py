@@ -93,7 +93,7 @@ class HandlerChannelInfo(ChannelInfo):
         return self.__dict__
 
 
-def run_channel(channel_id, startup=False):
+def run_channel(channel_id, startup=False, addToData=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
                                                                      cached_data_handler, queue_holder)
     ok_bool, error_message = channel_holder_class.loadYoutubeData()
@@ -107,6 +107,8 @@ def run_channel(channel_id, startup=False):
         check_streaming_channel_thread.start()
         channel_main_array.append(
             {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
+        if addToData:
+            cached_data_handler.addValueList('channel_ids', channel_id)
         return [True, "OK"]
     else:
         if startup:
@@ -141,13 +143,15 @@ def upload_test_run(channel_id, startup=False):
         return [False, error_message]
 
 
-def run_channel_with_video_id(video_id, startup=False):
+def run_channel_with_video_id(video_id, startup=False, addToData=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(None, shareable_variables,
                                                                      cached_data_handler, queue_holder)
     ok_bool, error_message = channel_holder_class.loadYoutubeData(video_id=video_id)
     if ok_bool:
         del ok_bool
         del error_message
+        channel_id = channel_holder_class.get('channel_id')
+
         channel_holder_class.registerCloseEvent()
         channel_name = channel_holder_class.get("channel_name")
         check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
@@ -155,6 +159,8 @@ def run_channel_with_video_id(video_id, startup=False):
         check_streaming_channel_thread.start()
         channel_main_array.append(
             {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
+        if addToData:
+            cached_data_handler.addValueList('channel_ids', channel_id)
         return [True, "OK"]
     else:
         if startup:
