@@ -165,7 +165,7 @@ if __name__ == '__main__':
                 else:
                     print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
                 print(" 6) {0}View Recordings.".format(Fore.LIGHTYELLOW_EX))
-                print(" 7) Add Channel (USING VIDEO ID).")
+                print(" 7) Add Channel (USING A LIVE STREAM TYPE VIDEO ID).")
                 if toaster is not None and 'localhost' not in serverIP:
                     print(" N) Holds console, shows Windows 10 Toast Notification every time a stream goes live.")
                 print("  - Type a specific number to do the specific action. - ")
