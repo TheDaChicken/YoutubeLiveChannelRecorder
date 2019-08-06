@@ -29,7 +29,6 @@ except ImportError:
     crash_warning(traceback.format_exc())
     stopped("Missing required packages for YouTube API uploading!")
 
-
 MAX_RETRIES = 10
 RETRIABLE_EXCEPTIONS = (HttpLib2Error, IOError, client.NotConnected,
                         client.IncompleteRead, client.ImproperConnectionState,
@@ -56,12 +55,12 @@ def get_youtube_api_credentials(cached_data_handler):
     return None
 
 
-def get_youtube_api_login_link(redirect_url, cached_data_handler):
+def get_youtube_api_login_link(redirect_url, cached_data_handler, isPrivateIP=False):
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, scopes=YOUTUBE_READ_WRITE_SCOPE)
     flow.redirect_uri = redirect_url
     if 'youtube_api_credentials' not in cached_data_handler.getDict():
-        authorization_url, state = flow.authorization_url(
+        arguments = dict(
             # Enable offline access so that you can refresh an access token without
             # re-prompting the user for permission. Recommended for web server apps.
             access_type='offline',
@@ -69,6 +68,9 @@ def get_youtube_api_login_link(redirect_url, cached_data_handler):
             include_granted_scopes='true',
             # Allows refresh_token to be always in the authorization url
             prompt='consent')
+        if isPrivateIP:
+            arguments.update({'device_id': '__314', 'device_name': 'private_ip'})
+        authorization_url, state = flow.authorization_url(**arguments)
         return [authorization_url, state]
     return [None, None]
 
