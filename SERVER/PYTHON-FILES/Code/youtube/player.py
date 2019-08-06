@@ -85,7 +85,7 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
         temp_dict = channelClass.video_list.get(channelClass.video_id)  # type: dict
         if 'file_location' in temp_dict:
             file_location = temp_dict['file_location']  # type: list
-            file_location.append(channelClass.video_id)
+            file_location.append(channelClass.video_location)
     else:
         dict_ = {'video_id': channelClass.video_id, 'video_data': YoutubeStream,
                  'channel_data': {
