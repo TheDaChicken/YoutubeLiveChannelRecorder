@@ -13,9 +13,9 @@ except ImportError:
 
 def check_server(ip, port):
     global useHTTPS
-    html_reply = __server_reply(ip, port, '', {}, httpMethod='http://')
+    html_reply = server_reply(ip, port, '', {}, httpMethod='http://')
     if html_reply == 504:
-        html_reply = __server_reply(ip, port, '', {}, httpMethod='https://')
+        html_reply = server_reply(ip, port, '', {}, httpMethod='https://')
         if html_reply == 2:
             stopped("Certificate verify failed. Hostname mismatch, certificate is not valid for '{0}'".format(ip))
         if type(html_reply) is not list:
@@ -26,7 +26,7 @@ def check_server(ip, port):
     return True
 
 
-def __server_reply(ip, port, function_name, arguments, RequestMethod='GET', httpMethod=None):
+def server_reply(ip, port, function_name, arguments, RequestMethod='GET', httpMethod=None):
     def format_response():
         if dict_json is None:
             stopped("Lost Connection of the Server!")
@@ -54,85 +54,85 @@ def __server_reply(ip, port, function_name, arguments, RequestMethod='GET', http
 def add_channel(ip, port, channel_id):
     function_name = 'addChannel'
     arguments = {'channel_id': channel_id}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def remove_channel(ip, port, channel_id):
     function_name = 'removeChannel'
     arguments = {'channel_id': channel_id}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def add_video_id(ip, port, video_id):
     function_name = 'addVideoID'
     arguments = {'video_id': video_id}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def get_server_info(ip, port):
     function_name = 'serverInfo'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def get_server_settings(ip, port):
     function_name = 'getServerSettings'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def swap_settings(ip, port, setting_name):
     function_name = 'swap/{0}'.format(setting_name)
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments, RequestMethod='POST')
+    return server_reply(ip, port, function_name, arguments, RequestMethod='POST')
 
 
 def get_youtube_api_info(ip, port):
     function_name = 'getYouTubeAPIInfo'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def youtube_login(ip, port):
     function_name = 'getLoginURL'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def youtube_logout(ip, port):
     function_name = 'logoutYouTubeAPI'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def test_upload(ip, port, channel_id):
     function_name = 'testUpload'
     arguments = {'channel_id': channel_id}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def youtube_fully_login(ip, port, username, password):
     function_name = 'youtubeLOGIN'
     arguments = {'username': username, 'password': password}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def update_data_cache(ip, port):
     function_name = 'updateDataCache'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def youtube_fully_logout(ip, port):
     function_name = 'youtubeLOGout'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def listRecordings(ip, port):
     function_name = 'listRecordings'
     arguments = {}
-    return __server_reply(ip, port, function_name, arguments)
+    return server_reply(ip, port, function_name, arguments)
 
 
 def playbackRecording(ip, port, RecordingName):

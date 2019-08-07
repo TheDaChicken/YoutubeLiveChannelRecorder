@@ -32,6 +32,7 @@ else:
 #
 #
 # THIS IS VERY POORLY CODED BUT IT WORKS.
+# TODO A RECODE.
 #
 #
 #
@@ -224,21 +225,13 @@ if __name__ == '__main__':
                 elif option is "4":
                     info("Getting Server Settings")
                     ok, reply = get_server_settings(serverIP, serverPort)
-                    info("Getting Youtube API Info")
-                    ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
                     if not ok:
                         print("")
                         print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
                         print("")
                         input("Press enter to go back to Selection.")
-                    elif not ok2:
-                        print("")
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply2)
-                        print("")
-                        input("Press enter to go back to Selection.")
                     else:
                         server_settings = reply
-                        server_youtube_api_info = reply2
                         Screen = "Settings"
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
                     info("Now Checking.")
@@ -337,67 +330,114 @@ if __name__ == '__main__':
                 server_settings_list = list(map(str, server_settings))
                 for server_setting_name in server_settings_list:
                     if server_settings.get(server_setting_name):
-                        message = ["    {0}{1}: {2}{3}: {4}{5}{6} [SWITCH]".format(Fore.LIGHTCYAN_EX, str(loopNumber),
-                                                                                   Fore.WHITE,
-                                                                                   server_setting_name,
-                                                                                   Fore.LIGHTMAGENTA_EX,
-                                                                                   str(server_settings.get(
-                                                                                       server_setting_name).get(
-                                                                                       'value')),
-                                                                                   Fore.LIGHTCYAN_EX)]
-                        if 'description' in server_settings.get(server_setting_name):
-                            message.append("\n         {0}{1}".format(Fore.WHITE,
-                                                                      server_settings.get(
-                                                                          server_setting_name).get('description')))
-                        loopNumber += 1
-                        print(''.join(message))
-                if server_youtube_api_info:
-                    message = ["    {0}{1}: {2}{3}: {4}{5}{6} ".format(Fore.LIGHTCYAN_EX, str(loopNumber),
-                                                                       Fore.WHITE,
-                                                                       'YouTube Account USING YOUTUBE API',
-                                                                       Fore.LIGHTRED_EX,
-                                                                       str(server_youtube_api_info.get(
-                                                                           'YoutubeAccountLogin-in').get(
-                                                                           'value')),
-                                                                       Fore.LIGHTYELLOW_EX)]
-                    if server_youtube_api_info.get('YoutubeAccountLogin-in').get('value'):
-                        message.append('[SIGN OUT ({0})]'.format(server_youtube_api_info.get('YoutubeAccountName').
-                                                                 get('value')))
-                    else:
-                        message.append('[LOGIN]')
-                    if 'description' in server_youtube_api_info.get('YoutubeAccountLogin-in'):
-                        message.append("\n         {0}{1}".format(Fore.WHITE,
-                                                                  server_youtube_api_info.get(
-                                                                      'YoutubeAccountLogin-in').get('description')))
-                    print(''.join(message))
-                    loopNumber += 1
-                    message = ["    {0}{1}: {2}{3} {4}[ADDS CHANNEL ID TO TEST UPLOAD LIST]"
-                               "\n         "
-                               "{5}{6}Records a channel for a few seconds. Then tries uploading that through the "
-                               "YouTube API.".format(
-                        Fore.LIGHTCYAN_EX, str(loopNumber), Fore.WHITE, 'Test Upload', Fore.LIGHTRED_EX,
-                        Fore.LIGHTYELLOW_EX, Fore.LIGHTRED_EX, Fore.WHITE)]
-                    print(''.join(message))
-                loopNumber += 1
-                message = ["    {0}{1}: {2}{3} ".format(Fore.LIGHTCYAN_EX, str(loopNumber),
-                                                        Fore.WHITE,
-                                                        'Refresh Data File Cache',
-                                                        Fore.LIGHTRED_EX,
-                                                        Fore.LIGHTYELLOW_EX),
-                           '{0}[REFRESH]'.format(Fore.LIGHTRED_EX),
-                           "\n         {0}{1}".format(Fore.WHITE,
-                                                      "Refreshes the cache created from the data.yml file.")]
-                print(''.join(message))
+                        server_setting = server_settings.get(server_setting_name)
+                        if type(server_setting) is dict:
+                            server_setting_type = server_setting.get('type')
+                            value = server_setting.get('value')
+                            # DEFAULT COLOR
+                            type_color = Fore.LIGHTYELLOW_EX
+                            type_ = "UNKNOWN"
+                            if server_setting_type == 'swap':
+                                type_color = Fore.LIGHTCYAN_EX
+                                type_ = 'SWITCH'
+                            if server_setting_type == 'youtube_api_login':
+                                if value:
+                                    type_ = "SIGN OUT ({0})".format(server_setting.get('AccountName'))
+                                else:
+                                    type_ = 'LOGIN'
+                            if server_setting_type == 'channel_id':
+                                type_ = "CHANNEL ID"
+                            if server_setting_type == 'refresh_data_cache':
+                                type_ = "REFRESH"
+                            if value is not None:
+                                # WITH VALUE
+                                message = [
+                                    "    {0}{1}: {2}{3}: {4}{5}{6} [{7}]".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                                                 Fore.WHITE,
+                                                                                 server_setting_name,
+                                                                                 Fore.LIGHTMAGENTA_EX,
+                                                                                 str(value),
+                                                                                 type_color, type_)]
+                            elif value is None:
+                                # WITHOUT VALUE
+                                message = [
+                                    "    {0}{1}: {2}{3} {4}[{5}]".format(Fore.LIGHTCYAN_EX, str(loopNumber),
+                                                                         Fore.WHITE,
+                                                                         server_setting_name,
+                                                                         type_color, type_)]
+                            if 'description' in server_setting:
+                                message.append("\n         {0}{1}".format(Fore.WHITE,
+                                                                          server_setting.get('description')))
+                            loopNumber += 1
+                            print(''.join(message))
                 print("  - Type a specific number to do the specific action. - ")
                 option = stringToInt(input(":"))
                 if option:
                     if option < server_settings_amount or option == server_settings_amount:
-                        ok, reply = swap_settings(serverIP, serverPort, server_settings_list[option - 1])
-                        if not ok:
+                        # check if swap.
+                        server_setting_name = server_settings_list[option - 1]
+                        server_setting = server_settings.get(server_setting_name)
+                        server_setting_type = server_setting.get('type')
+                        server_setting_value = server_setting.get('value')
+                        if server_setting_type == 'swap':
+                            ok, reply = swap_settings(serverIP, serverPort, server_setting_name)
+                            if not ok:
+                                print("")
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                print("")
+                                input("Press enter to go back to Selection.")
+                        if server_setting_type == 'youtube_api_login':
+                            if not server_setting_value:
+                                ok, reply = youtube_login(serverIP, serverPort)
+                                print("")
+                                print("")
+                                if not ok:
+                                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                    print("")
+                                    input("Press enter to go back to Selection.")
+                                else:
+                                    print(Fore.LIGHTRED_EX + "Go to this URL IN YOUR BROWSER: " + reply)
+                                    print("   "
+                                          "On Windows, you should be able to copy the url "
+                                          "by selecting the url and right clicking.")
+                                    print("")
+                                    input("Press enter to go back to Selection.")
+                                    print("")
+                            else:
+                                print("")
+                                print("")
+                                print("Signing out...")
+                                ok, reply = youtube_logout(serverIP, serverPort)
+                                if not ok:
+                                    print("")
+                                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                    sleep(3.5)
+                        if server_setting_type == 'channel_id':
+                            print("To Find The Channel_IDs USE THIS: ")
+                            print("https://commentpicker.com/youtube-channel-id.php")
+                            temp_channel_id = input("Channel ID: ")
+                            ok, reply = test_upload(serverIP, serverPort, temp_channel_id)
+                            del temp_channel_id
                             print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("")
+                            if not ok:
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            else:
+                                print(Fore.LIGHTGREEN_EX + "Channel has now been added.")
                             print("")
                             input("Press enter to go back to Selection.")
+                        if server_setting_type == 'refresh_data_cache':
+                            print("")
+                            print("")
+                            sleep(.5)
+                            print(Fore.LIGHTRED_EX + "Updating the cache..")
+                            ok, reply = update_data_cache(serverIP, serverPort)
+                            if not ok:
+                                print("")
+                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                print("")
+                                input("Press enter to go back to Selection.")
+                        # Refresh
                         info("Getting Server Settings")
                         ok, reply = get_server_settings(serverIP, serverPort)
                         if not ok:
@@ -407,96 +447,6 @@ if __name__ == '__main__':
                             input("Press enter to go back to Selection.")
                         else:
                             server_settings = reply  # type: dict
-                    elif option == (server_settings_amount + 1):
-                        if not server_youtube_api_info.get('YoutubeAccountLogin-in').get('value'):
-                            ok, reply = youtube_login(serverIP, serverPort)
-                            print("")
-                            print("")
-                            if not ok:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                print("")
-                                input("Press enter to go back to Selection.")
-                            else:
-                                print(Fore.LIGHTRED_EX + "Go to this URL IN YOUR BROWSER: " + reply)
-                                print("   "
-                                      "On Windows, you should be able to copy the url "
-                                      "by selecting the url and right clicking.")
-                                print("")
-                                input("Press enter to go back to Selection.")
-                                print("")
-                        else:
-                            print("")
-                            print("")
-                            print("Signing out...")
-                            ok, reply = youtube_logout(serverIP, serverPort)
-                            if not ok:
-                                print("")
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                sleep(3.5)
-                        ok, reply = get_server_settings(serverIP, serverPort)
-                        ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
-                        if not ok:
-                            print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                            print("")
-                            input("Press enter to go back to Selection.")
-                        elif not ok2:
-                            print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply2)
-                            print("")
-                            input("Press enter to go back to Selection.")
-                        else:
-                            server_settings = reply  # type: dict
-                            server_youtube_api_info = reply2  # type: dict
-                    elif option == (server_settings_amount + 2):
-                        if server_youtube_api_info:
-                            if not server_youtube_api_info.get('YoutubeAccountLogin-in').get('value'):
-                                print("")
-                                warning("There is no YouTube Account Logged into the YouTube API.\nIts best to use "
-                                        "Test Upload with a YouTube Account Logged into the YouTube API.")
-                                input("Press enter to keep going.")
-                                print("")
-                                print("")
-                        print("To Find The Channel_IDs USE THIS: ")
-                        print("https://commentpicker.com/youtube-channel-id.php")
-                        temp_channel_id = input("Channel ID: ")
-                        ok, reply = test_upload(serverIP, serverPort, temp_channel_id)
-                        del temp_channel_id
-                        print("")
-                        print("")
-                        if not ok:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                        else:
-                            print(Fore.LIGHTGREEN_EX + "Channel has now been added.")
-                        print("")
-                        input("Press enter to go back to Selection.")
-                        # Refresh
-                        ok, reply = get_server_settings(serverIP, serverPort)
-                        ok2, reply2 = get_youtube_api_info(serverIP, serverPort)
-                        if not ok:
-                            print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                            print("")
-                            input("Press enter to go back to Selection.")
-                        elif not ok2:
-                            print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply2)
-                            print("")
-                            input("Press enter to go back to Selection.")
-                        else:
-                            server_settings = reply  # type: dict
-                            server_youtube_api_info = reply2  # type: dict
-                    elif option == (server_settings_amount + 3):
-                        print("")
-                        print("")
-                        sleep(.5)
-                        print(Fore.LIGHTRED_EX + "Updating the cache..")
-                        ok, reply = update_data_cache(serverIP, serverPort)
-                        if not ok:
-                            print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                            print("")
-                            input("Press enter to go back to Selection.")
                 else:
                     print(Fore.LIGHTRED_EX + "That is not a number!")
                     print("")

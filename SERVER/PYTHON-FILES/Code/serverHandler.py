@@ -269,13 +269,27 @@ def swapDownloadThumbnail(name):
 def getSetting():
     json = {
         'DownloadThumbnail': {'value': cached_data_handler.getValue('DownloadThumbnail'),
-                              'description': 'Downloads the thumbnail from the original stream.'},
+                              'description': 'Downloads the thumbnail from the original stream.',
+                              'type': 'swap'},
         'UploadLiveStreams': {'value': cached_data_handler.getValue('UploadLiveStreams'),
                               'description':
-                                  'Auto uploads recorded YouTube Live streams to YouTube using the YouTube API.'},
+                                  'Auto uploads recorded YouTube Live streams to YouTube using the YouTube API.',
+                              'type': 'swap'},
         'UploadThumbnail': {'value': cached_data_handler.getValue('UploadThumbnail'),
                             'description':
-                                'Uploads the thumbnail from the original stream to the auto uploaded YouTube version.'},
+                                'Uploads the thumbnail from the original stream to the auto uploaded YouTube version.',
+                            'type': 'swap'},
+        'YouTube API LOGIN': {'value': 'youtube_api_credentials' in cached_data_handler.getDict(),
+                              'description':
+                                  'Login to the YouTube API to upload the auto uploads to your '
+                                  'channel.',
+                              'type': 'youtube_api_login', 'AccountName':
+                                  cached_data_handler.getValue('youtube_api_account_username')},
+        'YouTube API Test Upload': {'value': None, 'description': 'Records a channel for a few seconds. '
+                                                                  'Then tries uploading that through the YouTube API.',
+                                    'type': 'channel_id'},
+        'Refresh Data File Cache': {'value': None, 'description': 'Refreshes the cache created from the data.yml file.',
+                                    'type': 'refresh_data_cache'}
     }
     return Response(json)
 
@@ -283,6 +297,11 @@ def getSetting():
 # For Getting Login-in Youtube Account info
 @app.route('/getYouTubeAPIInfo')
 def YoutubeAPILoginInfo():
+    """
+
+    RIGHT NOW USELESS, BUT CAN BE USED IN YOUR OWN CLIENTS ;)
+
+    """
     json = {
         'YoutubeAccountName': {'value': cached_data_handler.getValue('youtube_api_account_username')},
         'YoutubeAccountLogin-in': {'value': 'youtube_api_credentials' in cached_data_handler.getDict(),
@@ -296,6 +315,7 @@ def YoutubeAPILoginInfo():
 def updateDataCache():
     cached_data_handler.updateCache()
     return Response(None)
+
 
 # LOGGING INTO YOUTUBE (FOR UPLOADING)
 @app.route('/getLoginURL')
