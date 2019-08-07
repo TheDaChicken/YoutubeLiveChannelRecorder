@@ -194,7 +194,7 @@ def stop_youtube_queue_thread():
     if uploadThread:
         uploadThread.terminate()
         uploadThread.join()  # wait until done.
-        uploadThread.close()
+        # uploadThread.close() (ERROR IDK LOL)
         uploadThread = None
         return [True, "OK"]
     return [False, "Welp, already stopped."]
