@@ -7,7 +7,7 @@
   This program does not work anything below PYTHON VERSION 3.
 
 ### LIMITATIONS (AS OF RIGHT NOW)
-  Resolution/fps changes in stream causes YouTube to buffer waiting for the client (or whatever) to grab a new manifest url. As FFmpeg is an external program, you cannot really easily see if a resolution/fps change has occured, and then grab a new manifest url and start recording again.
+  Resolution/fps changes in stream causes YouTube to buffer, waiting for the client (or whatever) to grab a new manifest url. As FFmpeg is an external program, you cannot really easily see if a resolution/fps change has occured and youtube is buffing, and then grab a new manifest url and start recording again.
 
 ### Inspiration
   
