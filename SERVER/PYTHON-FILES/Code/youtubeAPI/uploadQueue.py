@@ -1,5 +1,6 @@
 import traceback
 from datetime import datetime
+import os
 from time import sleep
 
 from ..log import info, error_warning, warning, crash_warning
@@ -48,10 +49,14 @@ def uploadQueue(cached_data_handler, queue_holder):
                     else:
                         # TODO MERGE FILES OR SOMETHING
                         now = video_data.get('start_date')  # type: datetime
-                        for file_ in file_location:
-                            queue_holder.updateStatus('Uploading \'{0}\' recordings to YouTube.'.format(video_id))
-                            uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_,
-                                          thumbnail_location)
+                        final_ = os.path.join(os.getcwd(), '{0}-merged-final.mp4'.format(video_id))
+                        encoder.merge_streams(file_location, final_)
+                        queue_holder.updateStatus('Merging \'{0}\' recordings for YouTube.'.format(video_id))
+                        while encoder.running:
+                            sleep(1)
+                        queue_holder.updateStatus('Uploading \'{0}\' merged recording to YouTube.'.format(video_id))
+                        uploadYouTube(cached_data_handler, video_id, video_data, channel_data, final_,
+                                      thumbnail_location)
                     queue_holder.removeQueue(video_id)
             else:
                 queue_holder.updateStatus('Waiting.')

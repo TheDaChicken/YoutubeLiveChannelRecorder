@@ -29,12 +29,21 @@ class Encoder:
         return True
 
     def merge_streams(self, videoInput, videoLocation):
+        """
+
+        Merges streams using FFmpeg.
+
+        :type videoInput: list
+        :type videoLocation: str
+        """
         concat_file = os.path.join(os.getcwd(), 'temp_concat.txt')
         with open(concat_file, 'w') as file:
             now = datetime.now()
             file.write('# Automated Concat File Created At: {0}.\n'.format(
                 str(now.strftime("%d/%m/%Y %I:%M %p"))))
             for video in videoInput:
+                # '\''
+                video = video.replace('\'', "'\\''")
                 if video:
                     file.write('file \'{0}\'\n'.format(video))
             file.close()
@@ -45,10 +54,7 @@ class Encoder:
         info("Merge Started.")
         return True
 
-    def __run__Encoder_Concat(self, videoInput, videoLocation):
-        """
-        TODO WORK ON THIS.
-        """
+    def __run__Encoder_Concat(self, concatFile, videoLocation):
         self.running = None
         verbose("Opening FFmpeg.")
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
@@ -56,7 +62,7 @@ class Encoder:
             for header in self.Headers:
                 command.extend(
                     ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
-        command.extend(["-f", "concat", "-y", "-i", videoInput,
+        command.extend(["-f", "concat", "-y", "-safe", "0", "-i", concatFile,
                         "-c:v", "copy", "-c:a", "copy", videoLocation])
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
@@ -92,12 +98,12 @@ class Encoder:
 
     # Handles when FFMPEG Crashes and when it's fully running.
     def __crashHandler(self):
-        log = ""
+        log = []
         for line in self.process.stdout:
             if True:
                 EncoderLog(line)
-            if self.running is None and self.running is not None:
-                log += line
+            if self.running is None:
+                log.append(line)
             if "Press [q] to stop" in line:
                 self.running = True
         if self.running is True:
@@ -116,7 +122,7 @@ class Encoder:
             del now
             del datetime
             logfile.write("\n")
-            logfile.write(log)
+            logfile.write(''.join(log))
         if self.crashFunction is not None:
             self.crashFunction()
         exit()  # It kinda of closes the thread...
