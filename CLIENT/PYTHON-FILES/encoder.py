@@ -136,7 +136,8 @@ class FFplay:
     def __run_Encoder(self, video_url):
         self.running = None
         verbose("Opening FFplay.")
-        command = ["ffplay", "-loglevel", "verbose", "-x", "1280", "-y", "720", "-i", video_url]
+        command = ["ffplay", "-loglevel", "verbose", "-x", "1280", "-y", "720", "-window_title",
+                   "YouTubeLiveChannelRecoder - FFPLAY", "-i", video_url]
         if self.Headers:
             for header in self.Headers:
                 command.extend(["-headers", '{0}: {1}'.format(header, self.Headers[header])])
