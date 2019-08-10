@@ -80,36 +80,33 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
             thread.start()
 
     # Adds to the temp upload list.
-
     if channelClass.video_id in channelClass.video_list:
         temp_dict = channelClass.video_list.get(channelClass.video_id)  # type: dict
         if 'file_location' in temp_dict:
             file_location = temp_dict['file_location']  # type: list
             file_location.append(channelClass.video_location)
     else:
-        dict_ = {'video_id': channelClass.video_id, 'video_data': YoutubeStream,
-                 'channel_data': {
-                     'channel_name': channelClass.channel_name,
-                     'channel_id': channelClass.channel_id,
-                 }, 'file_location': [channelClass.video_location],
-                 'thumbnail_location': channelClass.thumbnail_location,
-                 }
-        video_data = dict_.get('video_data')
-        if video_data:
-            video_data.update(
-                {'start_time_string': str(channelClass.start_date.strftime("%d/%m/%Y %I:%M %p"))}
-            )
-        # Write YouTube Stream info to json.
-        with open('{0}.json'.format(filename), 'w', encoding='utf-8') as f:
-            json.dump(dict_, f, ensure_ascii=False, indent=4)
-        if video_data:
-            # cannot have start date object in json file.
-            video_data.update(
-                {'start_date': channelClass.start_date}
-            )
         channelClass.video_list.update({
-            channelClass.video_id: dict_
+            channelClass.video_id: {
+                'video_id': channelClass.video_id, 'video_data': YoutubeStream, 'channel_data': {
+                    'channel_name': channelClass.channel_name,
+                    'channel_id': channelClass.channel_id,
+                }, 'start_date': channelClass.start_date,
+                'file_location': [channelClass.video_location, ],
+                'thumbnail_location': channelClass.thumbnail_location}
         })
+
+    # Write YouTube Stream info to json.
+    with open("{3} - '{4}' - {0}-{1}-{2}.json".format(channelClass.start_date.month, channelClass.start_date.day,
+                                                 channelClass.start_date.year,
+                                                 channelClass.channel_name, channelClass.video_id), 'w',
+              encoding='utf-8') as f:
+        json.dump({
+            'video_id': channelClass.video_id, 'video_data': YoutubeStream, 'channel_data': {
+                'channel_name': channelClass.channel_name,
+                'channel_id': channelClass.channel_id,
+            },
+        }, f, ensure_ascii=False, indent=4)
 
     if channelClass.TestUpload:
         sleep(10)
