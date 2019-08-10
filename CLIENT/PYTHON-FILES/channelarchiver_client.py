@@ -517,9 +517,7 @@ if __name__ == '__main__':
                                                 frames = next(x for x in frames_tuple if x is not None)
                                                 time = re.findall(r'time=(.+) b', last_line)
                                                 clearScreen()
-                                                print("")
-                                                print("")
-                                                print("")
+                                                print("\n\n")
                                                 print(
                                                     "    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX,
                                                                                            frames
@@ -537,8 +535,7 @@ if __name__ == '__main__':
                                                     print("    {0}HOLD Q FOR A SECOND TO SWITCH TO "
                                                           "FFMPEG LOGS. (ENCODER LOGS)"
                                                           .format(Fore.LIGHTYELLOW_EX))
-                                                print("")
-                                                print("")
+                                                print("\n")
                                         last_line = ffmpeg_class.last_line
                                         sleep(.2)
                                 else:
