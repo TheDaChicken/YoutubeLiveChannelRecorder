@@ -519,7 +519,6 @@ if __name__ == '__main__':
                                                 clearScreen()
                                                 print("")
                                                 print("")
-                                                print("===================")
                                                 print("")
                                                 print(
                                                     "    {0}DOWNLOADED FRAMES: {1}".format(Fore.LIGHTMAGENTA_EX,
@@ -538,7 +537,6 @@ if __name__ == '__main__':
                                                     print("    {0}HOLD Q FOR A SECOND TO SWITCH TO "
                                                           "FFMPEG LOGS. (ENCODER LOGS)"
                                                           .format(Fore.LIGHTYELLOW_EX))
-                                                print("===================")
                                                 print("")
                                                 print("")
                                         last_line = ffmpeg_class.last_line
