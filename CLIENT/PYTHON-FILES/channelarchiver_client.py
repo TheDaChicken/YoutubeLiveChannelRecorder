@@ -61,16 +61,16 @@ if __name__ == '__main__':
     serverPort = input(":")
     if serverPort is '':
         serverPort = '31311'
-    info("Checking for Server port " + serverPort + " on " + serverIP)
+    info("Checking for Server port {0} on {1}".format(serverPort, serverIP))
     if not check_server(serverIP, serverPort):
         stopped("Server is not running! Try checking again.")
     else:
-        setTitle('YoutubeLiveChannelRecorder [Connected to Server: ' + serverIP + " Port: " + serverPort + "]")
+        setTitle('YoutubeLiveChannelRecorder [Connected to Server: {0} Port: {1}]'.format(serverIP, serverPort))
         info("Server Running.")
         info("Getting Server Info.")
         ok, serverInfo = get_server_info(serverIP, serverPort)
         if not ok:
-            stopped("Error Response from Server: " + serverInfo)
+            stopped("Error Response from Server: {0}".format(serverInfo))
         Screen = "Main"
         while True:
             if Screen is "Main":
@@ -157,8 +157,7 @@ if __name__ == '__main__':
 
                 print("\n 1) Refresh Channel List.\n 2) Add Channel\n 3) Remove Channel\n 4) Change Settings")
                 if 'YoutubeLogin' in youtube and youtube['YoutubeLogin'] is False:
-                    print(" 5) " + Fore.LIGHTRED_EX + "Login to Youtube (FOR SPONSOR ONLY STREAMS) [VERY BUGGY] "
-                                                      "")
+                    print(" 5) " + Fore.LIGHTRED_EX + "Login to Youtube (FOR SPONSOR ONLY STREAMS) [VERY BUGGY] ")
                 else:
                     print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
                 print(" 6) {0}View Recordings.".format(Fore.LIGHTYELLOW_EX))
@@ -171,64 +170,61 @@ if __name__ == '__main__':
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
                         serverInfo = reply
+                    del reply
                 elif option is "2":  # ADDING CHANNELS
                     print("To Find The Channel_IDs USE THIS: ")
                     print("https://commentpicker.com/youtube-channel-id.php")
                     temp_channel_id = input("Channel ID: ")
                     ok, reply = add_channel(serverIP, serverPort, temp_channel_id)
-                    del temp_channel_id
-                    print("")
-                    print("")
+                    print("\n")
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                     else:
-                        print(Fore.LIGHTGREEN_EX + "Channel has now been added.")
-                    print("")
-                    input("Press enter to go back to Selection.")
+                        print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
+                    input("\nPress enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
                         serverInfo = reply
+                    del reply
+                    del temp_channel_id
                 elif option is "3":  # REMOVE CHANNELS (BETA ON SERVER)
                     print("  To Find The Channel_IDs USE THIS: ")
                     print("  https://commentpicker.com/youtube-channel-id.php")
                     temp_channel_id = input("Channel ID: ")
                     ok, reply = remove_channel(serverIP, serverPort, temp_channel_id)
-                    del temp_channel_id
-                    print("")
-                    print("")
+                    print("\n")
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                     else:
-                        print(Fore.LIGHTGREEN_EX + "Channel has now been removed.")
-                    print("")
-                    input("Press enter to go back to Selection.")
+                        print("{0}Channel has now been removed.".format(Fore.LIGHTGREEN_EX))
+                    input("\nPress enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                         print("")
                         input("Press enter to go back to Selection.")
                     else:
                         serverInfo = reply
+                    del reply
+                    del temp_channel_id
                 elif option is "4":
                     info("Getting Server Settings")
                     ok, reply = get_server_settings(serverIP, serverPort)
                     if not ok:
-                        print("")
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                        print("")
+                        print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                         input("Press enter to go back to Selection.")
                     else:
                         server_settings = reply
@@ -255,9 +251,9 @@ if __name__ == '__main__':
                         ok, reply = youtube_fully_login(serverIP, serverPort, username_google, password_google)
                         if not ok:
                             if not ok:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                         else:
-                            print(Fore.LIGHTGREEN_EX + "Login Successful!")
+                            print("{0}Login Successful!".format(Fore.LIGHTGREEN_EX))
                         print("")
                         print("")
                         sleep(.3)
@@ -267,11 +263,11 @@ if __name__ == '__main__':
                         info("Getting Server Info.")
                         ok, reply = get_server_info(serverIP, serverPort)
                         if not ok:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                            print("")
+                            print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                             input("Press enter to go back to Selection.")
                         else:
                             serverInfo = reply
+                        del reply
                     elif channel_info['YoutubeLogin'] is True:
                         print("")
                         print("")
@@ -280,22 +276,19 @@ if __name__ == '__main__':
                         print(Fore.LIGHTRED_EX + "Logging out...")
                         ok, reply = youtube_fully_logout(serverIP, serverPort)
                         if not ok:
-                            if not ok:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                            print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                         else:
-                            print(Fore.LIGHTGREEN_EX + "Logout Successful!")
-                        print("")
-                        print("")
+                            print("{0}Logout Successful!".format(Fore.LIGHTGREEN_EX))
+                        print("\n")
                         input("Press enter to go back to Selection.")
-                        print("")
                         info("Getting Server Info.")
                         ok, reply = get_server_info(serverIP, serverPort)
                         if not ok:
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                            print("")
+                            print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                             input("Press enter to go back to Selection.")
                         else:
                             serverInfo = reply
+                        del reply
                 elif option is "6":
                     Screen = "View-Recording"
                 elif option is "7":
@@ -306,20 +299,20 @@ if __name__ == '__main__':
                     print("")
                     print("")
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                     else:
-                        print(Fore.LIGHTGREEN_EX + "Video ID has now been added.")
+                        print("{0}Video ID has now been added.".format(Fore.LIGHTGREEN_EX))
                     print("")
                     input("Press enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                        print("")
+                        print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                         input("Press enter to go back to Selection.")
                     else:
                         serverInfo = reply
+                    del reply
             elif Screen is "Settings":
                 clearScreen()
                 print("")
@@ -382,9 +375,7 @@ if __name__ == '__main__':
                         if server_setting_type == 'swap':
                             ok, reply = swap_settings(serverIP, serverPort, server_setting_name)
                             if not ok:
-                                print("")
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                print("")
+                                print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                                 input("Press enter to go back to Selection.")
                         if server_setting_type == 'youtube_api_login':
                             if not server_setting_value:
@@ -392,25 +383,21 @@ if __name__ == '__main__':
                                 print("")
                                 print("")
                                 if not ok:
-                                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                    print("")
+                                    print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                                     input("Press enter to go back to Selection.")
                                 else:
-                                    print(Fore.LIGHTRED_EX + "Go to this URL IN YOUR BROWSER: " + reply)
+                                    print("{0}Go to this URL IN YOUR BROWSER: {1}".format(Fore.LIGHTRED_EX, reply))
                                     print("   "
                                           "On Windows, you should be able to copy the url "
-                                          "by selecting the url and right clicking.")
-                                    print("")
+                                          "by selecting the url and right clicking.\n")
                                     input("Press enter to go back to Selection.")
-                                    print("")
                             else:
                                 print("")
                                 print("")
                                 print("Signing out...")
                                 ok, reply = youtube_logout(serverIP, serverPort)
                                 if not ok:
-                                    print("")
-                                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                    print("\n{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                                     sleep(3.5)
                         if server_setting_type == 'channel_id':
                             print("To Find The Channel_IDs USE THIS: ")
@@ -418,14 +405,12 @@ if __name__ == '__main__':
                             temp_channel_id = input("Channel ID: ")
                             ok, reply = test_upload(serverIP, serverPort, temp_channel_id)
                             del temp_channel_id
-                            print("")
-                            print("")
+                            print("\n")
                             if not ok:
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
+                                print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                             else:
-                                print(Fore.LIGHTGREEN_EX + "Channel has now been added.")
-                            print("")
-                            input("Press enter to go back to Selection.")
+                                print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
+                            input("\nPress enter to go back to Selection.")
                         if server_setting_type == 'refresh_data_cache':
                             print("")
                             print("")
@@ -433,20 +418,17 @@ if __name__ == '__main__':
                             print(Fore.LIGHTRED_EX + "Updating the cache..")
                             ok, reply = update_data_cache(serverIP, serverPort)
                             if not ok:
-                                print("")
-                                print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                                print("")
+                                print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                                 input("Press enter to go back to Selection.")
                         # Refresh
                         info("Getting Server Settings")
-                        ok, reply = get_server_settings(serverIP, serverPort)
+                        ok, reply = get_server_info(serverIP, serverPort)
                         if not ok:
-                            print("")
-                            print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                            print("")
+                            print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                             input("Press enter to go back to Selection.")
                         else:
-                            server_settings = reply  # type: dict
+                            serverInfo = reply
+                        del reply
                 else:
                     print(Fore.LIGHTRED_EX + "That is not a number!")
                     print("")
@@ -455,27 +437,24 @@ if __name__ == '__main__':
                 print("")
                 ok, recordingList = listRecordings(serverIP, serverPort)
                 if not ok:
-                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                    print("")
+                    print("{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                     input("Press enter to go back to Selection.")
                 if len(recordingList) is 0:
-                    print("{0} No Recordings Available!".format(Fore.LIGHTRED_EX))
-                    print("")
+                    print("{0} No Recordings Available!\n".format(Fore.LIGHTRED_EX))
                     input("Press enter to go back to Selection.")
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
                     if not ok:
-                        print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                        print("")
+                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
                         input("Press enter to go back to Selection.")
                     else:
                         channel_info = reply
                     del recordingList
+                    del reply
                     Screen = "Main"
                 else:
                     loopNumber = 1
-                    print(Fore.LIGHTMAGENTA_EX + "List of Recordings:")
-                    print("")
+                    print("{0}List of Recordings:\n".format(Fore.LIGHTMAGENTA_EX))
                     for recording in recordingList:
                         print("    " + Fore.LIGHTCYAN_EX + str(loopNumber) + ": " + Fore.WHITE + recording)
                         loopNumber += 1
@@ -484,27 +463,19 @@ if __name__ == '__main__':
                     print(" 2) Download a Recording.")
                     print("  - Type a specific number to do the specific action. - ")
                     option = input(":")
-                    is_number = False
-                    number = 0
                     if option is "1" or option is "2":
+                        print("\nType the number corresponding with the recording.\n")
+                        recording_number = stringToInt(input("Recording Number: "))
                         print("")
-                        print("Type the number corresponding with the recording.")
-                        print("")
-                        recording_number = input("Recording Number: ")
-                        print("")
-                        try:
-                            number = int(recording_number)
-                            is_number = True
-                        except ValueError:
-                            print(Fore.LIGHTRED_EX + "That is not a number!")
-                            sleep(3.5)
-                    if is_number:
-                        recording = recordingList[number - 1]
+                        if recording_number is None:
+                            print("{0}That is not a number!".format(Fore.LIGHTRED_EX))
+                            sleep(2)
+                    if recording_number:
+                        recording = recordingList[recording_number - 1]
                         print("{0} Selected Recording: {1}".format(Fore.LIGHTMAGENTA_EX, recording))
                         sleep(1)
                         if option is "1":
-                            print("")
-                            print("{0} Starting Playback.".format(Fore.LIGHTMAGENTA_EX))
+                            print("\n{0} Starting Playback.".format(Fore.LIGHTMAGENTA_EX))
                             ffplay_class = playbackRecording(serverIP, serverPort, recording)
                             while True:
                                 if not ffplay_class.running:
@@ -515,9 +486,8 @@ if __name__ == '__main__':
 
                             stream_output_location = path.join(getcwd(), recording)
                             if os.path.isfile(stream_output_location):
-                                print("{0} File with the stream name already exists! Want to override?".format(
+                                print("{0} File with the stream name already exists! Want to override?\n".format(
                                     Fore.LIGHTMAGENTA_EX))
-                                print("")
                                 answer_input = input(" YES/NO:")
                                 if "NO" in answer_input or "no" in answer_input or "n" in answer_input:
                                     break
@@ -579,10 +549,10 @@ if __name__ == '__main__':
                 channel_info_last = channel_info
                 ok, reply = get_server_info(serverIP, serverPort)
                 if not ok:
-                    print(Fore.LIGHTRED_EX + "Error Response from Server: " + reply)
-                    print("")
+                    print("{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                 else:
                     serverInfo = reply
+                del reply
                 channel_info = serverInfo.get('channelInfo')
                 for channel in channel_info['channels']:
                     channelInfo = channel_info['channel'][channel]
