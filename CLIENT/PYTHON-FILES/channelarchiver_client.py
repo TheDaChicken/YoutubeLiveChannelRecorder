@@ -422,12 +422,12 @@ if __name__ == '__main__':
                                 input("Press enter to go back to Selection.")
                         # Refresh
                         info("Getting Server Settings")
-                        ok, reply = get_server_info(serverIP, serverPort)
+                        ok, reply = get_server_settings(serverIP, serverPort)
                         if not ok:
                             print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                             input("Press enter to go back to Selection.")
                         else:
-                            serverInfo = reply
+                            server_settings = reply
                         del reply
                 else:
                     print(Fore.LIGHTRED_EX + "That is not a number!")
