@@ -433,7 +433,6 @@ class ChannelInfo:
 
         """
         if len(self.video_list) != 0:
-            print(self.queue_holder)
             if self.queue_holder:
                 verbose("Adding streams to youtube upload queue.")
                 self.queue_holder.addQueue(self.video_list)
