@@ -98,8 +98,8 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
 
     # Write YouTube Stream info to json.
     with open("{3} - '{4}' - {0}-{1}-{2}.json".format(channelClass.start_date.month, channelClass.start_date.day,
-                                                 channelClass.start_date.year,
-                                                 channelClass.channel_name, channelClass.video_id), 'w',
+                                                      channelClass.start_date.year,
+                                                      channelClass.channel_name, channelClass.video_id), 'w',
               encoding='utf-8') as f:
         json.dump({
             'video_id': channelClass.video_id, 'video_data': YoutubeStream, 'channel_data': {
@@ -240,8 +240,7 @@ def getYoutubeStreamInfo(channelInfo, recordingHeight=None):
             'HLSManifestURL': manifest_url,
             'DashManifestURL': str(try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
             'HLSStreamURL': f['url'],
-            'title': try_get(video_info, lambda x: ['title'][0], str) or try_get(
-                video_details, lambda x: x['title'], str),
+            'title': try_get(video_details, lambda x: x['title'], str),
             'description': try_get(video_details, lambda x: x['shortDescription'], str),
             'video_id': channelInfo.video_id
         }
