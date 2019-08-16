@@ -206,6 +206,8 @@ def serverInfo():
                 channelInfo['channel'][channel_class.get('channel_id')].update({
                     'crashed_traceback': channel_class.get('crashed_traceback')
                 })
+
+    # YOUTUBE UPLOAD QUEUE
     from . import uploadThread, queue_holder
     uploadQueue = {
         'enabled': cached_data_handler.getValue('UploadLiveStreams'),
@@ -213,6 +215,9 @@ def serverInfo():
     }
     if uploadThread:
         uploadQueue.update({'status': queue_holder.getStatus()})
+        problem_message, last_traceback = queue_holder.getProblemOccurred()
+        if problem_message:
+            uploadQueue.update({'problem_occurred': {'message': problem_message, 'traceback': last_traceback}})
     return Response({
         'channelInfo': channelInfo,
         'youtube': {'YoutubeLogin': is_google_account_login_in()},

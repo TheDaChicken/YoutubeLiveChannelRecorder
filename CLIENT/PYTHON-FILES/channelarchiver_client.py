@@ -144,16 +144,22 @@ if __name__ == '__main__':
                         # USING JOIN INSTEAD OF += ON STRING BECAUSE JOIN IS FASTER.
                         print(''.join(message))
                         loopNumber += 1
+
+                # YOUTUBE UPLOAD QUEUE INFO
                 if uploadQueue and uploadQueue.get('enabled'):
                     is_alive = uploadQueue.get('is_alive')
+                    problem_occurred = uploadQueue.get('problem_occurred')  # type: dict
                     if is_alive:
                         status = '{0}{1}'.format(Fore.LIGHTRED_EX, uploadQueue.get('status'))
                     elif is_alive is None:
-                        status = '{0}Starting up.'.format(Fore.LIGHTRED_EX)
+                        status = '{0}Not Running. :/'.format(Fore.LIGHTRED_EX)
                     elif is_alive is False:
                         status = '{0}Crashed.'.format(Fore.LIGHTYELLOW_EX)
                     print("\n{0}YouTube Upload Queue:".format(Fore.LIGHTMAGENTA_EX))
                     print("    {0}Status: {1}".format(Fore.LIGHTGREEN_EX, status))
+                    if problem_occurred and type(problem_occurred) is dict:
+                        print("    {0}Problem Occurred: {1}{2}".format(Fore.LIGHTRED_EX, Fore.LIGHTYELLOW_EX,
+                                                                       problem_occurred.get('message')))
 
                 print("\n 1) Refresh Channel List.\n 2) Add Channel\n 3) Remove Channel\n 4) Change Settings")
                 if 'YoutubeLogin' in youtube and youtube['YoutubeLogin'] is False:

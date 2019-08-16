@@ -12,6 +12,8 @@ from ..encoder import Encoder
 class QueueHandler:
     _queue = {}
     _stats = 'RUNNING'
+    _last_problem_occurred = None
+    _crash_traceback_message = None
 
     def getQueue(self):
         return self._queue
@@ -25,8 +27,15 @@ class QueueHandler:
     def updateStatus(self, status):
         self._stats = status
 
+    def problem_occurred(self, problem, crash_traceback_message=None):
+        self._last_problem_occurred = problem
+        self._crash_traceback_message = crash_traceback_message
+
     def getStatus(self):
         return self._stats
+
+    def getProblemOccurred(self):
+        return self._last_problem_occurred, self._crash_traceback_message
 
 
 def uploadQueue(cached_data_handler, queue_holder):
@@ -44,20 +53,43 @@ def uploadQueue(cached_data_handler, queue_holder):
                     thumbnail_location = video_info.get('thumbnail_location')
                     if len(file_location) < 2:
                         queue_holder.updateStatus('Uploading \'{0}\' recording to YouTube.'.format(video_id))
-                        uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location[0],
-                                      thumbnail_location)
+                        ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location[0],
+                                                            thumbnail_location)
+                        if not ok:
+                            queue_holder.problem_occurred(
+                                "Failed to upload {0} \'{1}\' recording to YouTube.".format(
+                                    channel_data.get('channel_name'), traceback_crash))
                     else:
-                        # TODO MERGE FILES OR SOMETHING
                         now = video_data.get('start_date')  # type: datetime
-                        final_ = os.path.join(os.getcwd(), '{0}-merged-final.mp4'.format(video_id))
-                        encoder.merge_streams(file_location, final_)
-                        queue_holder.updateStatus('Merging \'{0}\' recordings for YouTube.'.format(video_id))
-                        while encoder.running:
-                            sleep(1)
-                        queue_holder.updateStatus('Uploading \'{0}\' merged recording to YouTube.'.format(video_id))
-                        uploadYouTube(cached_data_handler, video_id, video_data, channel_data, final_,
-                                      thumbnail_location)
-                    queue_holder.removeQueue(video_id)
+                        final_ = os.path.join(os.getcwd(), "RecordedStreams",
+                                              '{0} - \'{1}\' {2}-{3}-{4} merged-full-stream.mp4'.format(
+                                                  channel_data.get('channel_name'), video_id, now.month, now.day,
+                                                  now.year))
+                        ok = encoder.merge_streams(file_location, final_)
+                        if ok:
+                            queue_holder.updateStatus('Merging {0} \'{1}\' recordings for YouTube.'.format(
+                                channel_data.get('channel_name'), video_id))
+                            while encoder.running:
+                                sleep(1)
+                            queue_holder.updateStatus('Deleting {0} \'{1}\' recordings due to a merge. '
+                                                      'Keeping Merged Version for use.'.format(channel_data.
+                                                                                               get('channel_name'),
+                                                                                               video_id))
+                            # DELETE OLD RECORDINGS.
+                            for file in file_location:
+                                os.remove(file)
+                            queue_holder.updateStatus('Uploading {0} \'{1}\' merged recording to YouTube.'.format(
+                                channel_data.get('channel_name'), video_id))
+                            ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data, final_,
+                                                                thumbnail_location)
+                            if not ok:
+                                queue_holder.problem_occurred(
+                                    "Failed to upload {0} \'{1}\' merged version to YouTube.".
+                                    format(channel_data.get('channel_name'), traceback_crash))
+                        if not ok:
+                            queue_holder.problem_occurred("Failed to start merge {0} \'{1}\' recordings for YouTube.".
+                                                          format(channel_data.get('channel_name'), video_id))
+                        queue_holder.removeQueue(video_id)
             else:
                 queue_holder.updateStatus('Waiting.')
             sleep(2)
@@ -123,8 +155,8 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
             upload_thumbnail(youtube_client, upload_video_id,
                              thumbnail_location)
             info("Thumbnail Done Uploading!")
-        return True
+        return [True, None]
     except Exception:
         error_warning(traceback.format_exc())
         warning("Unable to upload stream to Youtube.")
-        return False
+        return [False, traceback.format_exc()]
