@@ -30,6 +30,7 @@
   ```
   colorama: Used for color.
   google-api-python-client: Used for youtube API.
+  google_auth_oauthlib: Used for youtube API.
   oauth2client: Used for youtube API. (May be installed with "google-api-python-client")
   httplib2: Used for youtube API. (May be installed with "google-api-python-client")
   PyYAML: data handling.
