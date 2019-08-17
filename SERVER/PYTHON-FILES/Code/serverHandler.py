@@ -340,7 +340,7 @@ def youtube_login():
     if 'youtube_api_credentials' in cached_data_handler.getDict():
         return Response("Youtube account already logged-in", status='client-error', status_code=400)
     url = url_for('youtube_login_call_back', _external=True)
-    is_private_ip = ipaddress.ip_address(request.remote_addr).is_private
+    is_private_ip = ipaddress.ip_address(request.remote_addr).is_private if request.remote_addr is '::1' else False
     link, session['state'] = get_youtube_api_login_link(url, cached_data_handler, isPrivateIP=is_private_ip)
     return redirect(link)
 
