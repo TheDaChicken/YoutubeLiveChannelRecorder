@@ -45,9 +45,11 @@ def server_reply(ip, port, function_name, arguments, RequestMethod='GET', httpMe
     if type(website_text) is str:
         dict_json = parse_json(website_text)
         if not dict_json:
-            print("\n{0}Invalid Response from Server: {1}".format(Fore.LIGHTRED_EX,website_text))
+            print("\n{0}Invalid Response from Server: {1}".format(Fore.LIGHTRED_EX, website_text))
             stopped(None)
         return format_response()
+    if website_text is None:
+        return [None, "Cannot connect to server."]
     return website_text
 
 
