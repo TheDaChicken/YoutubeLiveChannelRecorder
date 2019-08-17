@@ -66,10 +66,10 @@ def loadServer(cached_data_handler_, port, cert=None, key=None):
                 port=port, ssl_context=ssl_context)
     else:
         if cert and key:
-            http_server = WSGIServer(('', port), app, certfile=cert, keyfile=key,
+            http_server = WSGIServer(('0.0.0.0', port), app, certfile=cert, keyfile=key,
                                      server_side=True)
         else:
-            http_server = WSGIServer(('', port), app)
+            http_server = WSGIServer(('0.0.0.0', port), app)
         info("Server started. Hosted on port: {0}!".format(port))
         show_windows_toast_notification(
             "ChannelArchiver Server", "ChannelArchiver server started")
