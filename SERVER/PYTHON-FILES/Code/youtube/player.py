@@ -86,15 +86,20 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
             file_location = temp_dict['file_location']  # type: list
             file_location.append(channelClass.video_location)
     else:
+        temp_youtube_stream = YoutubeStream.copy()
+        temp_youtube_stream.update({
+            'start_date': channelClass.start_date
+        })
         channelClass.video_list.update({
             channelClass.video_id: {
-                'video_id': channelClass.video_id, 'video_data': YoutubeStream, 'channel_data': {
+                'video_id': channelClass.video_id, 'video_data': temp_youtube_stream, 'channel_data': {
                     'channel_name': channelClass.channel_name,
                     'channel_id': channelClass.channel_id,
-                }, 'start_date': channelClass.start_date,
+                },
                 'file_location': [channelClass.video_location, ],
                 'thumbnail_location': channelClass.thumbnail_location}
         })
+        del temp_youtube_stream
 
     # Write YouTube Stream info to json.
     with open("{3} - '{4}' - {0}-{1}-{2}.json".format(channelClass.start_date.month, channelClass.start_date.day,
