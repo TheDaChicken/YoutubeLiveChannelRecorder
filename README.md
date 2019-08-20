@@ -37,7 +37,8 @@
   flask: Web Server.
   gevent: Web Server.
   win10toast: Windows Toast Notifications [ONLY NEEDED IF ON WINDOWS]
-  tzlocal: Used to get TimeZone.
+  tzlocal: Used to get TimeZone. [OPTIONAL, ONLY NEEDED IF USING {TIMEZONE} IN DATA.YML FOR UPLOAD SETTINGS]
+  pytz: Used to get pacific time for YouTube Upload Queue. Allows the program to wait until midnight when YouTube API Quota resets in YouTube API Quota timezone (Pacific time). [OPTIONAL, ONLY NEEDED IF USING YOUTUBE UPLOAD QUEUE AND NOT IN PACIFIC TIMEZONE]
   ```
   
   Download Youtube Live Chanenl Recorder [[MASTER]](https://github.com/TheDaChicken/YoutubeLiveChannelRecorder/archive/master.zip)
