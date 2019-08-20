@@ -47,7 +47,21 @@ def uploadQueue(cached_data_handler, queue_holder):
             queue = queue_holder.getQueue()
             if youtube_api_quota:
                 # WAIT UNTIL MIDNIGHT. TURN OFF PROTECTION THEN START UPLOADING AGAIN.
-                now = datetime.now()
+                try:
+                    import pytz
+                except ImportError:
+                    pytz = None
+                    queue_holder.updateStatus("Unable to get Pacific Time Zone. "
+                                              "Needed to check if midnight in youtube api quota timezone "
+                                              "(Pacific Time) to start uploading again due to quota. "
+                                              "To fix that, pip install pytz. Then restart the server. "
+                                              "Using server timezone, currently. - {0}".format(
+                                               queue_holder.getStatus()))
+                if pytz:
+                    pacific_time = pytz.timezone('US/Pacific')
+                    now = datetime.now(pacific_time)
+                else:
+                    now = datetime.now()
                 if now.hour == 0 and now.minute > 1 and now.second > 1:
                     youtube_api_quota = False
             if len(queue) != 0 and not youtube_api_quota:
