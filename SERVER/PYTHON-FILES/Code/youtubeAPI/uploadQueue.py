@@ -1,12 +1,12 @@
+import os
 import traceback
 from datetime import datetime
-import os
 from time import sleep
 
+from ..encoder import Encoder
 from ..log import info, error_warning, warning, crash_warning
 from ..utils.other import getTimeZone
 from ..youtubeAPI import get_youtube_api_credentials, initialize_upload, upload_thumbnail
-from ..encoder import Encoder
 
 
 class QueueHandler:
@@ -39,12 +39,18 @@ class QueueHandler:
 
 
 def uploadQueue(cached_data_handler, queue_holder):
+    youtube_api_quota = False
     info("Upload Queue Started.")
     encoder = Encoder()
     try:
         while True:
             queue = queue_holder.getQueue()
-            if len(queue) != 0:
+            if youtube_api_quota:
+                # WAIT UNTIL MIDNIGHT. TURN OFF PROTECTION THEN START UPLOADING AGAIN.
+                now = datetime.now()
+                if now.hour == 0 and now.minute > 1 and now.second > 1:
+                    youtube_api_quota = False
+            if len(queue) != 0 and not youtube_api_quota:
                 for video_id in queue:
                     video_info = queue.get(video_id)  # type: dict
                     video_data = video_info.get('video_data')  # type: dict
@@ -83,13 +89,21 @@ def uploadQueue(cached_data_handler, queue_holder):
                             ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data, final_,
                                                                 thumbnail_location)
                             if not ok:
-                                queue_holder.problem_occurred(
-                                    "Failed to upload {0} \'{1}\' merged version to YouTube.".
-                                    format(channel_data.get('channel_name'), traceback_crash))
+                                # IF NOT A TRACEBACK, WILL SHOW IN STATUS.
+                                if 'Traceback' not in traceback_crash:
+                                    queue_holder.updateStatus(traceback_crash)
+                                    # IF REASON IS DUE TO QUOTA
+                                    if 'quota' in traceback_crash:
+                                        youtube_api_quota = True
+                                else:
+                                    queue_holder.problem_occurred(
+                                        "Failed to upload {0} \'{1}\' merged version to YouTube.".
+                                        format(channel_data.get('channel_name'), traceback_crash))
                         if not ok:
                             queue_holder.problem_occurred("Failed to start merge {0} \'{1}\' recordings for YouTube.".
                                                           format(channel_data.get('channel_name'), video_id))
-                    queue_holder.removeQueue(video_id)
+                    if not youtube_api_quota:
+                        queue_holder.removeQueue(video_id)
             else:
                 queue_holder.updateStatus('Waiting.')
             sleep(2)
@@ -156,7 +170,10 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
                              thumbnail_location)
             info("Thumbnail Done Uploading!")
         return [True, None]
-    except Exception:
-        error_warning(traceback.format_exc())
+    except Exception as e1:
+        traceback_ = traceback.format_exc()
+        if 'quota' in traceback_ and 'usage' in traceback_:
+            return [False, str(e1)]
+        error_warning(traceback_)
         warning("Unable to upload stream to Youtube.")
-        return [False, traceback.format_exc()]
+        return [False, traceback_]
