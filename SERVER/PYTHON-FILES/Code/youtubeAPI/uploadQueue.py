@@ -89,7 +89,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                         if not ok:
                             queue_holder.problem_occurred("Failed to start merge {0} \'{1}\' recordings for YouTube.".
                                                           format(channel_data.get('channel_name'), video_id))
-                        queue_holder.removeQueue(video_id)
+                    queue_holder.removeQueue(video_id)
             else:
                 queue_holder.updateStatus('Waiting.')
             sleep(2)
