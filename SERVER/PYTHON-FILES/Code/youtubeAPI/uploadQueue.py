@@ -108,10 +108,10 @@ def uploadQueue(cached_data_handler, queue_holder):
                                 os.remove(file)
                             queue_holder.updateStatus('Uploading {0} \'{1}\' merged recording to YouTube.'.format(
                                 channel_data.get('channel_name'), video_id))
-                            ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data,
+                            ok_, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data,
                                                                 final_,
                                                                 thumbnail_location)
-                            if not ok:
+                            if not ok_:
                                 # IF NOT A TRACEBACK, WILL SHOW IN STATUS.
                                 if 'Traceback' not in traceback_crash:
                                     queue_holder.updateStatus(traceback_crash)
