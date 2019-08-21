@@ -120,7 +120,7 @@ def run_channel(channel_id, startup=False, addToData=False):
 def upload_test_run(channel_id, startup=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
                                                                      cached_data_handler, queue_holder)
-    ok_bool, error_message = channel_holder_class.loadYoutubeData()
+    ok_bool, error_message = channel_holder_class.loadVideoData()
     if ok_bool:
         del ok_bool
         del error_message
@@ -146,7 +146,7 @@ def upload_test_run(channel_id, startup=False):
 def run_channel_with_video_id(video_id, startup=False, addToData=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(None, shareable_variables,
                                                                      cached_data_handler, queue_holder)
-    ok_bool, error_message = channel_holder_class.loadYoutubeData(video_id=video_id)
+    ok_bool, error_message = channel_holder_class.loadVideoData(video_id=video_id)
     if ok_bool:
         del ok_bool
         del error_message

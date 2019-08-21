@@ -56,7 +56,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                                               "(Pacific Time) to start uploading again due to quota. "
                                               "To fix that, pip install pytz. Then restart the server. "
                                               "Using server timezone, currently. - {0}".format(
-                        queue_holder.getStatus()))
+                                               queue_holder.getStatus()))
                 if pytz:
                     pacific_time = pytz.timezone('US/Pacific')
                     now = datetime.now(pacific_time)
@@ -108,9 +108,10 @@ def uploadQueue(cached_data_handler, queue_holder):
                                 os.remove(file)
                             queue_holder.updateStatus('Uploading {0} \'{1}\' merged recording to YouTube.'.format(
                                 channel_data.get('channel_name'), video_id))
-                            ok_, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data,
-                                                                final_,
-                                                                thumbnail_location)
+                            ok_, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data,
+                                                                 channel_data,
+                                                                 final_,
+                                                                 thumbnail_location)
                             if not ok_:
                                 # IF NOT A TRACEBACK, WILL SHOW IN STATUS.
                                 if 'Traceback' not in traceback_crash:
@@ -120,8 +121,8 @@ def uploadQueue(cached_data_handler, queue_holder):
                                         youtube_api_quota = True
                                 else:
                                     queue_holder.problem_occurred(
-                                        "Failed to upload {0} \'{1}\' merged version to YouTube.".
-                                            format(channel_data.get('channel_name'), traceback_crash))
+                                        "Failed to upload {0} \'{1}\' merged version to YouTube.".format(
+                                            channel_data.get('channel_name'), traceback_crash))
                         if not ok:
                             queue_holder.problem_occurred("Failed to start merge {0} \'{1}\' recordings for YouTube.".
                                                           format(channel_data.get('channel_name'), video_id))
@@ -196,7 +197,8 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
     except Exception as e1:
         traceback_ = traceback.format_exc()
         if 'quota' in traceback_ and 'usage' in traceback_:
-            return [False, str(e1)]
+            return [False, "YouTube API Quota has been exceeded. Waiting until YouTube API Quota resets.\n{0}".format(
+                str(e1))]
         error_warning(traceback_)
         warning("Unable to upload stream to Youtube.")
         return [False, traceback_]

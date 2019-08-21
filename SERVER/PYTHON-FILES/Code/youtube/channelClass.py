@@ -130,7 +130,7 @@ class ChannelInfo:
         self.cachedDataHandler = cachedDataHandler
         self.queue_holder = queue_holder
 
-    def loadYoutubeData(self, video_id=None):
+    def loadVideoData(self, video_id=None):
         if video_id is not None:
             website_string = download_website("https://www.youtube.com/watch?v={0}".
                                               format(video_id), SharedVariables=self.SharedVariables)
