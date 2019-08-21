@@ -96,7 +96,7 @@ class HandlerChannelInfo(ChannelInfo):
 def run_channel(channel_id, startup=False, addToData=False):
     channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
                                                                      cached_data_handler, queue_holder)
-    ok_bool, error_message = channel_holder_class.loadYoutubeData()
+    ok_bool, error_message = channel_holder_class.loadVideoData()
     if ok_bool:
         del ok_bool
         del error_message
