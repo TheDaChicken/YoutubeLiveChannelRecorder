@@ -278,7 +278,8 @@ def getSetting():
                               'type': 'swap'},
         'UploadLiveStreams': {'value': cached_data_handler.getValue('UploadLiveStreams'),
                               'description':
-                                  'Auto uploads recorded YouTube Live streams to YouTube using the YouTube API.',
+                                  'Auto uploads recorded YouTube Live streams to YouTube using the YouTube API. '
+                                  '(ENABLES YOUTUBE UPLOAD QUEUE)',
                               'type': 'swap'},
         'UploadThumbnail': {'value': cached_data_handler.getValue('UploadThumbnail'),
                             'description':
