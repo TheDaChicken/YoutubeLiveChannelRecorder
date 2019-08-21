@@ -7,7 +7,7 @@ class ChannelInfo_template:
     Holds as a template for other platforms. (ONLY JUST ADDED FOR TWITCH SUPPORT)
 
     # Channel Data
-    :type channel_id: str
+    :type channel_id: str, None
     :type channel_name: str
 
     # STREAM DATA

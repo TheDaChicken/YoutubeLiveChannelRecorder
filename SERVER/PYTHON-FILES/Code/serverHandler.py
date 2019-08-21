@@ -1,6 +1,7 @@
 import ipaddress
 import os
 import traceback
+from itertools import chain
 from os import path, getcwd
 from time import sleep
 
@@ -93,24 +94,46 @@ def hello():
 
 
 @app.route('/addChannel')
-def add_channel():
+def old_add_channel():
+    """
+    USED TO HANDLE OLD CLIENTS.
+    """
     channel_id = request.args.get('channel_id')
-    if channel_id is None:
-        return Response("You need Channel_ID in args.", status="client-error", status_code=400)
-    if channel_id is '':
-        return Response('You need to specify a valid channel id.', status='client-error', status_code=400)
-    channel_array = [channel_ for channel_ in channel_main_array
-                     if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
-                     channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
-    if len(channel_array) is not 0:
-        return Response("Channel Already in list!", status="server-error", status_code=500)
-    del channel_array
-    ok, message = run_channel(channel_id, addToData=True)
-    if ok:
-        info("{0} has been added to the list of channels.".format(channel_id))
-        return Response(None)
-    else:
-        return Response(message, status="server-error", status_code=500)
+    return redirect(url_for('add_channel', platform_name="YOUTUBE", channel_id=channel_id))
+
+
+@app.route('/addChannel/<platform_name>')
+def add_channel(platform_name):
+    if 'YOUTUBE' in platform_name:
+        channel_id = request.args.get('channel_id')
+        if channel_id is None:
+            return Response("You need Channel_ID in args.", status="client-error", status_code=400)
+        if channel_id is '':
+            return Response('You need to specify a valid channel id.', status='client-error', status_code=400)
+        channel_array = [channel_ for channel_ in channel_main_array
+                         if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
+                         channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
+        if len(channel_array) is not 0:
+            return Response("Channel Already in list!", status="server-error", status_code=500)
+        del channel_array
+        ok, message = run_channel(channel_id, addToData=True)
+        if ok:
+            info("{0} has been added to the list of channels.".format(channel_id))
+            return Response(None)
+        else:
+            return Response(message, status="server-error", status_code=500)
+    elif 'TWITCH' in platform_name:
+        channel_name = request.args.get('channel_name')
+        if channel_name is None:
+            return Response("You need Channel_NAME in args.", status="client-error", status_code=400)
+        if channel_name is '':
+            return Response('You need to specify a valid channel name.', status='client-error', status_code=400)
+        # TODO CHECK PLATFORM (JUST IN CASE, WANTED TO RECORD BOTH YOUTUBE AND TWITCH STREAM WITH SAME NAME)
+        channel_array = [channel_ for channel_ in channel_main_array
+                         if channel_name.casefold() == channel_['class'].get('channel_name').casefold()]
+        if len(channel_array) is not 0:
+            return Response("Channel Already in list!", status="server-error", status_code=500)
+    return Response("Unknown platform name.", status="client-error", status_code=404)
 
 
 @app.route('/removeChannel')
@@ -127,7 +150,7 @@ def remove_channel():
                         status="server-error", status_code=500)
     channel_array = channel_array[0]
     if 'error' not in channel_array:
-        channel_array['class'].close()
+        channel_array['class'].stop_recording()
         thread_class = channel_array['thread_class']
         try:
             thread_class.terminate()
