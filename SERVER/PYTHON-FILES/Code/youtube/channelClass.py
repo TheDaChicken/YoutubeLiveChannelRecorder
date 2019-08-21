@@ -1,4 +1,3 @@
-import atexit
 import os
 import re
 import traceback
@@ -6,16 +5,16 @@ from datetime import datetime
 from multiprocessing.managers import Namespace
 from time import sleep
 
-from .heatbeat import is_live
 from . import set_global_youtube_variables, generate_cpn
+from .communityPosts import is_live_sponsor_only_streams
+from .heatbeat import is_live
+from .player import openStream, getYoutubeStreamInfo
+from ..log import verbose, stopped, warning, info, crash_warning
 from ..template.template_channelClass import ChannelInfo_template
-from ..log import verbose, stopped, warning, info, note, crash_warning, error_warning
-from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
+from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.youtube import get_yt_player_config, get_endpoint_type
-from .player import openStream, getYoutubeStreamInfo
-from .communityPosts import is_live_sponsor_only_streams
 
 
 class ChannelInfo(ChannelInfo_template):
