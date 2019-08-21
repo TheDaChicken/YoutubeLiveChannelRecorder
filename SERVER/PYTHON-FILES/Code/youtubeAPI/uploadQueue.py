@@ -64,7 +64,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                     now = datetime.now()
                 if now.hour == 0 and now.minute > 1 and now.second > 1:
                     youtube_api_quota = False
-            if len(queue) != 0 and not youtube_api_quota:
+            elif len(queue) != 0 and not youtube_api_quota:
                 for video_id in queue:
                     video_info = queue.get(video_id)  # type: dict
                     video_data = video_info.get('video_data')  # type: dict
