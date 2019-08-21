@@ -56,7 +56,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                                               "(Pacific Time) to start uploading again due to quota. "
                                               "To fix that, pip install pytz. Then restart the server. "
                                               "Using server timezone, currently. - {0}".format(
-                                               queue_holder.getStatus()))
+                        queue_holder.getStatus()))
                 if pytz:
                     pacific_time = pytz.timezone('US/Pacific')
                     now = datetime.now(pacific_time)
@@ -73,12 +73,20 @@ def uploadQueue(cached_data_handler, queue_holder):
                     thumbnail_location = video_info.get('thumbnail_location')
                     if len(file_location) < 2:
                         queue_holder.updateStatus('Uploading \'{0}\' recording to YouTube.'.format(video_id))
-                        ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_location[0],
+                        ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data,
+                                                            file_location[0],
                                                             thumbnail_location)
                         if not ok:
-                            queue_holder.problem_occurred(
-                                "Failed to upload {0} \'{1}\' recording to YouTube.".format(
-                                    channel_data.get('channel_name'), traceback_crash))
+                            # IF NOT A TRACEBACK, WILL SHOW IN STATUS.
+                            if 'Traceback' not in traceback_crash:
+                                queue_holder.updateStatus(traceback_crash)
+                                # IF REASON IS DUE TO QUOTA
+                                if 'quota' in traceback_crash:
+                                    youtube_api_quota = True
+                            else:
+                                queue_holder.problem_occurred(
+                                    "Failed to upload {0} \'{1}\' recording to YouTube.".format(
+                                        channel_data.get('channel_name'), traceback_crash))
                     else:
                         now = video_data.get('start_date')  # type: datetime
                         final_ = os.path.join(os.getcwd(), "RecordedStreams",
@@ -100,7 +108,8 @@ def uploadQueue(cached_data_handler, queue_holder):
                                 os.remove(file)
                             queue_holder.updateStatus('Uploading {0} \'{1}\' merged recording to YouTube.'.format(
                                 channel_data.get('channel_name'), video_id))
-                            ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data, final_,
+                            ok, traceback_crash = uploadYouTube(cached_data_handler, video_id, video_data, channel_data,
+                                                                final_,
                                                                 thumbnail_location)
                             if not ok:
                                 # IF NOT A TRACEBACK, WILL SHOW IN STATUS.
@@ -112,7 +121,7 @@ def uploadQueue(cached_data_handler, queue_holder):
                                 else:
                                     queue_holder.problem_occurred(
                                         "Failed to upload {0} \'{1}\' merged version to YouTube.".
-                                        format(channel_data.get('channel_name'), traceback_crash))
+                                            format(channel_data.get('channel_name'), traceback_crash))
                         if not ok:
                             queue_holder.problem_occurred("Failed to start merge {0} \'{1}\' recordings for YouTube.".
                                                           format(channel_data.get('channel_name'), video_id))
