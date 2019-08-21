@@ -33,7 +33,7 @@ class ChannelInfo:
     :type description: str
     :type privateStream: bool
     :type sponsor_only_stream: bool
-    :type YoutubeStream: dict, None
+    :type StreamInfo: dict, None
 
     # USED FOR RECORDING.
     :type EncoderClass: Encoder
@@ -99,7 +99,7 @@ class ChannelInfo:
     start_date = None
     privateStream = False
     sponsor_only_stream = False
-    YoutubeStream = None  # DICT THAT HOLDS STREAM URLS
+    StreamInfo = None  # DICT THAT HOLDS STREAM URLS
 
     # USED FOR RECORDING
     EncoderClass = None
@@ -210,7 +210,7 @@ class ChannelInfo:
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
                                     if thumbnails:
                                         self.thumbnail_url = get_highest_thumbnail(thumbnails)
-                                    self.YoutubeStream = {
+                                    self.StreamInfo = {
                                         'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                                         'HLSManifestURL': manifest_url,
                                         'DashManifestURL': str(
@@ -310,7 +310,7 @@ class ChannelInfo:
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
                                     if thumbnails:
                                         self.thumbnail_url = get_highest_thumbnail(thumbnails)
-                                    self.YoutubeStream = {
+                                    self.StreamInfo = {
                                         'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                                         'HLSManifestURL': manifest_url,
                                         'DashManifestURL': str(
@@ -402,11 +402,11 @@ class ChannelInfo:
                             sleep(self.pollDelayMs / 1000)
                 if boolean_live:
                     self.recording_status = "Getting Youtube Stream Info."
-                    if self.YoutubeStream is None:
-                        self.YoutubeStream = self.getYoutubeStreamInfo(recordingHeight=None)
-                    if self.YoutubeStream:
-                        ok = self.openStream(self.YoutubeStream, sharedDataHandler=self.cachedDataHandler)
-                        self.YoutubeStream = None
+                    if self.StreamInfo is None:
+                        self.StreamInfo = self.getYoutubeStreamInfo(recordingHeight=None)
+                    if self.StreamInfo:
+                        ok = self.openStream(self.StreamInfo, sharedDataHandler=self.cachedDataHandler)
+                        self.StreamInfo = None
                         if ok:
                             if TestUpload:
                                 self.add_youtube_queue()
@@ -451,8 +451,8 @@ class ChannelInfo:
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
 
-    def openStream(self, YoutubeStream, sharedDataHandler=None):
-        return openStream(self, YoutubeStream, sharedDataHandler)
+    def openStream(self, StreamInfo, sharedDataHandler=None):
+        return openStream(self, StreamInfo, sharedDataHandler)
 
     def getYoutubeStreamInfo(self, recordingHeight=None):
         return getYoutubeStreamInfo(self, recordingHeight=recordingHeight)

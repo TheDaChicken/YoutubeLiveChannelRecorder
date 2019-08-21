@@ -16,7 +16,7 @@ from ..utils.windowsNotification import show_windows_toast_notification
 # from .channelClass import ChannelInfo
 
 
-def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
+def openStream(channelClass, StreamInfo, sharedDataHandler=None):
     """
 
     Records Youtube Live Stream. This holds until live stream is over.
@@ -27,8 +27,8 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
     :type sharedDataHandler: CacheDataHandler
     """
 
-    channelClass.title = YoutubeStream['title']
-    channelClass.description = YoutubeStream['description']
+    channelClass.title = StreamInfo['title']
+    channelClass.description = StreamInfo['description']
     # Sets video_locations and thumbnail (if you have it enabled
 
     filename = channelClass.create_filename(channelClass.video_id)
@@ -40,7 +40,7 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
     channelClass.EncoderClass = Encoder()
     channelClass.recording_status = "Starting Recording."
 
-    ok = channelClass.EncoderClass.start_recording(YoutubeStream['HLSStreamURL'], channelClass.video_location)
+    ok = channelClass.EncoderClass.start_recording(StreamInfo['HLSStreamURL'], channelClass.video_location)
 
     if not ok:
         channelClass.recording_status = "Failed To Start Recording."
@@ -70,7 +70,7 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
                                                                     "recording. \n"
                                                                     "Recording at "
                                                                     "{1}{2}".format(channelClass.channel_name,
-                                                                                    YoutubeStream['stream_resolution'],
+                                                                                    StreamInfo['stream_resolution'],
                                                                                     "\n[SPONSOR STREAM]" if channelClass
                                                                                     .sponsor_only_stream else ''))
     if sharedDataHandler:
@@ -86,7 +86,7 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
             file_location = temp_dict['file_location']  # type: list
             file_location.append(channelClass.video_location)
     else:
-        temp_youtube_stream = YoutubeStream.copy()
+        temp_youtube_stream = StreamInfo.copy()
         temp_youtube_stream.update({
             'start_date': channelClass.start_date
         })
@@ -107,7 +107,7 @@ def openStream(channelClass, YoutubeStream, sharedDataHandler=None):
                                                       channelClass.channel_name, channelClass.video_id), 'w',
               encoding='utf-8') as f:
         json.dump({
-            'video_id': channelClass.video_id, 'video_data': YoutubeStream, 'channel_data': {
+            'video_id': channelClass.video_id, 'video_data': StreamInfo, 'channel_data': {
                 'channel_name': channelClass.channel_name,
                 'channel_id': channelClass.channel_id,
             },
