@@ -143,7 +143,7 @@ def readCommunityPosts(channel_class, SharedVariables=None):
             textHolder = try_get(communityTabMessageInfo, lambda x: x['contentText'], dict)
             if textHolder:
                 if 'simpleText' in textHolder:
-                    communityMessage += try_get(textHolder, lambda x: x['simpleText'], str)
+                    communityMessage.append(try_get(textHolder, lambda x: x['simpleText'], str))
                 else:
                     textListHolder = try_get(textHolder, lambda x: x['runs'], list)
                     if textListHolder:
