@@ -73,7 +73,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
                 channel_Class.thumbnail_url = thumbnail
             channel_Class.pollDelayMs = get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class)
             channel_Class.live_scheduled = is_scheduled(liveStreamAbilityRenderer)
-            channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
+            channel_Class.broadcast_id = get_broadcast_id(liveStreamAbilityRenderer)
             video_id = get_video_id(liveStreamAbilityRenderer)
             if video_id:
                 if video_id != channel_Class.video_id:

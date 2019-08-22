@@ -38,6 +38,8 @@ class CacheDataHandler:
         return self._cache.get(key_name)
 
     def addValueList(self, key_name, value):
+        if key_name not in self._cache:
+            self._cache.update({key_name: []})
         self._cache.get(key_name).append(value)
         saveData(self._cache)
 

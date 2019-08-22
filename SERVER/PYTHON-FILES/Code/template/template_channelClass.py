@@ -2,7 +2,15 @@ import atexit
 from ..log import verbose
 
 
-class ChannelInfo_template:
+class SharableHandler:
+    def get(self, variable_name):
+        return getattr(self, variable_name)
+
+    def set(self, variable_name, value):
+        return setattr(self, variable_name, value)
+
+
+class ChannelInfo_template(SharableHandler):
     """
     Holds as a template for other platforms. (ONLY JUST ADDED FOR TWITCH SUPPORT)
 
@@ -11,7 +19,7 @@ class ChannelInfo_template:
     :type channel_name: str
 
     # STREAM DATA
-    :type video_id: str, None
+    # :type video_id: str, None
     :type title: str
 
     # SERVER VARIABLES
@@ -26,7 +34,6 @@ class ChannelInfo_template:
     channel_name = None
 
     # VIDEO DATA
-    video_id = None
     title = None
 
     # SERVER VARIABLES

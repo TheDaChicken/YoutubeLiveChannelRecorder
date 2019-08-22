@@ -33,7 +33,7 @@ if __name__ == '__main__':
         setupSharedVariables()
 
         cached_data_handler = get_cached_data_handler()
-        channel_ids = cached_data_handler.getValue('channel_ids')
+        youtube_channel_ids = cached_data_handler.getValue('channels_YOUTUBE')
 
         # FOR SSL
         key = try_get(cached_data_handler, lambda x: x.getValue('ssl_key'), str)
@@ -52,19 +52,19 @@ if __name__ == '__main__':
         else:
             port = 31311
 
-        for channel_id in channel_ids:
-            ok, error_message = run_channel(channel_id, startup=True)
-            if not ok:
-                warning(error_message)
+        if not youtube_channel_ids or len(youtube_channel_ids) is 0:
+            warning("None channels found added into this program!")
+            warning(
+                "Connect to localhost on server port using this program's Client, to add channels!")
+        else:
+            for channel_id in youtube_channel_ids:
+                ok, error_message = run_channel(channel_id, startup=True)
+                if not ok:
+                    warning(error_message)
 
         run_server(port, key=key, cert=cert)
 
         run_youtube_queue_thread()
-
-        if len(channel_ids) is 0:
-            warning("None channels found added into this program!")
-            warning(
-                "Connect to localhost on server port using this program's Client, to add channels!")
 
         del parser_args
 

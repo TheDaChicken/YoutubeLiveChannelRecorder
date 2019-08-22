@@ -5,6 +5,7 @@ from threading import Thread
 
 from .youtubeAPI.uploadQueue import uploadQueue, QueueHandler
 from .youtube.channelClass import ChannelInfo
+from .twitch.channelClass import ChannelInfoTwitch
 from .utils.web import download_website, __build__cookies
 from .dataHandler import CacheDataHandler
 from .log import verbose
@@ -33,7 +34,8 @@ def setupSharedVariables():
     global cached_data_handler
     global queue_holder
 
-    BaseManager.register('HandlerChannelInfo', HandlerChannelInfo)
+    BaseManager.register('ChannelInfo', ChannelInfo)
+    BaseManager.register('ChannelInfoTwitch', ChannelInfoTwitch)
     BaseManager.register('CacheDataHandler', CacheDataHandler)
     BaseManager.register('QueueHandler', QueueHandler)
 
@@ -72,54 +74,46 @@ class HandlerChannelList:
         self.list_.remove(object_)
 
 
-class HandlerChannelInfo(ChannelInfo):
+def run_channel(channel_identifier, platform='YOUTUBE', startup=False, addToData=False):
     """
-
-    This is a way of sharing variables from MultiThreading Process.
-    I couldn't find anything online, so what am I going to do?
-
+    :param channel_identifier: Different per platform. Youtube is Channel_id, Twitch is channel_name. :P
+    :type channel_identifier: str
+    :param platform: What platform to run.
+    :param startup: If running in main __main__.py script.
+    :param addToData: Add to data file, if channel runs correctly.
     """
-
-    def __init__(self, channel_id, shareableVariables, cachedDataHandler, queue_holder):
-        super().__init__(channel_id, shareableVariables, cachedDataHandler, queue_holder)
-
-    def get(self, variable_name):
-        return getattr(self, variable_name)
-
-    def set(self, variable_name, value):
-        return setattr(self, variable_name, value)
-
-    def list(self):
-        return self.__dict__
-
-
-def run_channel(channel_id, startup=False, addToData=False):
-    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
-                                                                     cached_data_handler, queue_holder)
-    ok_bool, error_message = channel_holder_class.loadVideoData()
-    if ok_bool:
-        del ok_bool
-        del error_message
-        channel_holder_class.registerCloseEvent()
-        channel_name = channel_holder_class.get("channel_name")
-        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                 name="{0} - Heartbeat Thread".format(channel_name))
-        check_streaming_channel_thread.start()
-        channel_main_array.append(
-            {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
-        if addToData:
-            cached_data_handler.addValueList('channel_ids', channel_id)
-        return [True, "OK"]
-    else:
-        if startup:
+    if 'YOUTUBE' in platform:
+        channel_holder_class = baseManagerChannelInfo.ChannelInfo(channel_identifier, shareable_variables,
+                                                                  cached_data_handler, queue_holder)
+    if 'TWITCH' in platform:
+        channel_holder_class = baseManagerChannelInfo.ChannelInfoTwitch(channel_identifier, shareable_variables,
+                                                                        cached_data_handler, queue_holder)
+    if channel_holder_class:
+        ok_bool, error_message = channel_holder_class.loadVideoData()
+        if ok_bool:
+            del ok_bool
+            del error_message
+            channel_holder_class.registerCloseEvent()
+            channel_name = channel_holder_class.get("channel_name")
+            check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
+                                                     name="{0} - Heartbeat Thread".format(channel_name))
+            check_streaming_channel_thread.start()
             channel_main_array.append(
-                {'class': channel_holder_class, "error": error_message, 'thread_class': None})
-        return [False, error_message]
+                {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
+            if addToData:
+                cached_data_handler.addValueList('channels_{0}'.format(platform), channel_identifier)
+            return [True, "OK"]
+        else:
+            if startup:
+                channel_main_array.append(
+                    {'class': channel_holder_class, "error": error_message, 'thread_class': None})
+            return [False, error_message]
+    return [False, "UNKNOWN PLATFORM GIVEN TO RUN_CHANNEL."]
 
 
 def upload_test_run(channel_id, startup=False):
-    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(channel_id, shareable_variables,
-                                                                     cached_data_handler, queue_holder)
+    channel_holder_class = baseManagerChannelInfo.ChannelInfo(channel_id, shareable_variables,
+                                                              cached_data_handler, queue_holder)
     ok_bool, error_message = channel_holder_class.loadVideoData()
     if ok_bool:
         del ok_bool
@@ -144,8 +138,8 @@ def upload_test_run(channel_id, startup=False):
 
 
 def run_channel_with_video_id(video_id, startup=False, addToData=False):
-    channel_holder_class = baseManagerChannelInfo.HandlerChannelInfo(None, shareable_variables,
-                                                                     cached_data_handler, queue_holder)
+    channel_holder_class = baseManagerChannelInfo.ChannelInfo(None, shareable_variables,
+                                                              cached_data_handler, queue_holder)
     ok_bool, error_message = channel_holder_class.loadVideoData(video_id=video_id)
     if ok_bool:
         del ok_bool
@@ -160,7 +154,7 @@ def run_channel_with_video_id(video_id, startup=False, addToData=False):
         channel_main_array.append(
             {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
         if addToData:
-            cached_data_handler.addValueList('channel_ids', channel_id)
+            cached_data_handler.addValueList('channels_{0}'.format('YOUTUBE'), channel_id)
         return [True, "OK"]
     else:
         if startup:

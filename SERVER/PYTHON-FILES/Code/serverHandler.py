@@ -129,10 +129,15 @@ def add_channel(platform_name):
         if channel_name is '':
             return Response('You need to specify a valid channel name.', status='client-error', status_code=400)
         # TODO CHECK PLATFORM (JUST IN CASE, WANTED TO RECORD BOTH YOUTUBE AND TWITCH STREAM WITH SAME NAME)
-        channel_array = [channel_ for channel_ in channel_main_array
-                         if channel_name.casefold() == channel_['class'].get('channel_name').casefold()]
-        if len(channel_array) is not 0:
+        if len([channel_ for channel_ in channel_main_array
+                if channel_name.casefold() == channel_['class'].get('channel_name').casefold()]) is not 0:
             return Response("Channel Already in list!", status="server-error", status_code=500)
+        ok, message = run_channel(channel_name, platform='TWITCH', addToData=True)
+        if ok:
+            info("{0} has been added to the list of channels.".format(channel_name))
+            return Response(None)
+        else:
+            return Response(message, status="server-error", status_code=500)
     return Response("Unknown platform name.", status="client-error", status_code=404)
 
 
@@ -205,18 +210,26 @@ def serverInfo():
             channelInfo['channel'][channel_class.get('channel_id')].update({
                 'name': channel_class.get('channel_name'),
                 'is_alive': process_class.is_alive() if process_class is not None else False,
+                'platform': channel_class.get('platform'),
             })
             if process_class.is_alive():
-                channelInfo['channel'][channel_class.get('channel_id')].update({
-                    'video_id': channel_class.get('video_id'),
-                    'live': channel_class.get('live_streaming'),
-                    'privateStream': channel_class.get('privateStream'),
-                    'live_scheduled': channel_class.get('live_scheduled'),
-                    'broadcastId': channel_class.get('broadcastId'),
-                    'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
-                    'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
-                    if channel_class.get('last_heartbeat') is not None else None,
-                })
+                if 'YOUTUBE' in channel_class.get('platform'):
+                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                        'video_id': channel_class.get('video_id'),
+                        'live': channel_class.get('live_streaming'),
+                        'privateStream': channel_class.get('privateStream'),
+                        'live_scheduled': channel_class.get('live_scheduled'),
+                        'broadcastId': channel_class.get('broadcast_id'),
+                        'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
+                        'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
+                        if channel_class.get('last_heartbeat') is not None else None,
+                    })
+                elif 'TWITCH' in channel_class.get('platform'):
+                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                        'broadcast_id': channel_class.get('broadcast_id'),
+                        'live': channel_class.get('live_streaming'),
+                        'broadcastId': channel_class.get('broadcastId'),
+                    })
                 if channel_class.get('live_streaming') is True:
                     channelInfo['channel'][channel_class.get('channel_id')].update({
                         'recording_status': channel_class.get('recording_status')
@@ -225,6 +238,7 @@ def serverInfo():
                     channelInfo['channel'][channel_class.get('channel_id')].update({
                         'live_scheduled_time': channel_class.get('live_scheduled_time')
                     })
+
             elif not process_class.is_alive():
                 channelInfo['channel'][channel_class.get('channel_id')].update({
                     'crashed_traceback': channel_class.get('crashed_traceback')

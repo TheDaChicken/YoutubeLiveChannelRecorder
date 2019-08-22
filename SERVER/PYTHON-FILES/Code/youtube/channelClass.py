@@ -50,7 +50,7 @@ class ChannelInfo(ChannelInfo_template):
     # HEARTBEAT Variables
     :type pollDelayMs: int
     :type sequence_number: int
-    :type broadcastId: str
+    :type broadcast_id: str
     :type last_heartbeat: datetime.datetime
 
     # USER ACCOUNT
@@ -59,6 +59,9 @@ class ChannelInfo(ChannelInfo_template):
     # PER-CHANNEL YOUTUBE VARIABLES
     :type cpn: str
     """
+
+    # NEEDED FOR EVERY CHANNEL CLASS.
+    platform = 'YOUTUBE'
 
     # USED FOR SERVER VARIABLES
     live_streaming = None
@@ -71,7 +74,7 @@ class ChannelInfo(ChannelInfo_template):
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
     pollDelayMs = 8000
     sequence_number = 0
-    broadcastId = None
+    broadcast_id = None
     last_heartbeat = None
 
     # User
