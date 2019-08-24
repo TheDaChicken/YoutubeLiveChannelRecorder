@@ -106,11 +106,13 @@ def old_add_channel():
 def add_channel(platform_name):
     if 'YOUTUBE' in platform_name:
         channel_id = request.args.get('channel_id')
+        print(channel_id)
         if channel_id is None:
             return Response("You need Channel_ID in args.", status="client-error", status_code=400)
         if channel_id is '':
             return Response('You need to specify a valid channel id.', status='client-error', status_code=400)
         channel_array = [channel_ for channel_ in channel_main_array
+                         if 'YOUTUBE' in channel_['class'].get('platform')
                          if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
                          channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
         if len(channel_array) is not 0:
@@ -201,20 +203,22 @@ def serverInfo():
     for channel in channel_main_array:
         channel_class = channel['class']
         process_class = channel['thread_class']
-        channelInfo['channel'].update({channel_class.get('channel_id'): {}})
+        channel_id = channel_class.get('channel_id')
+
+        channelInfo['channel'].update({channel_id: {}})
         if 'error' in channel:
-            channelInfo['channel'][channel_class.get('channel_id')].update({
+            channelInfo['channel'][channel_id].update({
                 'error': channel['error'],
             })
         else:
-            channelInfo['channel'][channel_class.get('channel_id')].update({
+            channelInfo['channel'][channel_id].update({
                 'name': channel_class.get('channel_name'),
                 'is_alive': process_class.is_alive() if process_class is not None else False,
                 'platform': channel_class.get('platform'),
             })
             if process_class.is_alive():
                 if 'YOUTUBE' in channel_class.get('platform'):
-                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_id].update({
                         'video_id': channel_class.get('video_id'),
                         'live': channel_class.get('live_streaming'),
                         'privateStream': channel_class.get('privateStream'),
@@ -225,22 +229,21 @@ def serverInfo():
                         if channel_class.get('last_heartbeat') is not None else None,
                     })
                 elif 'TWITCH' in channel_class.get('platform'):
-                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_id].update({
                         'broadcast_id': channel_class.get('broadcast_id'),
                         'live': channel_class.get('live_streaming'),
-                        'broadcastId': channel_class.get('broadcastId'),
                     })
                 if channel_class.get('live_streaming') is True:
-                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_id].update({
                         'recording_status': channel_class.get('recording_status')
                     })
                 if channel_class.get('live_scheduled') is True:
-                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_id].update({
                         'live_scheduled_time': channel_class.get('live_scheduled_time')
                     })
 
             elif not process_class.is_alive():
-                channelInfo['channel'][channel_class.get('channel_id')].update({
+                channelInfo['channel'][channel_id].update({
                     'crashed_traceback': channel_class.get('crashed_traceback')
                 })
 

@@ -22,7 +22,7 @@ def openStream(channelClass, StreamInfo, sharedDataHandler=None):
     Records Youtube Live Stream. This holds until live stream is over.
     Note: ChannelClass is meant to be self in ChannelInfo class.
 
-    :type YoutubeStream: dict
+    :type StreamInfo: dict
     :type channelClass: ChannelInfo
     :type sharedDataHandler: CacheDataHandler
     """
@@ -157,7 +157,7 @@ def openStream(channelClass, StreamInfo, sharedDataHandler=None):
                                                                        channelClass.video_id)
                                                                    + '.mp4')
 
-                        channelClass.EncoderClass.start_recording(YoutubeStream['HLSStreamURL'],
+                        channelClass.EncoderClass.start_recording(StreamInfo['HLSStreamURL'],
                                                                   channelClass.video_location)
 
                         channelClass.recording_status = "Recording."
@@ -166,7 +166,7 @@ def openStream(channelClass, StreamInfo, sharedDataHandler=None):
                                                                                         "Recording at "
                                                                                         "{1}{2}".
                                                         format(channelClass.channel_name,
-                                                               YoutubeStream['stream_resolution'],
+                                                               StreamInfo['stream_resolution'],
                                                                "\n[SPONSOR STREAM]" if channelClass.sponsor_only_stream
                                                                else ''))
                     else:

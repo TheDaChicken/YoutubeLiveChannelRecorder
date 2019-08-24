@@ -162,8 +162,8 @@ def download_json(url, headers=None, data=None, transform_source=None, SharedVar
     return json_string
 
 
-def download_m3u8_formats(m3u8_url):
-    m3u8_doc = download_website(m3u8_url)
-    if m3u8_doc:
+def download_m3u8_formats(m3u8_url, headers=None):
+    m3u8_doc = download_website(m3u8_url, headers)
+    if type(m3u8_doc) is str:
         return parse_m3u8_formats(m3u8_doc)
-    return None
+    return m3u8_doc

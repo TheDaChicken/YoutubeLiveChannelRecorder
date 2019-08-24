@@ -27,7 +27,6 @@ class ChannelInfo(ChannelInfo_template):
     :type description: str
     :type privateStream: bool
     :type sponsor_only_stream: bool
-    :type StreamInfo: dict, None
 
     # USED FOR HOLDING THUMBNAILS
     :type thumbnail_url: str
@@ -45,7 +44,6 @@ class ChannelInfo(ChannelInfo_template):
     :type recording_status: str
     :type SharedVariables: Namespace
     :type sharedCookies: Value
-    :type crashed_traceback: str
 
     # HEARTBEAT Variables
     :type pollDelayMs: int
@@ -64,11 +62,9 @@ class ChannelInfo(ChannelInfo_template):
     platform = 'YOUTUBE'
 
     # USED FOR SERVER VARIABLES
-    live_streaming = None
     recording_status = None
     SharedVariables = False
     sharedCookies = False
-    crashed_traceback = None
     queue_holder = None
 
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
@@ -87,7 +83,6 @@ class ChannelInfo(ChannelInfo_template):
     start_date = None
     privateStream = False
     sponsor_only_stream = False
-    StreamInfo = None  # DICT THAT HOLDS STREAM URLS
 
     # USED FOR UPLOADING
     video_location = None
@@ -372,7 +367,7 @@ class ChannelInfo(ChannelInfo_template):
                 if boolean_live:
                     self.recording_status = "Getting Youtube Stream Info."
                     if self.StreamInfo is None:
-                        self.StreamInfo = self.getYoutubeStreamInfo(recordingHeight=None)
+                        self.StreamInfo = self.getYoutubeStreamInfo()
                     if self.StreamInfo:
                         ok = self.openStream(self.StreamInfo, sharedDataHandler=self.cachedDataHandler)
                         self.StreamInfo = None
@@ -411,8 +406,8 @@ class ChannelInfo(ChannelInfo_template):
     def openStream(self, StreamInfo, sharedDataHandler=None):
         return openStream(self, StreamInfo, sharedDataHandler)
 
-    def getYoutubeStreamInfo(self, recordingHeight=None):
-        return getYoutubeStreamInfo(self, recordingHeight=recordingHeight)
+    def getYoutubeStreamInfo(self):
+        return getYoutubeStreamInfo(self, recordingHeight=self.cachedDataHandler.getValue('recordingHeight'))
 
     def create_filename(self, video_id):
         now = datetime.now()

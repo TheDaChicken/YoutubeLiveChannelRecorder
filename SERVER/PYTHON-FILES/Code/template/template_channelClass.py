@@ -4,7 +4,10 @@ from ..log import verbose
 
 class SharableHandler:
     def get(self, variable_name):
-        return getattr(self, variable_name)
+        try:
+            return getattr(self, variable_name)
+        except AttributeError:
+            return None
 
     def set(self, variable_name, value):
         return setattr(self, variable_name, value)
@@ -21,13 +24,22 @@ class ChannelInfo_template(SharableHandler):
     # STREAM DATA
     # :type video_id: str, None
     :type title: str
+    :type StreamInfo: dict, None
 
     # SERVER VARIABLES
     :type stop_heartbeat: bool
 
     # USED FOR RECORDING.
     :type EncoderClass: Encoder
+
+    # Server-type Variables
+    :type live_streaming, bool
+
     """
+
+    # USED FOR SERVER
+    crashed_traceback = None
+    live_streaming = None
 
     # Channel Data
     channel_id = None
@@ -35,6 +47,7 @@ class ChannelInfo_template(SharableHandler):
 
     # VIDEO DATA
     title = None
+    StreamInfo = None  # DICT THAT HOLDS STREAM URLS
 
     # SERVER VARIABLES
     stop_heartbeat = False
