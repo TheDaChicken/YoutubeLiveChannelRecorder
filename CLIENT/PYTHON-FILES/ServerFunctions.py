@@ -59,6 +59,12 @@ def add_channel(ip, port, channel_id):
     return server_reply(ip, port, function_name, arguments)
 
 
+def add_twitch_channel(ip, port, channel_name):
+    function_name = 'addChannel/TWITCH'
+    arguments = {'channel_name': channel_name}
+    return server_reply(ip, port, function_name, arguments)
+
+
 def remove_channel(ip, port, channel_id):
     function_name = 'removeChannel'
     arguments = {'channel_id': channel_id}

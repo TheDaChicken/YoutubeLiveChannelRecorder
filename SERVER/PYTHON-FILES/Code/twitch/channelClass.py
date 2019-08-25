@@ -181,26 +181,23 @@ class ChannelInfoTwitch(ChannelInfo_template):
                         if message_type:
                             if "MESSAGE" in message_type:
                                 data_message_type = try_get(message_data_json, lambda x: x['type'])
-                                if 'stream_up' in data_message_type:
-                                    with open("test.txt", "a", encoding='utf-8') as myfile:
-                                        myfile.write("someone is live!!")
-                                        myfile.close()
-                                    self.live_streaming = True
-                                    self.broadcast_id = try_get(
-                                        message_data_json, lambda x: x['data']['broadcast_id'])
-                                    start_recording(self.getTwitchStreamInfo())
-                                if 'stream_down' in data_message_type:
-                                    with open("test.txt", "a", encoding='utf-8') as myfile:
-                                        myfile.write("oh my someone is now offline.")
-                                        myfile.close()
-                                    self.live_streaming = False
-                                    stop_recording()
+                                if data_message_type:
+                                    if 'stream_up' in data_message_type:
+                                        with open("test.txt", "a", encoding='utf-8') as myfile:
+                                            myfile.write("someone is live!!")
+                                            myfile.close()
+                                        self.live_streaming = True
+                                        self.broadcast_id = try_get(
+                                            message_data_json, lambda x: x['data']['broadcast_id'])
+                                        start_recording(self.getTwitchStreamInfo())
+                                    if 'stream_down' in data_message_type:
+                                        with open("test.txt", "a", encoding='utf-8') as myfile:
+                                            myfile.write("oh my someone is now offline.")
+                                            myfile.close()
+                                        self.live_streaming = False
+                                        stop_recording()
                             if "RESPONSE" in message_type:
                                 pass
-                elif not self.ws.connected:
-                    self.ws = createConnection()
-                    if not self.ws.connected:
-                        warning("Unable to connect to Twitch WEBSOCKET.")
         except Exception:
             self.crashed_traceback = traceback.format_exc()
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))

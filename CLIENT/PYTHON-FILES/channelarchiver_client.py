@@ -5,7 +5,7 @@ from time import sleep
 
 from ServerFunctions import check_server, get_server_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
-    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id
+    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id, add_twitch_channel
 from utils import stringToInt
 from log import info, stopped, warning, EncoderLog, Fore
 
@@ -183,16 +183,32 @@ if __name__ == '__main__':
                         serverInfo = reply
                     del reply
                 elif option is "2":  # ADDING CHANNELS
-                    print("To Find The Channel_IDs USE THIS: ")
-                    print("https://commentpicker.com/youtube-channel-id.php")
-                    temp_channel_id = input("Channel ID: ")
-                    ok, reply = add_channel(serverIP, serverPort, temp_channel_id)
-                    print("\n")
-                    if not ok:
-                        print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
-                    else:
-                        print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
-                    input("\nPress enter to go back to Selection.")
+                    print("\nWhat Platform?")
+                    print("")
+                    print("Platform List:")
+                    print("YOUTUBE, TWITCH.")
+                    print("")
+                    okay = input(":")
+                    if 'YOUTUBE' in okay:
+                        print("To Find The Channel_IDs USE THIS: ")
+                        print("https://commentpicker.com/youtube-channel-id.php")
+                        temp_channel_id = input("Channel ID: ")
+                        ok, reply = add_channel(serverIP, serverPort, temp_channel_id)
+                        print("\n")
+                        if not ok:
+                            print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
+                        else:
+                            print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
+                        input("\nPress enter to go back to Selection.")
+                    if 'TWITCH' in okay:
+                        temp_channel_id = input("\nChannel NAME: ")
+                        ok, reply = add_twitch_channel(serverIP, serverPort, temp_channel_id)
+                        print("\n")
+                        if not ok:
+                            print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
+                        else:
+                            print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
+                        input("\nPress enter to go back to Selection.")
                     # Refresh
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
