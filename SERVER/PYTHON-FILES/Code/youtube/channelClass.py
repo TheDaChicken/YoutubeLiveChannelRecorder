@@ -32,9 +32,6 @@ class ChannelInfo(ChannelInfo_template):
     :type thumbnail_url: str
     :type thumbnail_location: str
 
-    # USED FOR UPLOADING.
-    :type video_location: str
-
     # USED IN HEARTBEAT TO BE SHOWN ON CLIENT.
     :type live_scheduled: bool
     :type live_scheduled_time: str
@@ -83,9 +80,6 @@ class ChannelInfo(ChannelInfo_template):
     start_date = None
     privateStream = False
     sponsor_only_stream = False
-
-    # USED FOR UPLOADING
-    video_location = None
 
     # THUMBNAIL
     thumbnail_location = None
@@ -425,7 +419,7 @@ class ChannelInfo(ChannelInfo_template):
             if not os.path.isfile(path):
                 verbose("Found Good Filename.")
                 return file_name
-            amount = amount + 1
+            amount += 1
 
     def download_thumbnail(self):
         info("Starting Download of Live Stream Thumbnail.")

@@ -35,6 +35,9 @@ class ChannelInfo_template(SharableHandler):
     # Server-type Variables
     :type live_streaming, bool
 
+    # USED FOR UPLOADING.
+    :type video_location: str
+
     """
 
     # USED FOR SERVER
@@ -48,6 +51,9 @@ class ChannelInfo_template(SharableHandler):
     # VIDEO DATA
     title = None
     StreamInfo = None  # DICT THAT HOLDS STREAM URLS
+
+    # USED FOR UPLOADING
+    video_location = None
 
     # SERVER VARIABLES
     stop_heartbeat = False

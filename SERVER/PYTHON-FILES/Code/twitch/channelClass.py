@@ -1,4 +1,6 @@
+import os
 import traceback
+from datetime import datetime
 from json import dumps
 from random import choice, randint
 from string import ascii_uppercase
@@ -8,11 +10,14 @@ from time import sleep
 from websocket import create_connection
 
 from . import find_client_id
-from ..log import verbose, reply, TwitchSent, warning, stopped, crash_warning
+from ..log import verbose, reply, TwitchSent, warning, stopped, crash_warning, info
 from ..template.template_channelClass import ChannelInfo_template
 from ..utils.other import try_get, get_format_from_data
 from ..utils.parser import parse_json
+from ..utils.windowsNotification import show_windows_toast_notification
+from ..encoder import Encoder
 from ..utils.web import download_website, download_json, download_m3u8_formats
+
 try:
     from urllib.parse import urlencode
 except ImportError:
@@ -29,6 +34,9 @@ class ChannelInfoTwitch(ChannelInfo_template):
     # VIDEO DATA
     broadcast_id = None
     live_streaming = None
+
+    # RECORDING.
+    EncoderClass = Encoder()
 
     def __init__(self, channel_name, SharedVariables=None, cachedDataHandler=None, queue_holder=None):
         # TWITCH ONLY GOES BY CHANNEL NAME. NOT CHANNEL ID.
@@ -102,6 +110,12 @@ class ChannelInfoTwitch(ChannelInfo_template):
                     # TRANSCODE DOESNT EXIST. THAT IS NORMAL. SO NOT LIVE
                     return False
                 if type(formats) is dict:
+                    verbose('Getting Broadcast ID. [TWITCH]')
+                    streams = self.__callAPI__('kraken/streams/{0}'.format(self.channel_name))
+                    if type(streams) is int:
+                        warning("Twitch replied: {0}".format(str(streams)))
+                    if streams:
+                        self.broadcast_id = try_get(streams, lambda x: x['stream']['_id'], int)
                     self.StreamInfo = formats
                     return True
                 else:
@@ -110,6 +124,28 @@ class ChannelInfoTwitch(ChannelInfo_template):
                     else:
                         warning("Formats returned: {0}".format(str(formats)))
                 return False
+
+            def start_recording(StreamInfo):
+                self.recording_status = "Starting Recording."
+
+                filename = self.create_filename(self.broadcast_id)
+                self.video_location = os.path.join("RecordedStreams", '{0}.mp4'.format(filename))
+
+                ok = self.EncoderClass.start_recording(StreamInfo['HLSStreamURL'], self.video_location)
+                if not ok:
+                    self.recording_status = "Failed To Start Recording."
+                    show_windows_toast_notification("Live Recording Notifications",
+                                                    "Failed to start record for {0}".format(self.channel_name))
+                self.start_date = datetime.now()
+
+                self.recording_status = "Recording."
+
+                show_windows_toast_notification("Live Recording Notifications",
+                                                "{0} is live and is now recording. \nRecording at {1}".format(
+                                                    self.channel_name, StreamInfo['stream_resolution']))
+
+            def stop_recording():
+                self.EncoderClass.stop_recording()
 
             ws = createConnection()
 
@@ -121,31 +157,40 @@ class ChannelInfoTwitch(ChannelInfo_template):
 
             self.live_streaming = firstCheckLive()
             if self.live_streaming:
-                pass
+                start_recording(self.StreamInfo)
 
             while True:
                 if ws.connected:
                     result = ws.recv()
                     json = parse_json(result)
+                    if json:
+                        reply('FROM TWITCH -> {0}'.format(json))
 
-                    reply('FROM TWITCH -> {0}'.format(json))
-
-                    message_type = try_get(json, lambda x: x['type'], str)
-                    # TODO ONLY HERE FOR TESTING.
-                    with open("test.txt", "a", encoding='utf-8') as myfile:
-                        myfile.write("{0}\n".format(str(json)))
-                    if message_type:
-                        if "MESSAGE" in message_type:
-                            data_message_type = try_get(json, lambda x: x['data']['message']['type'])
-                            if 'stream_up' in data_message_type:
-                                myfile.write("oh no not live\n")
-                                self.live_streaming = True
-                            if 'stream_down' in data_message_type:
-                                myfile.write("oh no not live\n")
-                                self.live_streaming = False
-                        if "RESPONSE" in message_type:
-                            pass
-                    myfile.close()
+                        message_type = try_get(json, lambda x: x['type'], str)
+                        message_data_json = parse_json(try_get(json, lambda x: x['data']['message'], str))
+                        # TODO ONLY HERE FOR TESTING.
+                        with open("test.txt", "a", encoding='utf-8') as myfile:
+                            myfile.write("{0}\n".format(str(json)))
+                            myfile.close()
+                        if message_type:
+                            if "MESSAGE" in message_type:
+                                data_message_type = try_get(message_data_json, lambda x: x['type'])
+                                if 'stream_up' in data_message_type:
+                                    with open("test.txt", "a", encoding='utf-8') as myfile:
+                                        myfile.write("someone is live!!")
+                                        myfile.close()
+                                    self.live_streaming = True
+                                    self.broadcast_id = try_get(
+                                        message_data_json, lambda x: x['data']['broadcast_id'])
+                                    start_recording(self.getTwitchStreamInfo())
+                                if 'stream_down' in data_message_type:
+                                    with open("test.txt", "a", encoding='utf-8') as myfile:
+                                        myfile.write("oh my someone is now offline.")
+                                        myfile.close()
+                                    self.live_streaming = False
+                                    stop_recording()
+                            if "RESPONSE" in message_type:
+                                pass
                 elif not ws.connected:
                     ws = createConnection()
                     if not ws.connected:
@@ -159,7 +204,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
             self.channel_name, urlencode({'need_https': 'true', 'platform': 'web',
                                           'player_backend': 'mediaplayer', 'player_type': 'site'})))
         if access_token:
-            arguments = {'allow_source': 'true', 'baking_bread': 'true',
+            arguments = {'allow_source': 'true', 'baking_bread': 'false',
                          'baking_brownies': 'true', 'baking_brownies_timeout': 1050,
                          'fast_bread': 'true',
                          'p': randint(1000000, 10000000), 'player_backend': 'mediaplayer',
@@ -182,3 +227,21 @@ class ChannelInfoTwitch(ChannelInfo_template):
             return formats
         warning("Unable to get access token.")
         return None
+
+    def create_filename(self, broadcast_id):
+        now = datetime.now()
+        # Used to handle lots of names by creating new names and add numbers!
+        amount = 1
+        while True:
+            if amount is 1:
+                file_name = "{3} - '{4}' - {0}-{1}-{2}".format(now.month, now.day, now.year, self.channel_name,
+                                                               broadcast_id)
+            else:
+                file_name = "{3} - '{4}' - {0}-{1}-{2}_{5}".format(now.month, now.day, now.year, self.channel_name,
+                                                                   broadcast_id,
+                                                                   amount)
+            path = os.path.join("RecordedStreams", '{0}.mp4'.format(file_name))
+            if not os.path.isfile(path):
+                verbose("Found Good Filename.")
+                return file_name
+            amount += 1
