@@ -38,6 +38,9 @@ class ChannelInfoTwitch(ChannelInfo_template):
     # RECORDING.
     EncoderClass = Encoder()
 
+    # HOLDING TWITCH'S WEBSOCKET
+    ws = None
+
     def __init__(self, channel_name, SharedVariables=None, cachedDataHandler=None, queue_holder=None):
         # TWITCH ONLY GOES BY CHANNEL NAME. NOT CHANNEL ID.
         self.channel_name = channel_name
@@ -83,20 +86,23 @@ class ChannelInfoTwitch(ChannelInfo_template):
                     'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
                     'User-Agent': UserAgent}
 
-                ws_ = create_connection("wss://pubsub-edge.twitch.tv/v1", headers=headers)
-                while not ws_.connected:
+                ws = create_connection("wss://pubsub-edge.twitch.tv/v1", headers=headers)
+                while not ws.connected:
                     pass
                 sleep(2)
-                return ws_
+                return ws
 
             def send(object_):
                 # DUMPS IS JSON.DUMPS. OOF
                 dump_ = dumps(object_)
-                ws.send(dump_)
+                try:
+                    self.ws.send(dump_)
+                except Exception:
+                    pass
                 TwitchSent(dump_)
 
             def pingThread():
-                while ws.connected:
+                while self.ws.connected:
                     send({'type': 'PING'})
                     sleep(240)
 
@@ -147,7 +153,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
             def stop_recording():
                 self.EncoderClass.stop_recording()
 
-            ws = createConnection()
+            self.ws = createConnection()
 
             x = Thread(target=pingThread)
             x.start()
@@ -160,8 +166,8 @@ class ChannelInfoTwitch(ChannelInfo_template):
                 start_recording(self.StreamInfo)
 
             while True:
-                if ws.connected:
-                    result = ws.recv()
+                if self.ws.connected:
+                    result = self.ws.recv()
                     json = parse_json(result)
                     if json:
                         reply('FROM TWITCH -> {0}'.format(json))
@@ -191,9 +197,9 @@ class ChannelInfoTwitch(ChannelInfo_template):
                                     stop_recording()
                             if "RESPONSE" in message_type:
                                 pass
-                elif not ws.connected:
-                    ws = createConnection()
-                    if not ws.connected:
+                elif not self.ws.connected:
+                    self.ws = createConnection()
+                    if not self.ws.connected:
                         warning("Unable to connect to Twitch WEBSOCKET.")
         except Exception:
             self.crashed_traceback = traceback.format_exc()
@@ -245,3 +251,13 @@ class ChannelInfoTwitch(ChannelInfo_template):
                 verbose("Found Good Filename.")
                 return file_name
             amount += 1
+
+    # USED FOR THE CLOSE EVENT AND STUFF.
+    def stop_recording(self):
+        if self.EncoderClass is not None:
+            self.EncoderClass.stop_recording()
+            self.EncoderClass = None
+        self.stop_heartbeat = True
+        if self.ws is not None:
+            if self.ws.connected:
+                self.ws.close()
