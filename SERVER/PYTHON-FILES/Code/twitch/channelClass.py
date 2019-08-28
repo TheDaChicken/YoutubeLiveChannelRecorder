@@ -219,7 +219,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
                                                                      urlencode(arguments))
             formats = download_m3u8_formats(manifest_url)
             if type(formats) is list:
-                f = get_format_from_data(formats, self.cachedDataHandler.getValue('recordingHeight'))
+                f = get_format_from_data(formats, self.cachedDataHandler.getValue('recordingResolution'))
                 return {
                     'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                     'HLSManifestURL': manifest_url,

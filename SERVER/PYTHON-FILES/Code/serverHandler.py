@@ -342,7 +342,11 @@ def getSetting():
                                                                   'Then tries uploading that through the YouTube API.',
                                     'type': 'channel_id'},
         'Refresh Data File Cache': {'value': None, 'description': 'Refreshes the cache created from the data.yml file.',
-                                    'type': 'refresh_data_cache'}
+                                    'type': 'refresh_data_cache'},
+        'Recording At': {'value': cached_data_handler.getValue('recordingResolution'),
+                         'description': 'Changes recording quality. Reduces data usage. '
+                                        'If unable to record at quality, will choose available quality.',
+                         'type': 'recording_at_resolution'}
     }
     return Response(json)
 
@@ -368,6 +372,29 @@ def YoutubeAPILoginInfo():
 def updateDataCache():
     cached_data_handler.updateCache()
     return Response(None)
+
+
+@app.route('/recording_at_resolution')
+def recording_at_resolution():
+    resolution = request.args.get('resolution')
+    if resolution is None:
+        return Response("You need resolution in args.", status='client-error', status_code=400)
+    if type(resolution) is str:
+        if 'original' in resolution:
+            cached_data_handler.setValue('recordingResolution', resolution)
+        if 'x' in resolution:
+            split = resolution.split('x')
+            if len(split) != 2:
+                return Response('The given resolution must be a valid resolution.')
+            # VERIFY IF NUMBER.
+            for number in split:
+                try:
+                    int(number)
+                except ValueError:
+                    return Response('{0} is not a number!'.format(number))
+            cached_data_handler.setValue('recordingResolution', resolution)
+            return Response("Resolution has been saved.")
+    return Response("Resolution should be a str.", status='client-error', status_code=400)
 
 
 # LOGGING INTO YOUTUBE (FOR UPLOADING)

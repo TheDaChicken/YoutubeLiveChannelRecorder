@@ -5,7 +5,7 @@ from time import sleep
 from ServerFunctions import check_server, get_server_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
     get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id, \
-    add_twitch_channel
+    add_twitch_channel, record_at_resolution
 from utils import stringToInt
 from log import info, stopped, warning, EncoderLog, Fore
 
@@ -364,6 +364,8 @@ if __name__ == '__main__':
                                 type_ = "CHANNEL ID"
                             if server_setting_type == 'refresh_data_cache':
                                 type_ = "REFRESH"
+                            if server_setting_type == 'recording_at_resolution':
+                                type_ = "RESOLUTION"
                             if value is not None:
                                 # WITH VALUE
                                 message = [
@@ -442,6 +444,25 @@ if __name__ == '__main__':
                             if not ok:
                                 print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
                                 input("Press enter to go back to Selection.")
+                        if server_setting_type == 'recording_at_resolution':
+                            print("")
+                            print("Type \"original\", if you want to record at original quality.")
+                            print("Type a resolution to record at that quality.")
+                            print("Resolution:")
+                            print("3840x2160 for 4K")
+                            print("1920x1080 for 1080p")
+                            print("1280x720 for 720p")
+                            print("")
+                            print("If that resolution isn\'t available on that stream, will use lower quality.")
+                            temp_resolution_or_something = input("Resolution: ")
+                            ok, reply = record_at_resolution(serverIP, serverPort, temp_resolution_or_something)
+                            del temp_resolution_or_something
+                            print("\n")
+                            if not ok:
+                                print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
+                            else:
+                                print("{0}Resolution has been set!".format(Fore.LIGHTGREEN_EX))
+                            input("\nPress enter to go back to Selection.")
                         # Refresh
                         info("Getting Server Settings")
                         ok, reply = get_server_settings(serverIP, serverPort)

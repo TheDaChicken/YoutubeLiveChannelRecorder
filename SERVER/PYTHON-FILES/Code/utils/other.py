@@ -9,24 +9,33 @@ from ..log import warning
 
 
 # This gets the best format of the width.
-def get_format_from_data(formats, height):
-    lower = None
-    if type(height) is str:
-        if 'original' in height:
-            return max(formats, key=lambda x: x['height'])
-        else:
-            warning("height is a str when it should be a int. Auto getting best format.")
-            return max(formats, key=lambda x: x['height'])
-    elif type(height) is int:
+def get_format_from_data(formats, resolution):
+    if type(resolution) is str:
+        if 'original' in resolution:
+            return formats[-1]
+        split = resolution.split('x')
+        if len(split) != 2:
+            warning('The given resolution must be a valid resolution. Getting best format.')
+            return formats[-1]
+        # height x width
+        try:
+            okay_height = int(split[0])
+            okay_width = int(split[1])
+        except ValueError:
+            warning('The given resolution must be a valid resolution. Getting best format.')
+            return formats[-1]
+        okay_format = None
         for format_ in formats:
-            format_height = format_['height']
-            if height == format_height:
-                return format_
-            if format_height < height:
-                lower = format_
-        return lower
-    elif height is None:
-        return max(formats, key=lambda x: x['height'])
+            height = format_['height']
+            width = format_['width']
+            if height < okay_height and width < okay_width:
+                okay_format = format_
+        if not okay_format:
+            warning("Unable to find best resolution fit with recording at. Using best quality.")
+            return formats[-1]
+    warning("Resolution stored in data is invalid. Getting best format.")
+    # BEST FORMAT IS MOSTLY ON TOP.
+    return formats[-1]
 
 
 # This could be changed but as right now, it seems to work.

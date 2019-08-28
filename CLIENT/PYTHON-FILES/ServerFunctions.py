@@ -143,6 +143,12 @@ def listRecordings(ip, port):
     return server_reply(ip, port, function_name, arguments)
 
 
+def record_at_resolution(ip, port, resolution):
+    function_name = 'recording_at_resolution'
+    arguments = {'resolution': resolution}
+    return server_reply(ip, port, function_name, arguments)
+
+
 def playbackRecording(ip, port, RecordingName):
     from encoder import FFplay
     try:
