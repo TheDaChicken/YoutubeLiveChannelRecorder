@@ -12,11 +12,11 @@ from ..log import warning
 def get_format_from_data(formats, resolution):
     if type(resolution) is str:
         if 'original' in resolution:
-            return formats[-1]
+            return formats[0]
         split = resolution.split('x')
         if len(split) != 2:
             warning('The given resolution must be a valid resolution. Getting best format.')
-            return formats[-1]
+            return formats[0]
         # height x width
         try:
             okay_height = int(split[0])
@@ -28,14 +28,18 @@ def get_format_from_data(formats, resolution):
         for format_ in formats:
             height = format_['height']
             width = format_['width']
-            if height < okay_height and width < okay_width:
+            print(height < okay_height)
+            print(width < okay_width)
+            if not (height > okay_height and width > okay_width):
                 okay_format = format_
+                break
         if not okay_format:
             warning("Unable to find best resolution fit with recording at. Using best quality.")
-            return formats[-1]
+            return formats[0]
+        return okay_format
     warning("Resolution stored in data is invalid. Getting best format.")
     # BEST FORMAT IS MOSTLY ON TOP.
-    return formats[-1]
+    return formats[0]
 
 
 # This could be changed but as right now, it seems to work.
