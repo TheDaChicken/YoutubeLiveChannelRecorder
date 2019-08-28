@@ -1,7 +1,6 @@
 import ipaddress
 import os
 import traceback
-from itertools import chain
 from os import path, getcwd
 from time import sleep
 
@@ -36,8 +35,13 @@ def Response(response, status="OK", status_code=200):
 class FlaskCustom(Flask):
     def process_response(self, response):
         # Allows more security. People won't see the Web Server in the headers.
-        if 'Client' in request.headers:
+        user_agent = request.headers.get('User-Agent')
+        client_header = request.headers.get('Client')
+        if (user_agent and 'WEB-CLIENT' in user_agent) or client_header:
             response.headers['Server'] = 'ChannelArchiver Server'
+            if client_header:
+                response.headers['oldversion'] = 'You are using an old version of the client. ' \
+                                                 'Please update the client to the latest version!'
         return response
 
 
@@ -80,7 +84,9 @@ def loadServer(cached_data_handler_, port, cert=None, key=None):
 @app.before_request
 def before_request():
     # This is used mostly for security. This can be easily broken
-    if 'Client' not in request.headers:
+    user_agent = request.headers.get('User-Agent')
+    client_header = request.headers.get('Client')
+    if not (user_agent and 'WEB-CLIENT' in user_agent) and not client_header:
         rule = request.url_rule
         if rule is not None:
             url = rule.rule

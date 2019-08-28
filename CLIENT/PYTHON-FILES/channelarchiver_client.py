@@ -2,10 +2,10 @@ import os
 import platform
 import re
 from time import sleep
-
 from ServerFunctions import check_server, get_server_info, add_channel, remove_channel, youtube_fully_login, \
     youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
-    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id, add_twitch_channel
+    get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id, \
+    add_twitch_channel
 from utils import stringToInt
 from log import info, stopped, warning, EncoderLog, Fore
 
@@ -13,10 +13,9 @@ serverIP = None
 serverPort = None
 
 # Windows ToastNotifier
-if platform.release() is '10':
+if os.name == 'nt' and platform.release() is '10':
     try:
         from win10toast import ToastNotifier
-
         toaster = ToastNotifier()
     except ImportError:
         warning("win10toast isn't installed!"
@@ -499,9 +498,9 @@ if __name__ == '__main__':
                         if option is "1":
                             print("\n{0} Starting Playback.".format(Fore.LIGHTMAGENTA_EX))
                             ffplay_class = playbackRecording(serverIP, serverPort, recording)
-                            while True:
-                                if not ffplay_class.running:
-                                    break
+                            if ffplay_class:
+                                while ffplay_class.running:
+                                    pass
                         if option is "2":
                             print("")
                             from os import path, getcwd

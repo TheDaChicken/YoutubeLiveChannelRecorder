@@ -1,7 +1,7 @@
-from utils import download_website, download_json, parse_json
 from log import stopped, Fore
+from utils import download_website, parse_json
 
-DefaultHeaders = {'Client': 'PYTHON-CLIENT'}
+DefaultHeaders = {'Client': 'WEB-CLIENT'}
 useHTTPS = False
 
 try:
@@ -149,8 +149,9 @@ def playbackRecording(ip, port, RecordingName):
         from urllib.parse import urlencode
     except ImportError:
         stopped("Unsupported version of Python. You need Version 3 :<")
-    FFplay = FFplay(("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playRecording?" + urlencode(
-        {'stream_name': RecordingName}),
+    url = ("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playRecording?" + urlencode(
+        {'stream_name': RecordingName})
+    FFplay = FFplay(url,
                     Headers=DefaultHeaders)
     FFplay.start_playback()
     return FFplay
