@@ -1,7 +1,6 @@
 # YoutubeLiveChannelRecorder
-  Records Youtube Livestreams for given channels automatically! Technically this program doesn't record, it downloads the stream, but whatever.
-  * NOW Twitch Also! :P
-  
+  Records Youtube Livestreams (and now twitch) streams for given specific channels automatically! Technically this program doesn't record, it downloads the stream, but whatever.
+
 ### NOTE
   This is a server program. You will need to use the client in order to control this program.
   This program is tested on PYTHON VERSION 3.7.2.
