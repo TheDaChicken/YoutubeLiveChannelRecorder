@@ -16,11 +16,14 @@ class Encoder:
     :type crashFunction: function
     """
 
+    running = None
+
     def __init__(self, crashFunction=None, Headers=None):
         self.crashFunction = crashFunction
         self.Headers = Headers
 
     def start_recording(self, videoInput, videoLocation):
+        self.running = None
         self.__run_Encoder(videoInput, videoLocation)
         self.__hold()
         if not self.running:

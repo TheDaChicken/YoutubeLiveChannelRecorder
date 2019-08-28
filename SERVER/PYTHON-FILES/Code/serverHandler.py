@@ -35,8 +35,13 @@ def Response(response, status="OK", status_code=200):
 class FlaskCustom(Flask):
     def process_response(self, response):
         # Allows more security. People won't see the Web Server in the headers.
-        if 'Client' in request.headers:
+        user_agent = request.headers.get('User-Agent')
+        client_header = request.headers.get('Client')
+        if (user_agent and 'WEB-CLIENT' in user_agent) or client_header:
             response.headers['Server'] = 'ChannelArchiver Server'
+            if client_header:
+                response.headers['oldversion'] = 'You are using an old version of the client. ' \
+                                                 'Please update the client to the latest version!'
         return response
 
 
@@ -79,7 +84,9 @@ def loadServer(cached_data_handler_, port, cert=None, key=None):
 @app.before_request
 def before_request():
     # This is used mostly for security. This can be easily broken
-    if 'Client' not in request.headers:
+    user_agent = request.headers.get('User-Agent')
+    client_header = request.headers.get('Client')
+    if not (user_agent and 'WEB-CLIENT' in user_agent) and not client_header:
         rule = request.url_rule
         if rule is not None:
             url = rule.rule
@@ -93,24 +100,53 @@ def hello():
 
 
 @app.route('/addChannel')
-def add_channel():
+def old_add_channel():
+    """
+    USED TO HANDLE OLD CLIENTS.
+    """
     channel_id = request.args.get('channel_id')
-    if channel_id is None:
-        return Response("You need Channel_ID in args.", status="client-error", status_code=400)
-    if channel_id is '':
-        return Response('You need to specify a valid channel id.', status='client-error', status_code=400)
-    channel_array = [channel_ for channel_ in channel_main_array
-                     if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
-                     channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
-    if len(channel_array) is not 0:
-        return Response("Channel Already in list!", status="server-error", status_code=500)
-    del channel_array
-    ok, message = run_channel(channel_id, addToData=True)
-    if ok:
-        info("{0} has been added to the list of channels.".format(channel_id))
-        return Response(None)
-    else:
-        return Response(message, status="server-error", status_code=500)
+    return redirect(url_for('add_channel', platform_name="YOUTUBE", channel_id=channel_id))
+
+
+@app.route('/addChannel/<platform_name>')
+def add_channel(platform_name):
+    if 'YOUTUBE' in platform_name:
+        channel_id = request.args.get('channel_id')
+        print(channel_id)
+        if channel_id is None:
+            return Response("You need Channel_ID in args.", status="client-error", status_code=400)
+        if channel_id is '':
+            return Response('You need to specify a valid channel id.', status='client-error', status_code=400)
+        channel_array = [channel_ for channel_ in channel_main_array
+                         if 'YOUTUBE' in channel_['class'].get('platform')
+                         if channel_id.casefold() == channel_['class'].get('channel_name').casefold() or
+                         channel_id.casefold() == channel_['class'].get('channel_id').casefold()]
+        if len(channel_array) is not 0:
+            return Response("Channel Already in list!", status="server-error", status_code=500)
+        del channel_array
+        ok, message = run_channel(channel_id, addToData=True)
+        if ok:
+            info("{0} has been added to the list of channels.".format(channel_id))
+            return Response(None)
+        else:
+            return Response(message, status="server-error", status_code=500)
+    elif 'TWITCH' in platform_name:
+        channel_name = request.args.get('channel_name')
+        if channel_name is None:
+            return Response("You need Channel_NAME in args.", status="client-error", status_code=400)
+        if channel_name is '':
+            return Response('You need to specify a valid channel name.', status='client-error', status_code=400)
+        # TODO CHECK PLATFORM (JUST IN CASE, WANTED TO RECORD BOTH YOUTUBE AND TWITCH STREAM WITH SAME NAME)
+        if len([channel_ for channel_ in channel_main_array
+                if channel_name.casefold() == channel_['class'].get('channel_name').casefold()]) is not 0:
+            return Response("Channel Already in list!", status="server-error", status_code=500)
+        ok, message = run_channel(channel_name, platform='TWITCH', addToData=True)
+        if ok:
+            info("{0} has been added to the list of channels.".format(channel_name))
+            return Response(None)
+        else:
+            return Response(message, status="server-error", status_code=500)
+    return Response("Unknown platform name.", status="client-error", status_code=404)
 
 
 @app.route('/removeChannel')
@@ -127,7 +163,7 @@ def remove_channel():
                         status="server-error", status_code=500)
     channel_array = channel_array[0]
     if 'error' not in channel_array:
-        channel_array['class'].close()
+        channel_array['class'].stop_recording()
         thread_class = channel_array['thread_class']
         try:
             thread_class.terminate()
@@ -137,7 +173,8 @@ def remove_channel():
         except Exception as e:
             error_warning(traceback.format_exc())
             return Response("Unable to remove channel. {0}".format(str(e)), status="server-error", status_code=500)
-    cached_data_handler.removeValueList('channel_ids', channel_array['class'].get('channel_id'))
+    cached_data_handler.removeValueList(
+        'channels_{0}'.format(channel_array['class'].get('platform')), channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
     sleep(.01)
     info("{0} has been removed.".format(channel_id))
@@ -173,37 +210,47 @@ def serverInfo():
     for channel in channel_main_array:
         channel_class = channel['class']
         process_class = channel['thread_class']
-        channelInfo['channel'].update({channel_class.get('channel_id'): {}})
+        channel_id = channel_class.get('channel_id')
+
+        channelInfo['channel'].update({channel_id: {}})
         if 'error' in channel:
-            channelInfo['channel'][channel_class.get('channel_id')].update({
+            channelInfo['channel'][channel_id].update({
                 'error': channel['error'],
             })
         else:
-            channelInfo['channel'][channel_class.get('channel_id')].update({
+            channelInfo['channel'][channel_id].update({
                 'name': channel_class.get('channel_name'),
                 'is_alive': process_class.is_alive() if process_class is not None else False,
+                'platform': channel_class.get('platform'),
             })
             if process_class.is_alive():
-                channelInfo['channel'][channel_class.get('channel_id')].update({
-                    'video_id': channel_class.get('video_id'),
-                    'live': channel_class.get('live_streaming'),
-                    'privateStream': channel_class.get('privateStream'),
-                    'live_scheduled': channel_class.get('live_scheduled'),
-                    'broadcastId': channel_class.get('broadcastId'),
-                    'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
-                    'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
-                    if channel_class.get('last_heartbeat') is not None else None,
-                })
+                if 'YOUTUBE' in channel_class.get('platform'):
+                    channelInfo['channel'][channel_id].update({
+                        'video_id': channel_class.get('video_id'),
+                        'live': channel_class.get('live_streaming'),
+                        'privateStream': channel_class.get('privateStream'),
+                        'live_scheduled': channel_class.get('live_scheduled'),
+                        'broadcastId': channel_class.get('broadcast_id'),
+                        'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
+                        'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
+                        if channel_class.get('last_heartbeat') is not None else None,
+                    })
+                elif 'TWITCH' in channel_class.get('platform'):
+                    channelInfo['channel'][channel_id].update({
+                        'broadcast_id': channel_class.get('broadcast_id'),
+                        'live': channel_class.get('live_streaming'),
+                    })
                 if channel_class.get('live_streaming') is True:
-                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_id].update({
                         'recording_status': channel_class.get('recording_status')
                     })
                 if channel_class.get('live_scheduled') is True:
-                    channelInfo['channel'][channel_class.get('channel_id')].update({
+                    channelInfo['channel'][channel_id].update({
                         'live_scheduled_time': channel_class.get('live_scheduled_time')
                     })
+
             elif not process_class.is_alive():
-                channelInfo['channel'][channel_class.get('channel_id')].update({
+                channelInfo['channel'][channel_id].update({
                     'crashed_traceback': channel_class.get('crashed_traceback')
                 })
 

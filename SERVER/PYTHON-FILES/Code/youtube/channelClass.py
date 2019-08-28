@@ -1,4 +1,3 @@
-import atexit
 import os
 import re
 import traceback
@@ -6,44 +5,32 @@ from datetime import datetime
 from multiprocessing.managers import Namespace
 from time import sleep
 
-from .heatbeat import is_live
 from . import set_global_youtube_variables, generate_cpn
-from ..log import verbose, stopped, warning, info, note, crash_warning, error_warning
-from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail, getTimeZone
+from .communityPosts import is_live_sponsor_only_streams
+from .heatbeat import is_live
+from .player import openStream, getYoutubeStreamInfo
+from ..log import verbose, stopped, warning, info, crash_warning
+from ..template.template_channelClass import ChannelInfo_template
+from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.youtube import get_yt_player_config, get_endpoint_type
-from .player import openStream, getYoutubeStreamInfo
-from .communityPosts import is_live_sponsor_only_streams
 
 
-class ChannelInfo:
+class ChannelInfo(ChannelInfo_template):
     """
 
     Class that holds channel information and functions related to the information.
 
-    # Channel Data
-    :type channel_id: str
-    :type channel_name: str
-
     # Stream Data.
-    :type video_id: str, None
-    :type title: str
     :type start_date: datetime.datetime
     :type description: str
     :type privateStream: bool
     :type sponsor_only_stream: bool
-    :type StreamInfo: dict, None
-
-    # USED FOR RECORDING.
-    :type EncoderClass: Encoder
 
     # USED FOR HOLDING THUMBNAILS
     :type thumbnail_url: str
     :type thumbnail_location: str
-
-    # USED FOR UPLOADING.
-    :type video_location: str
 
     # USED IN HEARTBEAT TO BE SHOWN ON CLIENT.
     :type live_scheduled: bool
@@ -52,15 +39,13 @@ class ChannelInfo:
     # Server-type Variables
     :type live_streaming, bool
     :type recording_status: str
-    :type stop_heartbeat: bool
     :type SharedVariables: Namespace
     :type sharedCookies: Value
-    :type crashed_traceback: str
 
     # HEARTBEAT Variables
     :type pollDelayMs: int
     :type sequence_number: int
-    :type broadcastId: str
+    :type broadcast_id: str
     :type last_heartbeat: datetime.datetime
 
     # USER ACCOUNT
@@ -70,24 +55,20 @@ class ChannelInfo:
     :type cpn: str
     """
 
+    # NEEDED FOR EVERY CHANNEL CLASS.
+    platform = 'YOUTUBE'
+
     # USED FOR SERVER VARIABLES
-    live_streaming = None
     recording_status = None
-    stop_heartbeat = False
     SharedVariables = False
     sharedCookies = False
-    crashed_traceback = None
     queue_holder = None
 
     # USED FOR YOUTUBE'S HEARTBEAT SYSTEM AND IS NOT A GLOBAL VALUE
     pollDelayMs = 8000
     sequence_number = 0
-    broadcastId = None
+    broadcast_id = None
     last_heartbeat = None
-
-    # Channel Data
-    channel_id = None
-    channel_name = None
 
     # User
     sponsor_on_channel = False
@@ -99,16 +80,6 @@ class ChannelInfo:
     start_date = None
     privateStream = False
     sponsor_only_stream = False
-    StreamInfo = None  # DICT THAT HOLDS STREAM URLS
-
-    # USED FOR RECORDING
-    EncoderClass = None
-
-    # USED FOR UPLOADING
-    video_location = None
-
-    # USED FOR UPLOADING TO HOLD MORE THAN ONE RECORDING.
-    video_list = {}
 
     # THUMBNAIL
     thumbnail_location = None
@@ -123,12 +94,6 @@ class ChannelInfo:
 
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
-
-    def __init__(self, channel_id, SharedVariables=None, cachedDataHandler=None, queue_holder=None):
-        self.channel_id = channel_id
-        self.SharedVariables = SharedVariables
-        self.cachedDataHandler = cachedDataHandler
-        self.queue_holder = queue_holder
 
     def loadVideoData(self, video_id=None):
         if video_id is not None:
@@ -314,7 +279,8 @@ class ChannelInfo:
                                         'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                                         'HLSManifestURL': manifest_url,
                                         'DashManifestURL': str(
-                                            try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
+                                            try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'],
+                                                    str)),
                                         'HLSStreamURL': f['url'],
                                         'title': try_get(videoDetails, lambda x: x['title'], str),
                                         'description': videoDetails['shortDescription'],
@@ -323,14 +289,6 @@ class ChannelInfo:
                                     return [False, "No StreamingData, YouTube bugged out!"]
 
         return [True, "OK"]
-
-    # CLOSE EVENT
-    def registerCloseEvent(self):
-        atexit.register(self.close_recording)
-
-    def close(self):
-        self.close_recording()
-        self.stop_heartbeat = True
 
     def close_recording(self):
         if self.EncoderClass is not None:
@@ -403,7 +361,7 @@ class ChannelInfo:
                 if boolean_live:
                     self.recording_status = "Getting Youtube Stream Info."
                     if self.StreamInfo is None:
-                        self.StreamInfo = self.getYoutubeStreamInfo(recordingHeight=None)
+                        self.StreamInfo = self.getYoutubeStreamInfo()
                     if self.StreamInfo:
                         ok = self.openStream(self.StreamInfo, sharedDataHandler=self.cachedDataHandler)
                         self.StreamInfo = None
@@ -426,18 +384,6 @@ class ChannelInfo:
             self.crashed_traceback = traceback.format_exc()
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
 
-    def add_youtube_queue(self):
-        """
-
-        To add videos to be uploaded in the YouTube Queue.
-
-        """
-        if len(self.video_list) != 0:
-            if self.queue_holder:
-                verbose("Adding streams to youtube upload queue.")
-                self.queue_holder.addQueue(self.video_list)
-                self.video_list.clear()
-
     def is_live(self, alreadyChecked=False):
         if self.SharedVariables:
             if self.SharedVariables.DebugMode:
@@ -454,8 +400,8 @@ class ChannelInfo:
     def openStream(self, StreamInfo, sharedDataHandler=None):
         return openStream(self, StreamInfo, sharedDataHandler)
 
-    def getYoutubeStreamInfo(self, recordingHeight=None):
-        return getYoutubeStreamInfo(self, recordingHeight=recordingHeight)
+    def getYoutubeStreamInfo(self):
+        return getYoutubeStreamInfo(self, recordingHeight=self.cachedDataHandler.getValue('recordingHeight'))
 
     def create_filename(self, video_id):
         now = datetime.now()
@@ -473,7 +419,7 @@ class ChannelInfo:
             if not os.path.isfile(path):
                 verbose("Found Good Filename.")
                 return file_name
-            amount = amount + 1
+            amount += 1
 
     def download_thumbnail(self):
         info("Starting Download of Live Stream Thumbnail.")
@@ -485,72 +431,3 @@ class ChannelInfo:
             info("Done Downloading Thumbnail!")
         else:
             info("Not able to download thumbnail!")
-
-    # Uploading
-    def start_upload(self):
-        """
-
-        Old Start Upload function.
-        TODO REMOVE THIS unless new uploadQueue is bad.
-
-        """
-
-        def get_upload_settings(channel_name):
-            upload_settings = self.cachedDataHandler.getValue('UploadSettings')
-            if channel_name in upload_settings:
-                return upload_settings[channel_name]
-            return upload_settings[None]
-
-        # Allows to get the most updated client without saving it, since it might change.
-        from ..youtubeAPI import get_youtube_api_credentials, initialize_upload, upload_thumbnail
-        youtube_client = get_youtube_api_credentials(self.cachedDataHandler)
-        if youtube_client:
-            verbose("Starting Upload Thread ...")
-            note("Closing the python script stops the upload.")
-            settings = get_upload_settings(self.channel_name)
-            try:
-                upload_video_id = initialize_upload(youtube_client, self.video_location,
-                                                    self._replace_variables(settings['title']),
-                                                    self._replace_variables('\n'.join(settings['description'])),
-                                                    self._replace_variables(settings['tags']),
-                                                    settings['CategoryID'], settings['privacyStatus'])
-                sleep(3)
-                if self.cachedDataHandler.getValue('UploadThumbnail') is True:
-                    info("Uploading Thumbnail for {0}".format(self.channel_name))
-                    upload_thumbnail(youtube_client, upload_video_id,
-                                     self.thumbnail_location)
-                    info("Thumbnail Done Uploading!")
-            except Exception:
-                error_warning(traceback.format_exc())
-                warning("Unable to upload stream to Youtube.")
-
-    def _replace_variables(self, text):
-        class DataDict(dict):
-            """
-                Taken from and
-                have been edited: https://stackoverflow.com/a/11023271
-            """
-
-            def __missing__(self, key):
-                return ''
-
-        if text is None or text is False or text is True:
-            return None
-        now = self.start_date
-        timezone = getTimeZone()
-        text = text.format(
-            **DataDict(VIDEO_ID=self.video_id,
-                       FILENAME=self.video_location,
-                       CHANNEL_ID=self.channel_id,
-                       CHANNEL_NAME=self.channel_name,
-                       START_DATE_MONTH=str(now.month),
-                       START_DATE_DAY=str(now.day),
-                       START_DATE_YEAR=str(now.year),
-                       START_DATE="{0}/{1}/{2}".format(now.month, now.day, now.year),
-                       START_TIME=str(now.strftime("%I:%M %p")),
-                       TIMEZONE=timezone if timezone is not None else '',
-                       TITLE=self.title,
-                       DESCRIPTION=self.description
-                       ))
-
-        return text

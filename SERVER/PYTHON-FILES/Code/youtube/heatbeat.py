@@ -1,6 +1,6 @@
 import traceback
 
-from ..log import warning, YoutubeReply, stopped, error_warning
+from ..log import warning, reply, stopped, error_warning
 from ..utils.other import get_highest_thumbnail, try_get
 from ..utils.web import download_json
 
@@ -63,7 +63,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
         if type(json) is bool or json is None:
             return None
         channel_Class.sequence_number += 1
-        YoutubeReply('FROM YOUTUBE -> {0}'.format(json))
+        reply('FROM YOUTUBE -> {0}'.format(json))
 
         # SETTING VARIABLES
         liveStreamAbilityRenderer = try_get(json, lambda x: x['liveStreamability']['liveStreamabilityRenderer'], dict)
@@ -73,7 +73,7 @@ def is_live(channel_Class, alreadyChecked=False, SharedVariables=None):
                 channel_Class.thumbnail_url = thumbnail
             channel_Class.pollDelayMs = get_poll_delay_ms(liveStreamAbilityRenderer, channel_Class)
             channel_Class.live_scheduled = is_scheduled(liveStreamAbilityRenderer)
-            channel_Class.broadcastId = get_broadcast_id(liveStreamAbilityRenderer)
+            channel_Class.broadcast_id = get_broadcast_id(liveStreamAbilityRenderer)
             video_id = get_video_id(liveStreamAbilityRenderer)
             if video_id:
                 if video_id != channel_Class.video_id:

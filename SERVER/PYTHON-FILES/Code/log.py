@@ -37,9 +37,15 @@ def error_warning(text):
     sys.stdout.flush()
 
 
-def YoutubeReply(text):
+def reply(text):
     if Reply is True:
         sys.stdout.write("{0}[REPLY] {1}\n".format(Fore.LIGHTMAGENTA_EX, text))
+    sys.stdout.flush()
+
+
+def TwitchSent(text):
+    if Reply is True:
+        sys.stdout.write("{0}[SENT TO TWITCH] {1}\n".format(Fore.LIGHTWHITE_EX, text))
     sys.stdout.flush()
 
 
