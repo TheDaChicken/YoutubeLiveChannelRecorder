@@ -175,25 +175,16 @@ class ChannelInfoTwitch(ChannelInfo_template):
                         message_type = try_get(json, lambda x: x['type'], str)
                         message_data_json = parse_json(try_get(json, lambda x: x['data']['message'], str))
                         # TODO ONLY HERE FOR TESTING.
-                        with open("test.txt", "a", encoding='utf-8') as myfile:
-                            myfile.write("{0}\n".format(str(json)))
-                            myfile.close()
                         if message_type:
                             if "MESSAGE" in message_type:
                                 data_message_type = try_get(message_data_json, lambda x: x['type'])
                                 if data_message_type:
                                     if 'stream_up' in data_message_type:
-                                        with open("test.txt", "a", encoding='utf-8') as myfile:
-                                            myfile.write("someone is live!!")
-                                            myfile.close()
                                         self.live_streaming = True
                                         self.broadcast_id = try_get(
                                             message_data_json, lambda x: x['data']['broadcast_id'])
                                         start_recording(self.getTwitchStreamInfo())
                                     if 'stream_down' in data_message_type:
-                                        with open("test.txt", "a", encoding='utf-8') as myfile:
-                                            myfile.write("oh my someone is now offline.")
-                                            myfile.close()
                                         self.live_streaming = False
                                         stop_recording()
                             if "RESPONSE" in message_type:
