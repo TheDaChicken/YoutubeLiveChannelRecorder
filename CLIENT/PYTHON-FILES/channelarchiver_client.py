@@ -199,6 +199,7 @@ if __name__ == '__main__':
                         else:
                             print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
                         input("\nPress enter to go back to Selection.")
+                        del temp_channel_id
                     if 'TWITCH' in okay:
                         temp_channel_id = input("\nChannel NAME: ")
                         ok, reply = add_twitch_channel(serverIP, serverPort, temp_channel_id)
@@ -208,6 +209,7 @@ if __name__ == '__main__':
                         else:
                             print("{0}Channel has now been added.".format(Fore.LIGHTGREEN_EX))
                         input("\nPress enter to go back to Selection.")
+                        del temp_channel_id
                     # Refresh
                     info("Getting Server Info.")
                     ok, reply = get_server_info(serverIP, serverPort)
@@ -218,7 +220,6 @@ if __name__ == '__main__':
                     else:
                         serverInfo = reply
                     del reply
-                    del temp_channel_id
                 elif option is "3":  # REMOVE CHANNELS (BETA ON SERVER)
                     print("  To Find The Channel_IDs USE THIS: ")
                     print("  https://commentpicker.com/youtube-channel-id.php")
