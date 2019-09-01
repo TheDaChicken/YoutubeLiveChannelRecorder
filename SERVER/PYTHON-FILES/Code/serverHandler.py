@@ -173,8 +173,12 @@ def remove_channel():
         except Exception as e:
             error_warning(traceback.format_exc())
             return Response("Unable to remove channel. {0}".format(str(e)), status="server-error", status_code=500)
-    cached_data_handler.removeValueList(
-        'channels_{0}'.format(channel_array['class'].get('platform')), channel_array['class'].get('channel_id'))
+    if 'TWITCH' in channel_array['class'].get('platform'):
+        cached_data_handler.removeValueList(
+            'channels_{0}'.format(channel_array['class'].get('platform')), channel_array['class'].get('channel_name'))
+    if 'YOUTUBE' in channel_array['class'].get('platform'):
+        cached_data_handler.removeValueList(
+            'channels_{0}'.format(channel_array['class'].get('platform')), channel_array['class'].get('channel_id'))
     channel_main_array.remove(channel_array)
     sleep(.01)
     info("{0} has been removed.".format(channel_id))
