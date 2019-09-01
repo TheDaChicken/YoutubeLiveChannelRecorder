@@ -39,6 +39,7 @@ class Encoder:
         :type videoInput: list
         :type videoLocation: str
         """
+        self.running = None
         concat_file = os.path.join(os.getcwd(), 'temp_concat.txt')
         with open(concat_file, 'w') as file:
             now = datetime.now()
