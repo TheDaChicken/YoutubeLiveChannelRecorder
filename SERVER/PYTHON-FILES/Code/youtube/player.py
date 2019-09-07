@@ -139,8 +139,9 @@ def openStream(channelClass, StreamInfo, sharedDataHandler=None):
                                                     format(channelClass.channel_name))
                 sleep(channelClass.pollDelayMs / 1000)
             else:
-                sleep(channelClass.pollDelayMs / 1000 + .9)
-                channelClass.EncoderClass.stop_recording()
+                if channelClass.EncoderClass.running:
+                    channelClass.EncoderClass.wait_for_inactivity()
+                    channelClass.EncoderClass.stop_recording()
                 channelClass.EncoderClass = None
                 return True
         elif array:

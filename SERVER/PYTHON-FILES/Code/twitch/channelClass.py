@@ -198,8 +198,8 @@ class ChannelInfoTwitch(ChannelInfo_template):
             self.channel_name, urlencode({'need_https': 'true', 'platform': 'web',
                                           'player_backend': 'mediaplayer', 'player_type': 'site'})))
         if access_token:
-            arguments = {'allow_source': 'true', 'baking_bread': 'false',
-                         'baking_brownies': 'true', 'baking_brownies_timeout': 1050,
+            arguments = {'allow_source': 'true', 'baking_bread': 'true',
+                         'baking_brownies': 'false', 'baking_brownies_timeout': 1050,
                          'fast_bread': 'true',
                          'p': randint(1000000, 10000000), 'player_backend': 'mediaplayer',
                          'playlist_include_framerate': 'true', 'reassignments_supported': 'true',
@@ -242,7 +242,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
 
     # USED FOR THE CLOSE EVENT AND STUFF.
     def stop_recording(self):
-        if self.EncoderClass is not None:
+        if self.EncoderClass:
             self.EncoderClass.stop_recording()
             self.EncoderClass = None
         self.stop_heartbeat = True
