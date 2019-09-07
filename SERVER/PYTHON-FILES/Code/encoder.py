@@ -71,10 +71,7 @@ class Encoder:
                         "-c:v", "copy", "-c:a", "copy", videoLocation])
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
-        encoder_crash_handler = Thread(
-            target=self.__crashHandler, name="FFMPEG Crash Handler.")
-        encoder_crash_handler.daemon = True  # needed control+C to work.
-        encoder_crash_handler.start()
+        self.__startHandler()
 
     def __run_Encoder(self, videoInput, videoLocation):
         self.running = None
@@ -101,7 +98,8 @@ class Encoder:
     def wait_for_inactivity(self):
         while True:
             if self.__last_log_time:
-                if (datetime.now() - self.__last_log_time).total_seconds() > 5:
+                last_seconds = (datetime.now() - self.__last_log_time).total_seconds()
+                if last_seconds > 5:
                     break
 
     def __startHandler(self):
