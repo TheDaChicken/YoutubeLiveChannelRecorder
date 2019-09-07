@@ -36,7 +36,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
     live_streaming = None
 
     # RECORDING.
-    EncoderClass = Encoder()
+    EncoderClass = None
 
     # HOLDING TWITCH'S WEBSOCKET
     ws = None
@@ -153,6 +153,8 @@ class ChannelInfoTwitch(ChannelInfo_template):
 
             def stop_recording():
                 self.EncoderClass.stop_recording()
+
+            self.EncoderClass = Encoder()
 
             self.ws = createConnection()
 

@@ -60,7 +60,7 @@ class ChannelInfo_template(SharableHandler):
     stop_heartbeat = False
 
     # USED FOR RECORDING
-    EncoderClass = Encoder()
+    EncoderClass = None
 
     # USED FOR UPLOADING TO HOLD MORE THAN ONE RECORDING.
     video_list = {}

@@ -17,6 +17,7 @@ from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.windowsNotification import show_windows_toast_notification
 from ..utils.youtube import get_yt_player_config, get_endpoint_type
+from ..encoder import Encoder
 
 
 class ChannelInfo(ChannelInfo_template):
@@ -96,6 +97,9 @@ class ChannelInfo(ChannelInfo_template):
 
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
+
+    # ENCODER HOLDER
+    EncoderClass = None
 
     def loadVideoData(self, video_id=None):
         if video_id is not None:
@@ -474,8 +478,9 @@ class ChannelInfo(ChannelInfo_template):
                 # IF BACK LIVE AGAIN IN THE MIDDLE OF WAITING FOR NON ACTIVITY.
                 if self.live_streaming is True:
                     break
-                if last_seconds > 10:
+                if last_seconds > 11:
                     self.EncoderClass.stop_recording()
+                    self.StreamInfo = None
                     break
             sleep(1)
 
@@ -486,8 +491,9 @@ class ChannelInfo(ChannelInfo_template):
         Best under a thread to allow multiple channels.
 
         """
+        self.EncoderClass = Encoder()
 
-        if self.live_streaming:
+        if self.live_streaming is True:
             ok = self.start_recording()
             if ok:
                 if TestUpload:
@@ -510,15 +516,16 @@ class ChannelInfo(ChannelInfo_template):
                     sleep(1)
 
                 # INTERNET OFFLiNE.
-                if self.live_streaming is None:
+                elif self.live_streaming is None:
                     warning("INTERNET OFFLINE")
                     sleep(2.4)
 
                 # FALSE
-                if self.live_streaming is False:
+                elif self.live_streaming is False:
+                    # TURN OFF RECORDING IF FFMPEG IS STILL ALIVE.
                     if self.EncoderClass.running is True:
                         x = Thread(target=self.stop_recording)
-                        x.daemon = False
+                        x.daemon = True
                         x.start()
 
                     if self.sponsor_on_channel:
@@ -538,7 +545,7 @@ class ChannelInfo(ChannelInfo_template):
                     else:
                         if self.sponsor_only_stream is True:
                             self.sponsor_only_stream = False
-                        if not self.privateStream:
+                        if self.privateStream is False:
                             info("{0} is not live!".format(self.channel_name))
                             sleep(self.pollDelayMs / 1000)
                         else:
@@ -547,12 +554,14 @@ class ChannelInfo(ChannelInfo_template):
                             sleep(self.pollDelayMs / 1000)
 
                 # LIVE
-                if self.live_streaming is True:
-                    if not self.EncoderClass.running:
+                elif self.live_streaming is True:
+                    # IF FFMPEG IS NOT ALIVE THEN TURN ON RECORDING.
+                    if self.EncoderClass.running is not True:
                         x = Thread(target=self.start_recording)
-                        x.daemon = False
+                        x.daemon = True
                         x.start()
                     sleep(self.pollDelayMs / 1000)
+
                 if alreadyChecked:
                     alreadyChecked = False
                 # REPEAT (END OF LOOP)

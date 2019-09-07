@@ -27,7 +27,7 @@ class Encoder:
         self.running = None
         self.__run_Encoder(videoInput, videoLocation)
         self.__hold()
-        if not self.running:
+        if self.running is False:
             return False
         info("Recording Started.")
         return True
@@ -54,7 +54,7 @@ class Encoder:
             file.close()
         self.__run__Encoder_Concat(concat_file, videoLocation)
         self.__hold()
-        if not self.running:
+        if self.running is False:
             return False
         info("Merge Started.")
         return True
@@ -107,7 +107,7 @@ class Encoder:
                     log.append(line)
                     if "Press [q] to stop" in line:
                         self.running = True
-            if not self.running:
+            if self.running is None:
                 warning("FFmpeg failed to start running.")
                 self.running = False
                 info("Saving FFmpeg Crash to Log File.")
@@ -119,7 +119,7 @@ class Encoder:
                 del now
                 logfile.write("\n")
                 logfile.write(''.join(log))
-            if self.running:
+            if self.running is True:
                 self.running = False
                 warning("FFmpeg has stopped.")
             exit()
@@ -131,8 +131,8 @@ class Encoder:
 
     def stop_recording(self):
         if self.process:
-            info("Recording Stopped.")
-            if self.running:
+            if self.running is True:
+                info("Recording Stopped.")
                 try:
                     self.process.kill()
                     verbose("SENT KILL TO FFMPEG.")
