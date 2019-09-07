@@ -132,7 +132,7 @@ class Encoder:
     def stop_recording(self):
         if self.process:
             info("Recording Stopped.")
-            if self.process.poll():
+            if self.running:
                 try:
                     self.process.kill()
                     verbose("SENT KILL TO FFMPEG.")

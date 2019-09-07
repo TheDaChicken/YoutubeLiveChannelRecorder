@@ -293,11 +293,6 @@ class ChannelInfo(ChannelInfo_template):
 
         return [True, "OK"]
 
-    def close_recording(self):
-        if self.EncoderClass is not None:
-            self.EncoderClass.stop_recording()
-            self.EncoderClass = None
-
     def get_sponsor_channel(self, html_code=None):
         from .. import is_google_account_login_in
         if is_google_account_login_in():

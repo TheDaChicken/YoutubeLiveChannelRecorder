@@ -163,7 +163,7 @@ def remove_channel():
                         status="server-error", status_code=500)
     channel_array = channel_array[0]
     if 'error' not in channel_array:
-        channel_array['class'].stop_recording()
+        channel_array['class'].close_recording()
         thread_class = channel_array['thread_class']
         try:
             thread_class.terminate()

@@ -72,10 +72,10 @@ class ChannelInfo_template(SharableHandler):
         self.queue_holder = queue_holder
 
     def registerCloseEvent(self):
-        atexit.register(self.stop_recording)
+        atexit.register(self.close_recording)
 
     # USED FOR THE CLOSE EVENT AND STUFF.
-    def stop_recording(self):
+    def close_recording(self):
         if self.EncoderClass is not None:
             self.EncoderClass.stop_recording()
         self.stop_heartbeat = True

@@ -242,7 +242,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
             amount += 1
 
     # USED FOR THE CLOSE EVENT AND STUFF.
-    def stop_recording(self):
+    def close_recording(self):
         if self.EncoderClass:
             self.EncoderClass.stop_recording()
         self.stop_heartbeat = True
