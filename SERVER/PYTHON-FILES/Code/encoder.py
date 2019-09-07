@@ -17,7 +17,7 @@ class Encoder:
 
     running = None
     process = None
-    __last_log_time = None
+    last_frame_time = None
 
     def __init__(self, crashFunction=None, Headers=None):
         self.crashFunction = crashFunction
@@ -95,19 +95,13 @@ class Encoder:
                 return None
             sleep(.1)
 
-    def wait_for_inactivity(self):
-        while True:
-            if self.__last_log_time:
-                last_seconds = (datetime.now() - self.__last_log_time).total_seconds()
-                if last_seconds > 5:
-                    break
-
     def __startHandler(self):
         log = []
 
         def print_handle():
             for line in self.process.stdout:
-                self.__last_log_time = datetime.now()
+                if 'frame=' in line:
+                    self.last_frame_time = datetime.now()
                 EncoderLog(line)
                 if self.running is None:
                     log.append(line)

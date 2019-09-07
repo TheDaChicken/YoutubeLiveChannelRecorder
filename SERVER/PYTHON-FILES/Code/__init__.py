@@ -95,8 +95,8 @@ def run_channel(channel_identifier, platform='YOUTUBE', startup=False, addToData
             del error_message
             channel_holder_class.registerCloseEvent()
             channel_name = channel_holder_class.get("channel_name")
-            check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                     name="{0} - Heartbeat Thread".format(channel_name))
+            check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                     name="{0} - Channel Process".format(channel_name))
             check_streaming_channel_thread.start()
             channel_main_array.append(
                 {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
@@ -124,8 +124,8 @@ def upload_test_run(channel_id, startup=False):
 
         channel_holder_class.registerCloseEvent()
         channel_name = channel_holder_class.get("channel_name")
-        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                 name="{0} - Heartbeat Thread".format(channel_name), args=(True,))
+        check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                 name="{0} - Channel Process".format(channel_name), args=(True,))
         check_streaming_channel_thread.start()
         channel_main_array.append(
             {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
@@ -148,8 +148,8 @@ def run_channel_with_video_id(video_id, startup=False, addToData=False):
 
         channel_holder_class.registerCloseEvent()
         channel_name = channel_holder_class.get("channel_name")
-        check_streaming_channel_thread = Process(target=channel_holder_class.start_heartbeat_loop,
-                                                 name="{0} - Heartbeat Thread".format(channel_name))
+        check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                 name="{0} - Channel Process".format(channel_name))
         check_streaming_channel_thread.start()
         channel_main_array.append(
             {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})

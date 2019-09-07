@@ -77,7 +77,7 @@ class ChannelInfoTwitch(ChannelInfo_template):
 
         return [True, "OK"]
 
-    def start_heartbeat_loop(self):
+    def channel_thread(self):
         try:
             def createConnection():
                 from .. import UserAgent
@@ -142,13 +142,14 @@ class ChannelInfoTwitch(ChannelInfo_template):
                     self.recording_status = "Failed To Start Recording."
                     show_windows_toast_notification("Live Recording Notifications",
                                                     "Failed to start record for {0}".format(self.channel_name))
-                self.start_date = datetime.now()
+                if ok:
+                    self.start_date = datetime.now()
 
-                self.recording_status = "Recording."
+                    self.recording_status = "Recording."
 
-                show_windows_toast_notification("Live Recording Notifications",
-                                                "{0} is live and is now recording. \nRecording at {1}".format(
-                                                    self.channel_name, StreamInfo['stream_resolution']))
+                    show_windows_toast_notification("Live Recording Notifications",
+                                                    "{0} is live and is now recording. \nRecording at {1}".format(
+                                                        self.channel_name, StreamInfo['stream_resolution']))
 
             def stop_recording():
                 self.EncoderClass.stop_recording()
@@ -244,7 +245,6 @@ class ChannelInfoTwitch(ChannelInfo_template):
     def stop_recording(self):
         if self.EncoderClass:
             self.EncoderClass.stop_recording()
-            self.EncoderClass = None
         self.stop_heartbeat = True
         if self.ws is not None:
             if self.ws.connected:

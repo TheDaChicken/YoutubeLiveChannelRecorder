@@ -1,5 +1,6 @@
 import atexit
 from ..log import verbose
+from ..encoder import Encoder
 
 
 class SharableHandler:
@@ -59,7 +60,7 @@ class ChannelInfo_template(SharableHandler):
     stop_heartbeat = False
 
     # USED FOR RECORDING
-    EncoderClass = None
+    EncoderClass = Encoder()
 
     # USED FOR UPLOADING TO HOLD MORE THAN ONE RECORDING.
     video_list = {}
@@ -77,7 +78,6 @@ class ChannelInfo_template(SharableHandler):
     def stop_recording(self):
         if self.EncoderClass is not None:
             self.EncoderClass.stop_recording()
-            self.EncoderClass = None
         self.stop_heartbeat = True
 
     def loadVideoData(self):

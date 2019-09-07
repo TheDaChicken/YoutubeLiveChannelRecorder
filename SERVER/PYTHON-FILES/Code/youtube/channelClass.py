@@ -1,19 +1,21 @@
+import json
 import os
 import re
 import traceback
 from datetime import datetime
 from multiprocessing.managers import Namespace
+from threading import Thread
 from time import sleep
 
 from . import set_global_youtube_variables, generate_cpn
 from .communityPosts import is_live_sponsor_only_streams
 from .heatbeat import is_live
-from .player import openStream, getYoutubeStreamInfo
 from ..log import verbose, stopped, warning, info, crash_warning
 from ..template.template_channelClass import ChannelInfo_template
 from ..utils.other import try_get, get_format_from_data, get_highest_thumbnail
 from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
+from ..utils.windowsNotification import show_windows_toast_notification
 from ..utils.youtube import get_yt_player_config, get_endpoint_type
 
 
@@ -312,35 +314,224 @@ class ChannelInfo(ChannelInfo_template):
             return False
         return False
 
-    def start_heartbeat_loop(self, TestUpload=False):
+    def add_video_temp_youtube_queue(self):
+        # Adds to the temp upload list.
+        if self.video_id in self.video_list:
+            temp_dict = self.video_list.get(self.video_id)  # type: dict
+            if 'file_location' in temp_dict:
+                file_location = temp_dict['file_location']  # type: list
+                file_location.append(self.video_location)
+        else:
+            temp_youtube_stream = self.StreamInfo.copy()
+            temp_youtube_stream.update({
+                'start_date': self.start_date
+            })
+            self.video_list.update({
+                self.video_id: {
+                    'video_id': self.video_id, 'video_data': temp_youtube_stream, 'channel_data': {
+                        'channel_name': self.channel_name,
+                        'channel_id': self.channel_id,
+                    },
+                    'file_location': [self.video_location, ],
+                    'thumbnail_location': self.thumbnail_location}
+            })
+            del temp_youtube_stream
+
+        # Write YouTube Stream info to json.
+        with open("{3} - '{4}' - {0}-{1}-{2}.json".format(self.start_date.month, self.start_date.day,
+                                                          self.start_date.year,
+                                                          self.channel_name, self.video_id), 'w',
+                  encoding='utf-8') as f:
+            json.dump({
+                'video_id': self.video_id, 'video_data': self.StreamInfo, 'channel_data': {
+                    'channel_name': self.channel_name,
+                    'channel_id': self.channel_id,
+                },
+            }, f, ensure_ascii=False, indent=4)
+
+    def start_recording(self):
+        def getYoutubeStreamInfo(recordingHeight=None):
+            """
+
+            Gets the stream info from channelClass.
+
+            Looked at for reference:
+            https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/youtube.py#L1675
+
+            :type recordingHeight: str, int, None
+            """
+            try:
+                from urllib.parse import urlencode, parse_qs
+                from urllib.request import urlopen
+            except ImportError:
+                parse_qs = None  # Fixes a random PyCharm warning.
+                urlencode = None
+                stopped("Unsupported version of Python. You need Version 3 :<")
+
+            url_arguments = {'html5': 1, 'video_id': self.video_id}
+            from . import client_name, client_version, ps, sts, cbr, client_os, client_os_version
+            if ps is not None:
+                url_arguments.update({'ps': ps})
+            url_arguments.update({'eurl': ''})
+            url_arguments.update({'hl': 'en_US'})
+            if sts is not None:
+                url_arguments.update({'sts': sts})
+            if client_name is not None:
+                url_arguments.update({'c': client_name})
+            if cbr is not None:
+                url_arguments.update({'cbr': cbr})
+            if client_version is not None:
+                url_arguments.update({'cver': client_version})
+            if client_os is not None:
+                url_arguments.update({'cos': client_os})
+            if client_os_version is not None:
+                url_arguments.update({'cosver': client_os_version})
+            if self.cpn is not None:
+                url_arguments.update({'cpn': self.cpn})
+
+            video_info_website = download_website(
+                'https://www.youtube.com/get_video_info?{0}'.format(
+                    urlencode(url_arguments)))
+            if video_info_website is None:
+                return video_info_website
+            video_info = parse_qs(video_info_website)
+            player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
+            video_details = try_get(player_response, lambda x: x['videoDetails'], dict)
+
+            if player_response:
+                if "streamingData" not in player_response:
+                    warning("No StreamingData, Youtube bugged out!")
+                    return None
+                manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+                if not manifest_url:
+                    warning("Unable to find HLS Manifest URL.")
+                    return None
+                formats = download_m3u8_formats(manifest_url)
+                if formats is None or len(formats) is 0:
+                    warning("There were no formats found! Even when the streamer is live.")
+                    return None
+                f = get_format_from_data(formats, recordingHeight)
+                youtube_stream_info = {
+                    'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
+                    'HLSManifestURL': manifest_url,
+                    'DashManifestURL': str(
+                        try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
+                    'HLSStreamURL': f['url'],
+                    'title': try_get(video_details, lambda x: x['title'], str),
+                    'description': try_get(video_details, lambda x: x['shortDescription'], str),
+                    'video_id': self.video_id
+                }
+                return youtube_stream_info
+            return None
+
+        if not self.StreamInfo:
+            self.recording_status = "Getting Youtube Stream Info."
+            self.StreamInfo = getYoutubeStreamInfo(
+                recordingHeight=self.cachedDataHandler.getValue('recordingResolution'))
+
+        if self.StreamInfo:
+            self.recording_status = "Starting Recording."
+
+            filename = self.create_filename(self.video_id)
+            self.video_location = os.path.join("RecordedStreams", '{0}.mp4'.format(filename))
+
+            ok_ = self.EncoderClass.start_recording(self.StreamInfo['HLSStreamURL'], self.video_location)
+            if not ok_:
+                self.recording_status = "Failed To Start Recording."
+                show_windows_toast_notification("Live Recording Notifications",
+                                                "Failed to start record for {0}".format(self.channel_name))
+            if ok_:
+                self.start_date = datetime.now()
+
+                self.recording_status = "Recording."
+
+                show_windows_toast_notification("Live Recording Notifications",
+                                                "{0} is live and is now recording. \nRecording at {1}".format(
+                                                    self.channel_name, self.StreamInfo['stream_resolution']))
+
+                if self.cachedDataHandler:
+                    if self.cachedDataHandler.getValue(
+                            'DownloadThumbnail') is True and self.privateStream is not True:
+                        thread = Thread(target=self.download_thumbnail, name=self.channel_name)
+                        thread.daemon = True  # needed control+C to work.
+                        thread.start()
+
+                self.add_video_temp_youtube_queue()
+
+                if self.TestUpload:
+                    sleep(10)
+                    self.EncoderClass.stop_recording()
+                    return True
+
+            return ok_
+        else:
+            self.recording_status = "Unable to get Youtube Stream Info."
+            self.live_streaming = None
+            warning("Unable to get Youtube Stream Info from this stream: ")
+            warning("VIDEO ID: {0}".format(str(self.video_id)))
+            warning("CHANNEL ID: {0}".format(str(self.channel_id)))
+            return None
+
+    def stop_recording(self):
+        while True:
+            if self.EncoderClass.last_frame_time:
+                last_seconds = (datetime.now() - self.EncoderClass.last_frame_time).total_seconds()
+                # IF BACK LIVE AGAIN IN THE MIDDLE OF WAITING FOR NON ACTIVITY.
+                if self.live_streaming is True:
+                    break
+                if last_seconds > 10:
+                    self.EncoderClass.stop_recording()
+                    break
+            sleep(1)
+
+    def channel_thread(self, TestUpload=False):
         """
 
         Checks for streams, records them if live.
         Best under a thread to allow multiple channels.
 
         """
+
+        if self.live_streaming:
+            ok = self.start_recording()
+            if ok:
+                if TestUpload:
+                    self.add_youtube_queue()
+                    stopped("")
+
         alreadyChecked = True
         self.TestUpload = TestUpload
+
         # noinspection PyBroadException
         try:
             while self.stop_heartbeat is False:
                 # LOOP
-                boolean_live = self.is_live(alreadyChecked=alreadyChecked)
-                if boolean_live is 1:
+                self.live_streaming = self.is_live(alreadyChecked=alreadyChecked)
+
+                # HEARTBEAT ERROR
+                if self.live_streaming is 1:
                     # IF CRASHED.
                     info("Error on Heartbeat on {0}! Trying again ...".format(self.channel_name))
                     sleep(1)
-                if not boolean_live:
-                    # HEARTBEAT INTERNET OFFLINE.
-                    if boolean_live is None:
-                        warning("INTERNET OFFLINE")
-                        sleep(2.4)
-                    elif self.sponsor_on_channel:
+
+                # INTERNET OFFLiNE.
+                if self.live_streaming is None:
+                    warning("INTERNET OFFLINE")
+                    sleep(2.4)
+
+                # FALSE
+                if self.live_streaming is False:
+                    if self.EncoderClass.running is True:
+                        x = Thread(target=self.stop_recording)
+                        x.daemon = False
+                        x.start()
+
+                    if self.sponsor_on_channel:
                         verbose("Reading Community Posts on {0}.".format(self.channel_name))
                         # NOTE this edits THE video id when finds stream.
-                        boolean_live = self.is_live_sponsor_only_streams()
-                        if not boolean_live:
-                            if boolean_live is None:
+                        self.live_streaming = self.is_live_sponsor_only_streams()
+                        if not self.live_streaming:
+                            if self.live_streaming is None:
                                 warning("INTERNET OFFLINE")
                                 sleep(2.52)
                             else:
@@ -359,24 +550,13 @@ class ChannelInfo(ChannelInfo_template):
                             info("{0}'s channel live streaming is currently private/unlisted!".format(
                                 self.channel_name))
                             sleep(self.pollDelayMs / 1000)
-                if boolean_live:
-                    self.recording_status = "Getting Youtube Stream Info."
-                    if self.StreamInfo is None:
-                        self.StreamInfo = self.getYoutubeStreamInfo()
-                    if self.StreamInfo:
-                        ok = self.openStream(self.StreamInfo, sharedDataHandler=self.cachedDataHandler)
-                        self.StreamInfo = None
-                        if ok:
-                            if TestUpload:
-                                self.add_youtube_queue()
-                                stopped("")
-                        sleep(2.5)
-                    else:
-                        self.recording_status = "Unable to get Youtube Stream Info."
-                        self.live_streaming = None
-                        warning("Unable to get Youtube Stream Info from this stream: ")
-                        warning("VIDEO ID: {0}".format(str(self.video_id)))
-                        warning("CHANNEL ID: {0}".format(str(self.channel_id)))
+
+                # LIVE
+                if self.live_streaming is True:
+                    if not self.EncoderClass.running:
+                        x = Thread(target=self.start_recording)
+                        x.daemon = False
+                        x.start()
                     sleep(self.pollDelayMs / 1000)
                 if alreadyChecked:
                     alreadyChecked = False
@@ -390,19 +570,12 @@ class ChannelInfo(ChannelInfo_template):
             if self.SharedVariables.DebugMode:
                 self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked, SharedVariables=self.SharedVariables)
-        self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
 
     def is_live_sponsor_only_streams(self):
         boolean_live = is_live_sponsor_only_streams(self, SharedVariables=self.SharedVariables)
         self.live_streaming = boolean_live  # UPDATE SERVER VARIABLE
         return boolean_live
-
-    def openStream(self, StreamInfo, sharedDataHandler=None):
-        return openStream(self, StreamInfo, sharedDataHandler)
-
-    def getYoutubeStreamInfo(self):
-        return getYoutubeStreamInfo(self, recordingHeight=self.cachedDataHandler.getValue('recordingHeight'))
 
     def create_filename(self, video_id):
         now = datetime.now()
