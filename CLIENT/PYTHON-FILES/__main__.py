@@ -37,7 +37,7 @@ else:
 #
 
 def setTitle(title):
-    if platform.release() is '10':
+    if os.name == "nt":
         import ctypes
         ctypes.windll.kernel32.SetConsoleTitleW(title)
 

@@ -1,3 +1,5 @@
+import os
+
 from log import stopped, Fore
 from utils import download_website, parse_json
 
@@ -150,16 +152,33 @@ def record_at_resolution(ip, port, resolution):
 
 
 def playbackRecording(ip, port, RecordingName):
-    from encoder import FFplay
+    from player import FFplay, VLC
     try:
         from urllib.parse import urlencode
     except ImportError:
         stopped("Unsupported version of Python. You need Version 3 :<")
     url = ("https://" if useHTTPS else 'http://') + ip + ":" + port + "/playRecording?" + urlencode(
         {'stream_name': RecordingName})
+
+    # CHECK IF VLC IS INSTALLED.
+    if os.name == "nt":
+        import winreg
+        vlc_installdir = None
+        try:
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "Software\\VideoLAN\\VLC")
+            vlc_installdir = winreg.QueryValueEx(key, "InstallDir")[0]
+        except:
+            pass
+        if vlc_installdir:
+            vlc_location = os.path.join(vlc_installdir, "vlc")
+            VLC = VLC(url, VLCLocation=vlc_location)
+            VLC.start_playback()
+            return VLC
+
     FFplay = FFplay(url,
                     Headers=DefaultHeaders)
     FFplay.start_playback()
+
     return FFplay
 
 
