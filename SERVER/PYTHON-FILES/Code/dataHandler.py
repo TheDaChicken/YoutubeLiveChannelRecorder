@@ -68,7 +68,7 @@ def setupDataFile():
         data = {
             'channel_ids': [],
             'DownloadThumbnail': True,
-            'recordingHeight': 'original',
+            'recordingResolution': 'original',
             'UploadLiveStreams': False,
             'UploadThumbnail': False,
             'UploadSettings': {

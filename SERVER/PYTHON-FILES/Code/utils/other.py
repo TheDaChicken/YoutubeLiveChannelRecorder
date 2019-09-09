@@ -19,21 +19,25 @@ def get_format_from_data(formats, resolution):
             return max(formats, key=lambda x: x['height'])
         # height x width
         try:
-            okay_height = int(split[0])
-            okay_width = int(split[1])
+            okay_width = int(split[0])
+            okay_height = int(split[1])
         except ValueError:
             warning('The given resolution must be a valid resolution. Getting best format.')
             return max(formats, key=lambda x: x['height'])
-        okay_format = None
+        highest_format = None
         for format_ in formats:
             height = format_['height']
             width = format_['width']
             if not (height > okay_height and width > okay_width):
-                okay_format = format_
-        if not okay_format:
+                if highest_format:
+                    if highest_format['width'] < width and highest_format['height'] < height:
+                        highest_format = format_
+                else:
+                    highest_format = format_
+        if not highest_format:
             warning("Unable to find best resolution fit with recording at. Using best quality.")
             return max(formats, key=lambda x: x['height'])
-        return okay_format
+        return highest_format
     warning("Resolution stored in data is invalid. Getting best format.")
     # BEST FORMAT IS MOSTLY ON TOP.
     return max(formats, key=lambda x: x['height'])

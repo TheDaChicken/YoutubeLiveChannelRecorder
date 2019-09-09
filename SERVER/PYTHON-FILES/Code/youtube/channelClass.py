@@ -276,7 +276,7 @@ class ChannelInfo(ChannelInfo_template):
                                     formats = download_m3u8_formats(manifest_url)
                                     if formats is None or len(formats) is 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
-                                    f = get_format_from_data(formats, None)
+                                    f = get_format_from_data(formats, self.cachedDataHandler.getValue('recordingResolution'))
                                     if not videoDetails:
                                         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
