@@ -154,8 +154,6 @@ class ChannelInfoTwitch(ChannelInfo_template):
             def stop_recording():
                 self.EncoderClass.stop_recording()
 
-            self.EncoderClass = Encoder()
-
             self.ws = createConnection()
 
             x = Thread(target=pingThread)

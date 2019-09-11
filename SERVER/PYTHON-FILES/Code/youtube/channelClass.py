@@ -491,7 +491,6 @@ class ChannelInfo(ChannelInfo_template):
         Best under a thread to allow multiple channels.
 
         """
-        self.EncoderClass = Encoder()
 
         if self.live_streaming is True:
             ok = self.start_recording()

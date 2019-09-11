@@ -70,6 +70,7 @@ class ChannelInfo_template(SharableHandler):
         self.SharedVariables = SharedVariables
         self.cachedDataHandler = cachedDataHandler
         self.queue_holder = queue_holder
+        self.EncoderClass = Encoder()
 
     def registerCloseEvent(self):
         atexit.register(self.close_recording)
