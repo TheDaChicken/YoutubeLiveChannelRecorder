@@ -197,8 +197,7 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
     except Exception as e1:
         traceback_ = traceback.format_exc()
         if 'quota' in traceback_ and 'usage' in traceback_:
-            return [False, "YouTube API Quota has been exceeded. Waiting until YouTube API Quota resets.\n{0}".format(
-                str(e1))]
+            return [False, "YouTube API Quota has been exceeded. Waiting until YouTube API Quota resets."]
         error_warning(traceback_)
         warning("Unable to upload stream to Youtube.")
         return [False, traceback_]
