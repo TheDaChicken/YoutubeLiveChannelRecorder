@@ -194,7 +194,7 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
                              thumbnail_location)
             info("Thumbnail Done Uploading!")
         return [True, None]
-    except Exception as e1:
+    except Exception:
         traceback_ = traceback.format_exc()
         if 'quota' in traceback_ and 'usage' in traceback_:
             return [False, "YouTube API Quota has been exceeded. Waiting until YouTube API Quota resets."]
