@@ -3,7 +3,7 @@ import os
 from log import stopped, Fore
 from utils import download_website, parse_json
 
-DefaultHeaders = {'Client': 'WEB-CLIENT'}
+DefaultHeaders = {'User-Agent': 'WEB-CLIENT'}
 useHTTPS = False
 
 try:
