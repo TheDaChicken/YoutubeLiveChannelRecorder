@@ -40,7 +40,7 @@ class FlaskCustom(Flask):
         if (user_agent and 'WEB-CLIENT' in user_agent) or client_header:
             response.headers['Server'] = 'ChannelArchiver Server'
             if client_header:
-                response.headers['oldversion'] = 'You are using an old version of the client. ' \
+                response.headers['NOTICE'] = 'You are using an old version of the client. ' \
                                                  'Please update the client to the latest version!'
         return response
 
