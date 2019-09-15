@@ -514,5 +514,8 @@ def loadServer(cached_data_handler, port, cert=None, key=None):
                         return '', 403
 
         http_server = WSGIServer(('0.0.0.0', port), app, **ssl_args)
+
         info("Starting server. Hosted on port: {0}!".format(port))
+        show_windows_toast_notification(
+            "ChannelArchiver Server", "ChannelArchiver server starting...")
         http_server.serve_forever()
