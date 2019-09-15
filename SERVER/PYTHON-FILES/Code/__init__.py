@@ -165,11 +165,8 @@ def run_channel_with_video_id(video_id, startup=False, addToData=False):
 
 def run_server(port, cert=None, key=None):
     from .serverHandler import loadServer
-    load_server_thread = Thread(target=loadServer,
-                                name="Server Thread",
-                                args=(cached_data_handler, port, cert, key,))
-    load_server_thread.daemon = True  # needed control+C to work.
-    load_server_thread.start()
+    server = loadServer(
+        cached_data_handler, port, cert=cert, key=key)
 
 
 def run_youtube_queue_thread(skipValueCheck=False):

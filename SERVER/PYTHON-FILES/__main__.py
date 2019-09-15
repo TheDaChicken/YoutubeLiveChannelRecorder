@@ -72,14 +72,10 @@ if __name__ == '__main__':
             warning(
                 "Connect to localhost on server port using this program's Client, to add channels!")
 
-        run_server(port, key=key, cert=cert)
-
         run_youtube_queue_thread()
 
-        del parser_args
+        run_server(port, key=key, cert=cert)
 
-        while True:  # Also needed for control+C to work.
-            sleep(1)  # Hai! How about you doing? o_O
     except KeyboardInterrupt:
         # remove all KeyboardInterrupt from main thing.
         pass
