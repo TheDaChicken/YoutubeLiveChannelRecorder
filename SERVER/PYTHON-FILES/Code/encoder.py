@@ -25,7 +25,7 @@ class Encoder:
 
     def start_recording(self, videoInput, videoLocation):
         self.running = None
-        self.__run_Encoder(videoInput, videoLocation)
+        self.requestFFmpeg(videoInput, videoLocation)
         self.__hold()
         if self.running is False:
             return False
@@ -52,14 +52,14 @@ class Encoder:
                 if video:
                     file.write('file \'{0}\'\n'.format(video))
             file.close()
-        self.__run__Encoder_Concat(concat_file, videoLocation)
+        self.requestFFmpegConcat(concat_file, videoLocation)
         self.__hold()
         if self.running is False:
             return False
         info("Merge Started.")
         return True
 
-    def __run__Encoder_Concat(self, concatFile, videoLocation):
+    def requestFFmpegConcat(self, concatFile, videoLocation):
         self.running = None
         verbose("Opening FFmpeg.")
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
@@ -73,7 +73,7 @@ class Encoder:
                                         stdin=subprocess.PIPE, universal_newlines=True)
         self.__startHandler()
 
-    def __run_Encoder(self, videoInput, videoLocation):
+    def requestFFmpeg(self, videoInput, videoLocation):
         self.running = None
         verbose("Opening FFmpeg.")
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
