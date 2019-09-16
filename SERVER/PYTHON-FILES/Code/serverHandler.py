@@ -467,6 +467,7 @@ class Server(Flask):
             for file_name in file_names:
                 if 'mp4' in file_name:
                     list_recordings.append(file_name)
+        list_recordings.sort()
         return Response(list_recordings)
 
     @staticmethod
