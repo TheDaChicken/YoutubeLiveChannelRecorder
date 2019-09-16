@@ -165,7 +165,7 @@ def run_channel_with_video_id(video_id, startup=False, addToData=False):
 
 def run_server(port, cert=None, key=None):
     from .serverHandler import loadServer
-    server = loadServer(
+    loadServer(
         cached_data_handler, port, cert=cert, key=key)
 
 
