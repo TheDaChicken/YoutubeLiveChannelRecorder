@@ -199,5 +199,7 @@ def readCommunityPosts(channel_class, SharedVariables=None):
     communityTab = getCommunityTabInfo(tabs)
     itemSectionRenderer = try_get(communityTab, lambda x: x['content']['sectionListRenderer']['contents'][
         0]['itemSectionRenderer']['contents'], list)
-    communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
+    communityTabMessages = None
+    if itemSectionRenderer:
+        communityTabMessages = getCommunityTabListMessages(itemSectionRenderer)
     return communityTabMessages
