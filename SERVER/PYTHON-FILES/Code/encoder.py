@@ -82,8 +82,7 @@ class Encoder:
                 command.extend(
                     ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
         command.extend(["-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
-                        "-movflags", "faststart", "-metadata",
-                        "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
+                        "-metadata", "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
                         "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
