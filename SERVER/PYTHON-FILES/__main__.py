@@ -1,5 +1,6 @@
 import argparse
 import multiprocessing
+import signal
 from time import sleep
 from Code.utils.other import try_get
 from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setupSharedVariables, \

@@ -17,7 +17,6 @@ from ..utils.parser import parse_json
 from ..utils.web import download_website, download_image, download_m3u8_formats
 from ..utils.windowsNotification import show_windows_toast_notification
 from ..utils.youtube import get_yt_player_config, get_endpoint_type
-from ..encoder import Encoder
 
 
 class ChannelInfo(ChannelInfo_template):
