@@ -1,11 +1,10 @@
 import argparse
 import multiprocessing
-import signal
-from time import sleep
-from Code.utils.other import try_get
+
 from Code import run_channel, check_internet, enable_debug, setupStreamsFolder, setupSharedVariables, \
     run_youtube_queue_thread, run_server
 from Code.log import stopped, warning, note
+from Code.utils.other import try_get
 
 
 # from Code.dataHandler import createDataFile, loadData, doesDataExist
