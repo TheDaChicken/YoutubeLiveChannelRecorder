@@ -275,7 +275,8 @@ class ChannelInfo(ChannelInfo_template):
                                     formats = download_m3u8_formats(manifest_url)
                                     if formats is None or len(formats) is 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
-                                    f = get_format_from_data(formats, self.cachedDataHandler.getValue('recordingResolution'))
+                                    f = get_format_from_data(formats,
+                                                             self.cachedDataHandler.getValue('recordingResolution'))
                                     if not videoDetails:
                                         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
@@ -431,9 +432,36 @@ class ChannelInfo(ChannelInfo_template):
             self.recording_status = "Starting Recording."
 
             filename = self.create_filename(self.video_id)
-            self.video_location = os.path.join("RecordedStreams", '{0}.mp4'.format(filename))
+            self.video_location = os.path.join(os.getcwd(), "RecordedStreams", '{0}.mp4'.format(filename))
 
-            ok_ = self.EncoderClass.start_recording(self.StreamInfo['HLSStreamURL'], self.video_location)
+            self.mpeg_dash_manifest_location = None
+            mpeg_dash_settings = None
+
+            if self.cachedDataHandler and self.cachedDataHandler.getValue(
+                    'broadcast_mpeg_dash') is True:
+                TempMPEG_DASH_dir = os.path.join(os.getcwd(), "MPEG-DASH_manifest_temp")
+                if not os.path.exists(TempMPEG_DASH_dir):
+                    os.mkdir(TempMPEG_DASH_dir)
+                self.mpeg_dash_manifest_location = os.path.join(TempMPEG_DASH_dir, '{0}.mpd'.format(self.video_id))
+                if os.name == "nt":
+                    # Windows Weird Problem in FFmpeg.
+                    TempMPEG_DASH_dir = os.getcwd()
+                mpeg_dash_segment_folder = os.path.join(TempMPEG_DASH_dir, "MPEG-DASH_segments")
+                if not os.path.exists(mpeg_dash_segment_folder):
+                    os.mkdir(mpeg_dash_segment_folder)
+                mpeg_dash_init_folder = os.path.join(TempMPEG_DASH_dir, "MPEG-DASH_init")
+                if not os.path.exists(mpeg_dash_init_folder):
+                    os.mkdir(mpeg_dash_init_folder)
+                mpeg_dash_settings = {
+                    'mpeg_dash_manifest': self.mpeg_dash_manifest_location,
+                    'media_seg_name':
+                        os.path.join('MPEG-DASH_segments', "chunk-stream$RepresentationID$-$Number%05d$-{0}.$ext$".
+                                     format(self.video_id)),
+                    'init_seg_name': os.path.join('MPEG-DASH_init', "init-stream$RepresentationID$-{0}.$ext$".format(
+                        self.video_id))}
+
+            ok_ = self.EncoderClass.start_recording(self.StreamInfo['HLSStreamURL'], self.video_location,
+                                                    MPEGDASHSettings=mpeg_dash_settings)
             if not ok_:
                 self.recording_status = "Failed To Start Recording."
                 show_windows_toast_notification("Live Recording Notifications",
@@ -447,12 +475,11 @@ class ChannelInfo(ChannelInfo_template):
                                                 "{0} is live and is now recording. \nRecording at {1}".format(
                                                     self.channel_name, self.StreamInfo['stream_resolution']))
 
-                if self.cachedDataHandler:
-                    if self.cachedDataHandler.getValue(
-                            'DownloadThumbnail') is True and self.privateStream is not True:
-                        thread = Thread(target=self.download_thumbnail, name=self.channel_name)
-                        thread.daemon = True  # needed control+C to work.
-                        thread.start()
+                if self.cachedDataHandler and self.cachedDataHandler.getValue(
+                        'DownloadThumbnail') is True:
+                    thread = Thread(target=self.download_thumbnail, name=self.channel_name)
+                    thread.daemon = True  # needed control+C to work.
+                    thread.start()
 
                 self.add_video_temp_youtube_queue()
 
@@ -464,7 +491,7 @@ class ChannelInfo(ChannelInfo_template):
             return ok_
         else:
             self.recording_status = "Unable to get Youtube Stream Info."
-            self.live_streaming = None
+            self.live_streaming = -2
             warning("Unable to get Youtube Stream Info from this stream: ")
             warning("VIDEO ID: {0}".format(str(self.video_id)))
             warning("CHANNEL ID: {0}".format(str(self.channel_id)))

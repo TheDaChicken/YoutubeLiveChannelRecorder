@@ -56,6 +56,9 @@ class ChannelInfo_template(SharableHandler):
     # USED FOR UPLOADING
     video_location = None
 
+    # USED FOR LIVE STREAMING THE RECORDING SO PEOPLE CAN WATCH WHILE RECORDING.
+    mpeg_dash_manifest_location = None
+
     # SERVER VARIABLES
     stop_heartbeat = False
 
@@ -63,7 +66,7 @@ class ChannelInfo_template(SharableHandler):
     EncoderClass = None
 
     # USED FOR UPLOADING TO HOLD MORE THAN ONE RECORDING.
-    video_list = {}
+    video_list = None
 
     def __init__(self, channel_id, SharedVariables=None, cachedDataHandler=None, queue_holder=None):
         self.channel_id = channel_id
@@ -71,6 +74,7 @@ class ChannelInfo_template(SharableHandler):
         self.cachedDataHandler = cachedDataHandler
         self.queue_holder = queue_holder
         self.EncoderClass = Encoder()
+        self.video_list = {}
 
     def registerCloseEvent(self):
         atexit.register(self.close_recording)

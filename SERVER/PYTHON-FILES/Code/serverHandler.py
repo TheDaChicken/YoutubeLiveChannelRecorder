@@ -4,7 +4,7 @@ from os import path, getcwd
 from time import sleep
 
 import requests
-from flask import request, redirect, Flask, url_for, jsonify, send_from_directory, session, has_request_context
+from flask import request, redirect, Flask, url_for, jsonify, send_from_directory, session, make_response
 
 import ipaddress
 from . import run_channel, channel_main_array, upload_test_run, google_account_login, is_google_account_login_in, \
@@ -16,7 +16,7 @@ from .utils.windowsNotification import show_windows_toast_notification
 # THIS FILE CONTAINS SERVER RELATED STUFF
 
 
-def Response(response, status="OK", status_code=200):
+def Response(response, json_on=True, status="OK", status_code=200, headers=None):
     """
 
     Allows a custom json formatted response.
@@ -24,13 +24,20 @@ def Response(response, status="OK", status_code=200):
     :type response: str, None
     :type status: str
     :type status_code: int
+    :type headers: dict
+    :type json_on: bool
+
     """
+    if headers is None:
+        headers = {}
+    if not json_on:
+        return response, status_code, headers
     json_dict = {
         'status': status,
         'response': response,
         'status_code': status_code
     }
-    return jsonify(json_dict), status_code
+    return jsonify(json_dict), status_code, headers
 
 
 class Server(Flask):
@@ -85,7 +92,13 @@ class Server(Flask):
 
         # RECORDINGS RELATED.
         self.add_url_rule('/listRecordings', view_func=self.listStreams)
-        self.add_url_rule('/playRecording', view_func=self.uploadVideo)
+        self.add_url_rule('/listStreams', view_func=self.listStreams)
+
+        self.add_url_rule('/playRecording', view_func=self.playRecording)
+
+        self.add_url_rule('/playLiveStream', view_func=self.playLiveStream)
+        self.add_url_rule('/MPEG-DASH_init/<filename>', view_func=self.MPEG_DASH_init)
+        self.add_url_rule('/MPEG-DASH_segments/<filename>', view_func=self.MPEG_DASH_segments)
 
     @staticmethod
     def hello():
@@ -461,23 +474,77 @@ class Server(Flask):
     # Playback recordings / downloading them.
     @staticmethod
     def listStreams():
-        from os import walk
-        recorded_streams_dir = path.join(getcwd(), "RecordedStreams")
-        list_recordings = []
-        for (dir_path, dir_names, file_names) in walk(recorded_streams_dir):
-            for file_name in file_names:
-                if 'mp4' in file_name:
-                    list_recordings.append(file_name)
-        list_recordings.sort()
-        return Response(list_recordings)
+        rule = request.url_rule
+        if 'listRecordings' in rule.rule:
+            recorded_streams_dir = path.join(getcwd(), "RecordedStreams")
+            list_recordings = []
+            for (dir_path, dir_names, file_names) in os.walk(recorded_streams_dir):
+                for file_name in file_names:
+                    if 'mp4' in file_name:
+                        list_recordings.append(file_name)
+            list_recordings.sort()
+            return Response(list_recordings)
+        if 'listStreams' in rule.rule:
+            recorded_streams_dir = path.join(getcwd(), "RecordedStreams")
+            list_recordings = []
+            for (dir_path, dir_names, file_names) in os.walk(recorded_streams_dir):
+                for file_name in file_names:
+                    if 'mp4' in file_name:
+                        list_recordings.append(file_name)
+            list_recordings.sort()
+            return Response({'recordings': list_recordings, 'live': []})
 
     @staticmethod
-    def uploadVideo():
+    def playRecording():
         stream_name = request.args.get('stream_name')
         if stream_name is None:
             return Response("You need stream_name in args.", status='client-error', status_code=400)
         stream_folder = path.join(getcwd(), "RecordedStreams")
         return send_from_directory(directory=stream_folder, filename=stream_name)
+
+    @staticmethod
+    def playLiveStream():
+        stream_id = request.args.get('stream_id')
+        if stream_id is None:
+            return Response("You need stream_id in args.", status='client-error', status_code=400)
+        mpeg_dash_folder = path.join(getcwd(), "MPEG-DASH_manifest_temp")
+        if not os.path.exists(mpeg_dash_folder):
+            return Response("Unable to find MPEG-DASH manifest.", status='client-error', status_code=404)
+        mpeg_dash_manifest = path.join(getcwd(), "MPEG-DASH_manifest_temp", "{0}.mpd".format(stream_id))
+        if not os.path.exists(mpeg_dash_manifest):
+            return Response("Unable to find MPEG-DASH manifest.", status='client-error', status_code=404)
+        f = open(mpeg_dash_manifest, "r")
+        contents = f.read()
+        f.close()
+        return Response(contents, json_on=False, headers={
+            'Content-Type': 'video/vnd.mpeg.dash.mpd', 'Cache-Control': 'no-cache, must-revalidate',
+            'pragma': 'no-cache', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET'})
+
+    @staticmethod
+    def MPEG_DASH_init(filename):
+        if os.name == "nt":
+            TempMPEG_DASH_dir = getcwd()
+        else:
+            TempMPEG_DASH_dir = os.path.join(getcwd(), "MPEG-DASH_manifest_temp")
+        stream_folder = path.join(TempMPEG_DASH_dir, "MPEG-DASH_init")
+        response = make_response(send_from_directory(directory=stream_folder, filename=filename))
+        if os.path.exists(os.path.join(stream_folder, filename)):
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET'
+        return response
+
+    @staticmethod
+    def MPEG_DASH_segments(filename):
+        if os.name == "nt":
+            TempMPEG_DASH_dir = getcwd()
+        else:
+            TempMPEG_DASH_dir = os.path.join(getcwd(), "MPEG-DASH_manifest_temp")
+        stream_folder = path.join(TempMPEG_DASH_dir, "MPEG-DASH_segments")
+        response = make_response(send_from_directory(directory=stream_folder, filename=filename))
+        if os.path.exists(os.path.join(stream_folder, filename)):
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET'
+        return response
 
     # CUSTOM MESSAGES
     @staticmethod

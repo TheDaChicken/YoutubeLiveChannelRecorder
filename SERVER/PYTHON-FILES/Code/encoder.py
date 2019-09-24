@@ -23,9 +23,9 @@ class Encoder:
         self.crashFunction = crashFunction
         self.Headers = Headers
 
-    def start_recording(self, videoInput, videoLocation):
+    def start_recording(self, videoInput, videoLocation, MPEGDASHSettings=None):
         self.running = None
-        self.requestFFmpeg(videoInput, videoLocation)
+        self.requestFFmpeg(videoInput, videoLocation, MPEGDASHSettings)
         self.__hold()
         if self.running is False:
             return False
@@ -73,7 +73,10 @@ class Encoder:
                                         stdin=subprocess.PIPE, universal_newlines=True)
         self.__startHandler()
 
-    def requestFFmpeg(self, videoInput, videoLocation):
+    def requestFFmpeg(self, videoInput, videoLocation,
+                      MPEGDASHSettings=None):
+        if MPEGDASHSettings is None:
+            MPEGDASHSettings = {}
         self.running = None
         verbose("Opening FFmpeg.")
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
@@ -84,6 +87,16 @@ class Encoder:
         command.extend(["-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
                         "-metadata", "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
                         "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])
+        if MPEGDASHSettings:
+            mpeg_dash_manifest = MPEGDASHSettings.get('mpeg_dash_manifest')
+            media_seg_name = MPEGDASHSettings.get('media_seg_name')
+            init_seg_name = MPEGDASHSettings.get('init_seg_name')
+
+            command.extend(["-c:v", "copy", "-f", "dash", "-vtag", "avc1",
+                            "-adaptation_sets", "id=0,streams=v id=1,streams=a",
+                            "-dash_segment_type", "mp4", "-media_seg_name", media_seg_name,
+                            "-init_seg_name", init_seg_name, mpeg_dash_manifest])
+
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
         self.__startHandler()

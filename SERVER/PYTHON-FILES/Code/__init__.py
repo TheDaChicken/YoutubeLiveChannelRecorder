@@ -1,14 +1,13 @@
 import os
 from multiprocessing import Process
 from multiprocessing.managers import BaseManager, Namespace
-from threading import Thread
 
-from .youtubeAPI.uploadQueue import uploadQueue, QueueHandler
-from .youtube.channelClass import ChannelInfo
-from .twitch.channelClass import ChannelInfoTwitch
-from .utils.web import download_website, __build__cookies
 from .dataHandler import CacheDataHandler
 from .log import verbose
+from .twitch.channelClass import ChannelInfoTwitch
+from .utils.web import download_website, __build__cookies
+from .youtube.channelClass import ChannelInfo
+from .youtubeAPI.uploadQueue import uploadQueue, QueueHandler
 
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
             'Chrome/75.0.3770.100 Safari/537.36'
@@ -18,11 +17,11 @@ UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML
 channel_main_array = []
 ServerClass = None
 
-baseManagerChannelInfo = None  # type: BaseManager
-baseManagerDataHandler = None  # type: BaseManager
+baseManagerChannelInfo = None
+baseManagerDataHandler = None
 
-shareable_variables = None  # type: Namespace
-cached_data_handler = None  # type: CacheDataHandler
+shareable_variables = None
+cached_data_handler = None
 queue_holder = None
 uploadThread = None
 
@@ -48,12 +47,12 @@ def setupSharedVariables():
     baseManagerChannelInfo.start()
 
     # Cache Data File. (Data Cache is in a class)
-    baseManagerDataHandler = BaseManager()
-    baseManagerDataHandler.start()
-    cached_data_handler = baseManagerDataHandler.CacheDataHandler()
+    baseManagerDataHandlers = BaseManager()
+    baseManagerDataHandlers.start()
+    cached_data_handler = baseManagerDataHandlers.CacheDataHandler()
 
     # Global Queue Holder.
-    queue_holder = baseManagerDataHandler.QueueHandler()
+    queue_holder = baseManagerDataHandlers.QueueHandler()
 
     # Cache Cookies in shareable_variables. (Cookies are cached in a list)
     # Cannot make into global class due to problems.
