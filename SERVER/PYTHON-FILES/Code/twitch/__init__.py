@@ -35,7 +35,7 @@ def find_client_id(website_string, url_referer):
 
     global client_id
     if not client_id:
-        assets_list = try_get(re.findall(r'assets[^>]*\((.+)\[r\]\|', website_string), lambda x: x[0], str)  # type: str
+        assets_list = try_get(re.findall(r'\+\"assets/\"[^>]\((.+)\[g\]\|', website_string), lambda x: x[0], str)  # type: str
         if not assets_list:
             return [False, "Unable to get assets list."]
         okay, assets_list = parse_numbered_list(assets_list)
@@ -45,11 +45,14 @@ def find_client_id(website_string, url_referer):
         asset_number = None
         for number in assets_list:
             asset_name = assets_list[number]
-            if 'twitch-player-ui' in asset_name:
-                asset_number = number
+            if asset_name:
+                if 'twitch-player-ui' in asset_name:
+                    asset_number = number
         if not asset_number:
             return [False, "Unable to find twitch player ui in assets list."]
-        asset_identifier_list = try_get(re.findall(r'\)\+\"-\"\+(.+?)\[r\]\+', website_string), lambda x: x[1], str)
+        asset_identifier_list = try_get(re.findall(r'\[g\]\|\|[^>]*\+(.+)\[g\][^>]*\.js', website_string), lambda x: x[0], str)
+        if not asset_identifier_list:
+            return [False, "Unable to get assets identifier list."]
         okay, asset_identifier_list = parse_numbered_list(asset_identifier_list)
         if not okay:
             return [False, asset_identifier_list]
