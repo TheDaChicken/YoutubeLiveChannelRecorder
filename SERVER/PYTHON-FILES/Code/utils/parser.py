@@ -37,13 +37,15 @@ def parse_m3u8_formats(m3u8_doc):
     https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/common.py#L1608
 
     """
+    compiled_attributes_re = re.compile(r'(?P<key>[A-Z0-9-]+)=(?P<val>"[^"]+"|[^",]+)(?:,|$)')
+    compiled_search_re = re.compile(r'(?P<width>\d+)[xX](?P<height>\d+)')
 
     def parse_m3u8_attributes(attrib):
         """
         Taken from https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/utils.py#L3801
         """
         info = {}
-        for (key, val) in re.findall(r'(?P<key>[A-Z0-9-]+)=(?P<val>"[^"]+"|[^",]+)(?:,|$)', attrib):
+        for (key, val) in compiled_attributes_re.findall(attrib):
             if val.startswith('"'):
                 val = val[1:-1]
             info[key] = val
@@ -67,7 +69,7 @@ def parse_m3u8_formats(m3u8_doc):
             }
             resolution = last_stream_inf.get('RESOLUTION')
             if resolution:
-                search = re.search(r'(?P<width>\d+)[xX](?P<height>\d+)', resolution)
+                search = compiled_search_re.search(resolution)
                 if search:
                     f['width'] = int(search.group('width'))
                     f['height'] = int(search.group('height'))
