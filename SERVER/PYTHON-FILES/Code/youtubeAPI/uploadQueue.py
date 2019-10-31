@@ -157,7 +157,7 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
                 return ''
 
         if text is None or text is False or text is True:
-            return None
+            return "EMPTY VIDEO TITLE. This is due to text being null, false, or True."
         now = video_data.get('start_date')  # type: datetime
         timezone = getTimeZone()
         text = text.format(
@@ -174,7 +174,6 @@ def uploadYouTube(cached_data_handler, video_id, video_data, channel_data, file_
                        TITLE=str(video_data.get('title')),
                        DESCRIPTION=str(video_data.get('description'))
                        ))
-
         return text
 
     youtube_client = get_youtube_api_credentials(cached_data_handler)
