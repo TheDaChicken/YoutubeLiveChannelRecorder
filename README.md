@@ -21,7 +21,7 @@
 
 ### EXAMPLE STREAM RECORDINGS (ORIGINAL DELETED) 
   
-  https://youtu.be/MQP8aqw7-Ko (SKEP CHANNEL 6/15/19)
+  https://youtu.be/tCKmHynj5O8 (SKEP CHANNEL 10/31/19)
   
   https://youtu.be/Ao1ZkJ8XwjE (SKEP CHANNEL 6/22/19)
 
