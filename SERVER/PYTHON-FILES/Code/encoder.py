@@ -23,9 +23,9 @@ class Encoder:
         self.crashFunction = crashFunction
         self.Headers = Headers
 
-    def start_recording(self, videoInput, videoLocation, MPEGDASHSettings=None):
+    def start_recording(self, videoInput, videoLocation, MPEGDASHSettings=None, StartIndex0=False):
         self.running = None
-        self.requestFFmpeg(videoInput, videoLocation, MPEGDASHSettings)
+        self.requestFFmpeg(videoInput, videoLocation, MPEGDASHSettings, StartIndex0)
         self.__hold()
         if self.running is False:
             return False
@@ -74,7 +74,7 @@ class Encoder:
         self.__startHandler()
 
     def requestFFmpeg(self, videoInput, videoLocation,
-                      MPEGDASHSettings=None):
+                      MPEGDASHSettings=None, StartIndex0=False):
         if MPEGDASHSettings is None:
             MPEGDASHSettings = {}
         self.running = None
@@ -84,6 +84,8 @@ class Encoder:
             for header in self.Headers:
                 command.extend(
                     ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
+        if StartIndex0:
+            command.extend(['-live_start_index', '0'])
         command.extend(["-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
                         "-metadata", "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
                         "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])

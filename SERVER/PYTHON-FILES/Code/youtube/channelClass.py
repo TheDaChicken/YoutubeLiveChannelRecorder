@@ -423,7 +423,10 @@ class ChannelInfo(ChannelInfo_template):
                 return youtube_stream_info
             return None
 
+        start_index_0 = False
+
         if not self.StreamInfo:
+            start_index_0 = True
             self.recording_status = "Getting Youtube Stream Info."
             self.StreamInfo = getYoutubeStreamInfo(
                 recordingHeight=self.cachedDataHandler.getValue('recordingResolution'))
@@ -461,7 +464,7 @@ class ChannelInfo(ChannelInfo_template):
                         self.video_id))}
 
             ok_ = self.EncoderClass.start_recording(self.StreamInfo['HLSStreamURL'], self.video_location,
-                                                    MPEGDASHSettings=mpeg_dash_settings)
+                                                    MPEGDASHSettings=mpeg_dash_settings, StartIndex0=start_index_0)
             if not ok_:
                 self.recording_status = "Failed To Start Recording."
                 show_windows_toast_notification("Live Recording Notifications",
