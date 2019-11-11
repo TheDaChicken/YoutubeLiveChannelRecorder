@@ -82,7 +82,6 @@ class Server(Flask):
         # YOUTUBE API
         self.add_url_rule('/getLoginURL', view_func=self.youtube_api_get_login_url)
         self.add_url_rule('/login', view_func=self.youtube_api_login)
-        self.add_url_rule('/login', view_func=self.youtube_api_login)
         self.add_url_rule('/login/callback', view_func=self.youtube_api_login_call_back)
         self.add_url_rule('/logoutYouTubeAPI', view_func=self.youtube_api_log_out)
 
@@ -399,7 +398,7 @@ class Server(Flask):
     # LOGGING INTO YOUTUBE (FOR UPLOADING)
     @staticmethod
     def youtube_api_get_login_url():
-        url = "{0}?unlockCode={1}".format(url_for('youtube_login', _external=True), "OK")
+        url = "{0}?unlockCode={1}".format(url_for('youtube_api_login', _external=True), "OK")
         return Response(url)
 
     def youtube_api_login(self):
