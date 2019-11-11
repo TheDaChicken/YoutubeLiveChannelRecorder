@@ -100,6 +100,8 @@ class Server(Flask):
         self.add_url_rule('/MPEG-DASH_init/<filename>', view_func=self.MPEG_DASH_init)
         self.add_url_rule('/MPEG-DASH_segments/<filename>', view_func=self.MPEG_DASH_segments)
 
+        self.add_url_rule('/testUpload', view_func=self.YoutubeTestUpload)
+
     @staticmethod
     def hello():
         return Response("Server is alive.")
