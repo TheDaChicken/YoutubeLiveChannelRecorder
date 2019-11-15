@@ -419,7 +419,7 @@ class Server(Flask):
         from .youtubeAPI import credentials_build, get_youtube_account_user_name, get_request_credentials
         authorization_response = request.url
         state = session.get('state')
-        url = url_for('youtube_login_call_back', _external=True)
+        url = url_for('youtube_api_login_call_back', _external=True)
         try:
             credentials = get_request_credentials(authorization_response, state, url)
             username = get_youtube_account_user_name(credentials_build(credentials))

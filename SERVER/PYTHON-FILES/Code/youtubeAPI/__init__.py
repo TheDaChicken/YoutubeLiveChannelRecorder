@@ -138,7 +138,7 @@ def initialize_upload(youtubeClient, file_location, title, description, keywords
         # practice, but if you're using Python older than 2.6 or if you're
         # running on App Engine, you should set the chunksize to something like
         # 1024 * 1024 (1 megabyte).
-        media_body=MediaFileUpload(file_location, chunksize=-1, resumable=True)
+        media_body=MediaFileUpload(file_location, chunksize=1024 * 1024, resumable=True)
     )
     return __resumable_upload(insert_request, file_location)
 
