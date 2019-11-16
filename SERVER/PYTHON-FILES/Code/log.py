@@ -56,3 +56,4 @@ def stopped(text):
 
 def note(text):
     sys.stdout.write("{0}[NOTE] {1}\n".format(Fore.LIGHTCYAN_EX, text))
+
