@@ -16,7 +16,6 @@ from Code.YouTube.heartbeat import is_live
 from Code.utils.windows import show_windows_toast_notification
 from Code.encoder import Encoder
 
-
 # GLOBAL YOUTUBE VARIABLES
 page_build_label = None
 page_cl = None
@@ -168,7 +167,7 @@ class ChannelObject(TemplateChannel):
         self.cachedDataHandler = cachedDataHandler
         self.SharedCookieDict = SharedCookieDict
         self.cachedDataHandler = cachedDataHandler
-        self.DebugMode = SettingDict.get('debug-mode')
+        self.DebugMode = SettingDict.get('debug_mode')
         self.EncoderClass = Encoder()
         self.EncoderClass.enable_logs = SettingDict.get('ffmpeg_logs')
         self.queue_holder = queue_holder
@@ -327,6 +326,12 @@ class ChannelObject(TemplateChannel):
                 show_windows_toast_notification("Live Recording Notifications",
                                                 "{0} is live and is now recording. \nRecording at {1}".format(
                                                     self.channel_name, self.StreamInfo['stream_resolution']))
+                self.title = self.StreamInfo.get('title')
+                self.add_VideoInfo_to_temp_({
+                    'video_id': self.video_id, 'title': self.StreamInfo.get('title'), 'start_date': self.start_date,
+                    'file_location': self.video_location, 'channel_name': self.channel_name,
+                    'channel_id': self.channel_id, 'description': self.StreamInfo.get("description")})
+                print(self.video_list)
                 return True
             else:
                 self.recording_status = "Unable to get Youtube Stream Info."
@@ -393,12 +398,12 @@ class ChannelObject(TemplateChannel):
                         x.start()
                     sleep(self.pollDelayMs / 1000)
                 # REPEAT (END OF LOOP)
-        except Exception:
+        except:
             self.crashed_traceback = traceback.format_exc()
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
 
     def is_live(self, alreadyChecked=False):
-        if self.DebugMode:
+        if self.DebugMode is True:
             self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookies)
         return boolean_live

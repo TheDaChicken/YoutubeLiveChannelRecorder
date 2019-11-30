@@ -6,15 +6,21 @@ from Code.YouTube import ChannelObject as ChannelYouTube
 from Code.Twitch import ChannelObject as ChannelTwitch
 from Code.dataHandler import CacheDataHandler
 from Code.log import warning
-from Code.YouTubeAPI.uploadQueue import QueueHandler, uploadQueue
+from Code.YouTubeAPI.uploadQueue import QueueHandler, runQueue
+from Code.serverHandler import loadServer
+from Code.utils.other import try_get
+from Code.YouTubeAPI import YouTubeAPIHandler
 
 
-class ThreadHandler:
+class ProcessHandler:
     channels_dict = {}
 
     debug_mode = False
     serverPort = 31311
     enable_ffmpeg_logs = False
+
+    # YouTube Queue Stuff
+    YouTubeQueueThread = None
 
     def __init__(self):
         # Create Shared Variables
@@ -23,18 +29,24 @@ class ThreadHandler:
         BaseManager.register("ChannelTwitch", ChannelTwitch)
         BaseManager.register("Dict", dict)
         BaseManager.register("QueueHandler", QueueHandler)
+        BaseManager.register("YouTubeAPIHandler", YouTubeAPIHandler)
 
         # Channel Class
         self.baseManagerChannelInfo = BaseManager()
         self.baseManagerChannelInfo.start()
 
         # Data Handler
-        self.baseManagerDataHandlers = BaseManager()
-        self.baseManagerDataHandlers.start()
-        self.cachedDataHandler = self.baseManagerDataHandlers.CacheDataHandler()
+        self.baseManagerNormalHandlers = BaseManager()
+        self.baseManagerNormalHandlers.start()
+        self.cachedDataHandler = self.baseManagerNormalHandlers.CacheDataHandler()
 
         # Global Queue Holder.
-        self.queue_holder = self.baseManagerDataHandlers.QueueHandler()
+        self.queue_holder = self.baseManagerNormalHandlers.QueueHandler()
+
+        # YouTube API Handler
+        self.baseManagerAPIHandlers = BaseManager()
+        self.baseManagerAPIHandlers.start()
+        self.youtube_api_handler = self.baseManagerAPIHandlers.YouTubeAPIHandler(self.cachedDataHandler)
 
         # Cookies
         self.baseManagerCookieDictHolder = BaseManager()
@@ -78,6 +90,32 @@ class ThreadHandler:
                 return [False, error_message]
         return [False, "UNKNOWN PLATFORM GIVEN TO RUN_CHANNEL."]
 
+    def run_channel_with_video_id(self, video_id):
+        """
+
+        Runs a Channel Instance without a channel id. Uses a Video ID to get channel id etc
+
+        """
+        channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
+            None, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
+            self.shared_cookieDictHolder, self.cachedDataHandler)
+        ok_bool, error_message = channel_holder_class.loadVideoData(video_id=video_id)
+        if ok_bool:
+            channel_holder_class.registerCloseEvent()
+            channel_id = channel_holder_class.get("channel_id")
+            channel_name = channel_holder_class.get("channel_name")
+            check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                     name="{0} - Channel Process".format(channel_name))
+            check_streaming_channel_thread.start()
+            self.channels_dict.update({
+                channel_id: {
+                    'class': channel_holder_class,
+                    'thread_class': check_streaming_channel_thread}
+            })
+            return [True, "OK"]
+        else:
+            return [False, error_message]
+
     def loadChannels(self):
         youtube_channel_ids = self.cachedDataHandler.getValue('channels_YOUTUBE')
         if youtube_channel_ids:
@@ -88,7 +126,22 @@ class ThreadHandler:
 
     def run_youtube_queue(self):
         if self.cachedDataHandler.getValue('UploadLiveStreams'):
-            check_streaming_channel_thread = Process(target=uploadQueue,
-                                                     name="YouTube Upload Queue",
-                                                     args=(self.cachedDataHandler, self.queue_holder,))
-            check_streaming_channel_thread.start()
+            self.YouTubeQueueThread = Process(target=runQueue,
+                                              name="YouTube Upload Queue",
+                                              args=(self.youtube_api_handler, self.queue_holder,))
+            self.YouTubeQueueThread.start()
+
+    def run_server(self, cert=None, key=None):
+        key = try_get(self.cachedDataHandler, lambda x: x.getValue('ssl_key'), str) if not None else key
+        cert = try_get(self.cachedDataHandler, lambda x: x.getValue('ssl_cert'), str) if not None else cert
+
+        loadServer(self, self.cachedDataHandler, self.serverPort, self.youtube_api_handler,
+                   cert=cert, key=key)
+
+    def is_google_account_login_in(self):
+        cj = self.shared_cookieDictHolder.copy()
+        cookie = [cookies for cookies in cj if 'SSID' in cookies]
+        if cookie is None or len(cookie) is 0:
+            return False
+        return True
+

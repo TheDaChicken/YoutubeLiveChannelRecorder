@@ -54,6 +54,28 @@ class TemplateChannel(SharableHandler):
                 return file_name
             amount += 1
 
+    def add_VideoInfo_to_temp_(self, video_data):
+        """
+
+        :type video_data: dict
+        :return:
+        """
+        if self.video_list is None:
+            self.video_list = {}
+        video_id = video_data.get('video_id')
+        if video_id in self.video_list:
+            file_location = self.video_list.get(video_id).get('file_location')  # type: list
+            file_location.append(video_data.get('file_location'))
+            self.video_list.update({
+                video_id: {
+                    'title': video_data.get('title'),
+                    'file_location': file_location
+                }
+            })
+        else:
+            video_data.update({'file_location': [video_data.get('file_location')]})
+            self.video_list.update({video_data.get('video_id'): video_data})
+
     def add_youtube_queue(self):
         """
         To add videos to be uploaded in the YouTube Queue.
@@ -61,5 +83,6 @@ class TemplateChannel(SharableHandler):
         if len(self.video_list) != 0:
             if self.queue_holder:
                 verbose("Adding streams to youtube upload queue.")
-                self.queue_holder.addQueue(self.video_list)
-                self.video_list.clear()
+                for video_id in self.video_list:
+                    self.queue_holder.addQueue(self.video_list.get(video_id))
+                    self.video_list.clear()

@@ -1,7 +1,7 @@
 import argparse
 from time import sleep
 
-from Code import ThreadHandler
+from Code import ProcessHandler
 
 if __name__ == '__main__':
     try:
@@ -15,13 +15,12 @@ if __name__ == '__main__':
         parser.add_argument('-e', '--enable-ffmpeg-logs', action='store_true')
         parser_args = parser.parse_args()
 
-        threadHandler = ThreadHandler()
+        threadHandler = ProcessHandler()
         threadHandler.debug_mode = parser_args.enable_debug
         threadHandler.serverPort = parser_args.port
         threadHandler.enable_ffmpeg_logs = parser_args.enable_ffmpeg_logs
         threadHandler.loadChannels()
         threadHandler.run_youtube_queue()
-        while True:
-            sleep(15)
+        threadHandler.run_server()  # holds
     except KeyboardInterrupt:
         pass
