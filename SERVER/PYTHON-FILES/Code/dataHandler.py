@@ -58,7 +58,7 @@ class CacheDataHandler:
             outfile.write(yaml.dump(self._cache))
 
     def __init__(self):
-        pass
+        self.loadDataFile()
 
     def updateCache(self):
         self.loadDataFile()
