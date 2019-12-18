@@ -6,6 +6,8 @@ from time import sleep
 
 from Code.log import error_warning, warning, info
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 
 class YouTubeAPIHandler:
     class MissingPackage(Exception):
@@ -25,8 +27,8 @@ class YouTubeAPIHandler:
     def __init__(self, cached_data_handler):
         # Safe way of checking packages with a list of missing packages. :P
         self.packages = self.__getPackages__(
-            ["httplib2", "apiclient", "oauth2client",
-             "google.oauth2.credentials", "google_auth_oauthlib.flow"])
+            {"httplib2": [], "apiclient": ['discovery', 'errors'], "google": ['oauth2'], "google_auth_oauthlib": ['flow'],
+             'oauthlib': ['oauth2'], 'googleapiclient': ['http', 'errors']})
         self.cached_data_handler = cached_data_handler
 
     def isMissingPackages(self):
@@ -40,7 +42,7 @@ class YouTubeAPIHandler:
         package = {'missing_packages': [], 'packages': {}}
         for package_name in package_list:
             try:
-                module_import = __import__(package_name)
+                module_import = __import__(package_name, fromlist=package_list.get(package_name))
                 package.get('packages').update({package_name: module_import})
             except ImportError:
                 package.get('missing_packages').append(package_name)
@@ -51,9 +53,12 @@ class YouTubeAPIHandler:
             raise self.MissingPackage
         return self.packages.get('packages').get(package_name)
 
-    def get_youtube_api_credentials(self):
-        def credentials_build(credentials_dict):
-            credentials = self.getPackage('google.oauth2.credentials').Credentials(**credentials_dict)
+    def getClientSecretFile(self):
+        return self.CLIENT_SECRETS_FILE
+
+    def get_youtube_api_credentials(self, credentials_dict=None):
+        def credentials_build():
+            credentials = self.getPackage('google').oauth2.credentials.Credentials(**credentials_dict)
             try:
                 b = self.getPackage('apiclient').discovery.build(
                     self.YOUTUBE_API_SERVICE_NAME, self.YOUTUBE_API_VERSION, credentials=credentials)
@@ -63,9 +68,13 @@ class YouTubeAPIHandler:
                 warning("Unable to build Youtube API Client.")
                 return None
 
+        if credentials_dict:
+            return credentials_build()
+
         if 'youtube_api_credentials' in self.cached_data_handler.getDict():
             info("Found Youtube Account login in. Getting Youtube Upload Client.")
-            youtube_client = credentials_build(self.cached_data_handler.getValue('youtube_api_credentials'))
+            credentials_dict = self.cached_data_handler.getValue('youtube_api_credentials')
+            youtube_client = credentials_build()
             return youtube_client
         return None
 
@@ -77,16 +86,19 @@ class YouTubeAPIHandler:
                     'client_id': credentials.client_id,
                     'client_secret': credentials.client_secret,
                     'scopes': credentials.scopes}
+        try:
+            flow = self.getPackage('google_auth_oauthlib').flow.Flow.from_client_secrets_file(
+                self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_READ_WRITE_SCOPE, state=state)
+            flow.redirect_uri = url
+            flow.fetch_token(authorization_response=authorization_response)
+            credentials = flow.credentials
+            return credentials_to_dict()
+        except self.getPackage('oauthlib').oauth2.rfc6749.errors.InvalidGrantError:
+            return None
 
-        flow = self.getPackage('google_auth_oauthlib.flow').Flow.from_client_secrets_file(
-            self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_READ_WRITE_SCOPE, state=state)
-        flow.redirect_uri = url
-        flow.fetch_token(authorization_response=authorization_response)
-        credentials = flow.credentials
-        return credentials_to_dict()
 
-    def generate_login_link(self, redirect_url, isPrivateIP=False):
-        flow = self.getPackage('google_auth_oauthlib.flow').Flow.from_client_secrets_file(
+    def generate_login_link(self, redirect_url):
+        flow = self.getPackage('google_auth_oauthlib').flow.Flow.from_client_secrets_file(
             self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_READ_WRITE_SCOPE)
         flow.redirect_uri = redirect_url
         if 'youtube_api_credentials' not in self.cached_data_handler.getDict():
@@ -98,8 +110,6 @@ class YouTubeAPIHandler:
                 include_granted_scopes='true',
                 # Allows refresh_token to be always in the authorization url
                 prompt='consent')
-            if isPrivateIP:
-                arguments.update({'device_id': '__314', 'device_name': 'private_ip'})
             authorization_url, state = flow.authorization_url(**arguments)
             return [authorization_url, state]
         return [None, None]
@@ -111,6 +121,8 @@ class YouTubeAPIHandler:
         youtubeClient = self.get_youtube_api_credentials()
         if keywords:
             tags = keywords.split(",")
+        else:
+            tags = []
         body = dict(
             snippet=dict(
                 title=title,
@@ -137,7 +149,7 @@ class YouTubeAPIHandler:
             # practice, but if you're using Python older than 2.6 or if you're
             # running on App Engine, you should set the chunksize to something like
             # 1024 * 1024 (1 megabyte).
-            media_body=self.getPackage("apiclient").http.MediaFileUpload(
+            media_body=self.getPackage("googleapiclient").http.MediaFileUpload(
                 file_location, chunksize=1024 * 1024, resumable=True)
         )
         return self.__resumable_upload(insert_request, file_location)
@@ -149,21 +161,23 @@ class YouTubeAPIHandler:
         error = None
         retry = 0
         while response is None:
+            httperror = self.getPackage('googleapiclient').errors.HttpError
             try:
                 info("Uploading file...")
                 status, response = insert_request.next_chunk()
-                if 'id' in response:
-                    info(file_location + " was successfully uploaded with video id of '%s'." % response['id'])
-                    return response['id']
-                else:
-                    warning("The upload failed with an unexpected response: %s" % response)
-            except self.getPackage('apiclient').HttpError as e:
+                if response:
+                    if 'id' in response:
+                        info(file_location + " was successfully uploaded with video id of '%s'." % response['id'])
+                        return response['id']
+                    else:
+                        warning("The upload failed with an unexpected response: %s" % response)
+            except httperror as e:
                 if e.resp.status in self.RETRIABLE_STATUS_CODES:
                     error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
                                                                          e.content)
                 else:
                     raise
-            except (self.getPackage('httplib2'), IOError, client.NotConnected,
+            except (IOError, client.NotConnected,
                     client.IncompleteRead, client.ImproperConnectionState,
                     client.CannotSendRequest, client.CannotSendHeader,
                     client.ResponseNotReady, client.BadStatusLine) as e:
@@ -186,3 +200,12 @@ class YouTubeAPIHandler:
             videoId=video_id,
             media_body=file_location
         ).execute()
+
+    def get_youtube_account_user_name(self, youtubeClient=None):
+        if youtubeClient is None:
+            youtubeClient = self.get_youtube_api_credentials()
+        channels_list = youtubeClient.channels().list(
+            part="snippet,contentDetails,statistics",
+            mine=True
+        ).execute()
+        return channels_list['items'][0]['snippet']['title']

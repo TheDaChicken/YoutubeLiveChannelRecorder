@@ -85,4 +85,4 @@ class TemplateChannel(SharableHandler):
                 verbose("Adding streams to youtube upload queue.")
                 for video_id in self.video_list:
                     self.queue_holder.addQueue(self.video_list.get(video_id))
-                    self.video_list.clear()
+                self.video_list.clear()

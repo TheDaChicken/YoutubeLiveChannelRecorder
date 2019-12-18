@@ -171,6 +171,8 @@ class ChannelObject(TemplateChannel):
         self.EncoderClass = Encoder()
         self.EncoderClass.enable_logs = SettingDict.get('ffmpeg_logs')
         self.queue_holder = queue_holder
+        if 'testUpload' in SettingDict:
+            self.TestUpload = True
 
     def loadVideoData(self, video_id=None):
         if video_id is not None:
@@ -331,7 +333,7 @@ class ChannelObject(TemplateChannel):
                     'video_id': self.video_id, 'title': self.StreamInfo.get('title'), 'start_date': self.start_date,
                     'file_location': self.video_location, 'channel_name': self.channel_name,
                     'channel_id': self.channel_id, 'description': self.StreamInfo.get("description")})
-                print(self.video_list)
+                self.StreamInfo = None
                 return True
             else:
                 self.recording_status = "Unable to get Youtube Stream Info."
@@ -358,7 +360,12 @@ class ChannelObject(TemplateChannel):
     def channel_thread(self):
         if self.live_streaming is True:
             if self.start_recording():
-                pass
+                if self.TestUpload is True:
+                    sleep(10)
+                    self.EncoderClass.stop_recording()
+                    self.add_youtube_queue()
+                    exit(0)
+
 
         if self.live_streaming is not None:
             sleep(self.pollDelayMs / 1000)

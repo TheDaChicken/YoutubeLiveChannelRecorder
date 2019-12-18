@@ -58,7 +58,7 @@ def runQueue(youtube_api_handler, queue_holder):
         try:
             # youtube_api_handler.initialize_upload()
             def get_upload_settings():
-                upload_settings = youtube_api_handler.getCacheDataHandler.getValue('UploadSettings')
+                upload_settings = youtube_api_handler.getCacheDataHandler().getValue('UploadSettings')
                 channel_name = video_data.get('channel_name')
                 if channel_name:
                     if channel_name in upload_settings:
@@ -75,32 +75,31 @@ def runQueue(youtube_api_handler, queue_holder):
                     def __missing__(self, key):
                         return ''
 
-                if text is None or text is False or text is True:
-                    return "EMPTY VIDEO TITLE. This is due to text being null, false, or True."
                 now = video_data.get('start_date')  # type: datetime
                 timezone = getTimeZone()
-                text = text.format(
-                    **DataDict(VIDEO_ID=video_id,
-                               FILENAME=file_location,
-                               CHANNEL_ID=video_data.get('channel_id'),
-                               CHANNEL_NAME=video_data.get('channel_name'),
-                               START_DATE_MONTH=str(now.month),
-                               START_DATE_DAY=str(now.day),
-                               START_DATE_YEAR=str(now.year),
-                               START_DATE="{0}/{1}/{2}".format(now.month, now.day, now.year),
-                               START_TIME=str(now.strftime("%I:%M %p")),
-                               TIMEZONE=timezone if timezone is not None else '',
-                               TITLE=str(video_data.get('title')),
-                               DESCRIPTION=str(video_data.get('description'))
-                               ))
-                if text is None:
-                    return "[FAILED TO REPLACE VARIABLES]"
+                if text is not None:
+                    text = text.format(
+                        **DataDict(VIDEO_ID=video_id,
+                                   FILENAME=file_locations[0],
+                                   CHANNEL_ID=video_data.get('channel_id'),
+                                   CHANNEL_NAME=video_data.get('channel_name'),
+                                   START_DATE_MONTH=str(now.month),
+                                   START_DATE_DAY=str(now.day),
+                                   START_DATE_YEAR=str(now.year),
+                                   START_DATE="{0}/{1}/{2}".format(now.month, now.day, now.year),
+                                   START_TIME=str(now.strftime("%I:%M %p")),
+                                   TIMEZONE=timezone if timezone is not None else '',
+                                   TITLE=str(video_data.get('title')),
+                                   DESCRIPTION=str(video_data.get('description'))
+                                   ))
+                    if text is None:
+                        return "[FAILED TO REPLACE VARIABLES]"
                 return text
 
             settings = get_upload_settings()
 
             if youtube_api_handler.getCacheDataHandler().getValue('UploadLiveStreams') is True:
-                upload_video_id = youtube_api_handler.initialize_upload(file_location,
+                upload_video_id = youtube_api_handler.initialize_upload(file_locations[0],
                                                                         _replace_variables(settings['title']),
                                                                         _replace_variables(
                                                                             '\n'.join(settings['description'])),
@@ -114,7 +113,6 @@ def runQueue(youtube_api_handler, queue_holder):
                     # TODO Get Auto Uploading thumbnails! working again!
                     info("Thumbnail Done Uploading!")
                 return [True, None]
-
         except:
             traceback_ = traceback.format_exc()
             if 'quota' in traceback_ and 'usage' in traceback_:
@@ -141,7 +139,7 @@ def runQueue(youtube_api_handler, queue_holder):
                 if youtube_api_quota is True:
                     continue
             video_data = queue_holder.getNextQueue()
-            if video_data:
+            if video_data is not None:
                 video_id = video_data.get('video_id')  # type: str
                 file_locations = video_data.get('file_location')  # type: list
                 start_date = video_data.get('start_date')  # datetime.
@@ -172,7 +170,7 @@ def runQueue(youtube_api_handler, queue_holder):
                     uploadYouTube()
             else:
                 queue_holder.updateStatus("Waiting.")
-        sleep(1.5)
+            sleep(4)
     except:
         queue_holder.updateStatus("Crash: {0}".format(traceback.format_exc()))
         crash_warning("{0}:\n{1}".format("Queue Process", traceback.format_exc()))

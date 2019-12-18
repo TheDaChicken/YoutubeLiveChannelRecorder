@@ -60,11 +60,11 @@ class ProcessHandler:
         if 'YOUTUBE' in platform:
             channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
                 channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler)
+                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
         if 'TWITCH' in platform:
             channel_holder_class = self.baseManagerChannelInfo.ChannelTwitch(
                 channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler)
+                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
         if channel_holder_class:
             ok_bool, error_message = channel_holder_class.loadVideoData()
             if ok_bool:
@@ -98,11 +98,36 @@ class ProcessHandler:
         """
         channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
             None, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-            self.shared_cookieDictHolder, self.cachedDataHandler)
+            self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
         ok_bool, error_message = channel_holder_class.loadVideoData(video_id=video_id)
         if ok_bool:
             channel_holder_class.registerCloseEvent()
             channel_id = channel_holder_class.get("channel_id")
+            channel_name = channel_holder_class.get("channel_name")
+            check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                     name="{0} - Channel Process".format(channel_name))
+            check_streaming_channel_thread.start()
+            self.channels_dict.update({
+                channel_id: {
+                    'class': channel_holder_class,
+                    'thread_class': check_streaming_channel_thread}
+            })
+            return [True, "OK"]
+        else:
+            return [False, error_message]
+
+    def upload_test_run(self, channel_id):
+        channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
+            channel_id, {'testUpload': True, 'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
+            self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+        ok_bool, error_message = channel_holder_class.loadVideoData()
+        if ok_bool:
+            del ok_bool
+            del error_message
+            if not channel_holder_class.is_live():
+                return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
+
+            channel_holder_class.registerCloseEvent()
             channel_name = channel_holder_class.get("channel_name")
             check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
                                                      name="{0} - Channel Process".format(channel_name))

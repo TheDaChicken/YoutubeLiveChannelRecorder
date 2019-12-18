@@ -1,7 +1,10 @@
 import traceback
+from ipaddress import ip_address
+from os.path import exists
 from time import sleep
 
-from flask import jsonify, request, Flask, redirect, url_for
+import requests
+from flask import jsonify, request, Flask, redirect, url_for, session
 from multiprocessing import Process
 
 from Code.YouTube import ChannelObject as ChannelYouTube
@@ -68,9 +71,13 @@ class Server(Flask):
         self.add_url_rule('/addVideoID', view_func=self.add_video_id)
 
         self.add_url_rule('/getLoginURL', view_func=self.youtube_api_get_login_url)
-        # self.add_url_rule('/login', view_func=self.youtube_api_login)
-        # self.add_url_rule('/login/callback', view_func=self.youtube_api_login_call_back)
+        self.add_url_rule('/login', view_func=self.youtube_api_login)
+        self.add_url_rule('/login/callback', view_func=self.youtube_api_login_call_back)
         self.add_url_rule('/logoutYouTubeAPI', view_func=self.youtube_api_log_out)
+
+        self.add_url_rule('/getServerSettings', view_func=self.getSetting)
+
+        self.add_url_rule('/testUpload', view_func=self.YoutubeTestUpload)
 
     @staticmethod
     def hello():
@@ -172,6 +179,8 @@ class Server(Flask):
         if not ok:
             return Response(message, status="server-error", status_code=500)
         elif ok:
+            self.cached_data_handler.addValueList(
+                'channels_{0}'.format(platform_name), channel_identifier)
             info("{0} has been added to the list of channels.".format(channel_identifier))
             return Response(None)
         return self.server_internal_error(None)
@@ -242,11 +251,78 @@ class Server(Flask):
         else:
             return Response(message, status="server-error", status_code=500)
 
+    def getSetting(self):
+        json = {
+            'DownloadThumbnail': {'value': self.cached_data_handler.getValue('DownloadThumbnail'),
+                                  'description': 'Downloads the thumbnail from the original stream.',
+                                  'type': 'swap'},
+            'UploadLiveStreams': {'value': self.cached_data_handler.getValue('UploadLiveStreams'),
+                                  'description':
+                                      'Auto uploads recorded YouTube Live streams to YouTube using the YouTube API. '
+                                      '(ENABLES YOUTUBE UPLOAD QUEUE)',
+                                  'type': 'swap'},
+            'UploadThumbnail': {'value': self.cached_data_handler.getValue('UploadThumbnail'),
+                                'description': 'Uploads the thumbnail from the original stream'
+                                               ' to the auto uploaded YouTube version.',
+                                'type': 'swap'},
+            'YouTube API LOGIN': {'value': 'youtube_api_credentials' in self.cached_data_handler.getDict(),
+                                  'description':
+                                      'Login to the YouTube API to upload the auto uploads to your '
+                                      'channel.',
+                                  'type': 'youtube_api_login', 'AccountName':
+                                      self.cached_data_handler.getValue('youtube_api_account_username')},
+            'YouTube API Test Upload': {'value': None,
+                                        'description':
+                                            'Records a channel for a few seconds. '
+                                            'Then tries uploading that through the YouTube API.',
+                                        'type': 'channel_id'},
+            'Refresh Data File Cache': {'value': None,
+                                        'description': 'Refreshes the cache created from the data.yml file.',
+                                        'type': 'refresh_data_cache'},
+            'Recording At': {'value': self.cached_data_handler.getValue('recordingResolution'),
+                             'description': 'Changes recording quality. Reduces data usage. '
+                                            'If unable to record at quality, will choose available quality.',
+                             'type': 'recording_at_resolution'}
+        }
+        return Response(json)
+
     # LOGGING INTO YOUTUBE (FOR UPLOADING)
     @staticmethod
     def youtube_api_get_login_url():
         url = "{0}?unlockCode={1}".format(url_for('youtube_api_login', _external=True), "OK")
         return Response(url)
+
+    def youtube_api_login(self):
+        # Check for client secret file...
+        if not exists(self.youtube_api_handler.getClientSecretFile()):
+            return Response("WARNING: Please configure OAuth 2.0. Information at the Developers Console "
+                            "https://console.developers.google.com/", status='server-error', status_code=500)
+        if 'youtube_api_credentials' in self.cached_data_handler.getDict():
+            return Response("Youtube account already logged-in", status='client-error', status_code=400)
+        if self.youtube_api_handler.isMissingPackages():
+            return Response("Missing Packages: {0}.".format(', '.join(self.youtube_api_handler.getMissingPackages())))
+        url = url_for('youtube_api_login_call_back', _external=True)
+        link, session['state'] = self.youtube_api_handler.generate_login_link(url)
+        return redirect(link)
+
+    def youtube_api_login_call_back(self):
+        authorization_response = request.url
+        state = session.get('state')
+        url = url_for('youtube_api_login_call_back', _external=True)
+        try:
+            credentials = self.youtube_api_handler.get_credentials_from_request(authorization_response, state, url)
+            if credentials is None:
+                return Response("Bad Request.", status='client-error', status_code=400)
+            username = self.youtube_api_handler.get_youtube_account_user_name(
+                self.youtube_api_handler.get_youtube_api_credentials(credentials))
+        except requests.exceptions.SSLError:
+            return Response("The server encountered an SSL error and was unable to complete your request.",
+                            status='server-error', status_code=500)
+
+        self.cached_data_handler.setValue('youtube_api_account_username', username)
+        self.cached_data_handler.setValue('youtube_api_credentials', credentials)
+        session.pop('state', None)
+        return Response(None)
 
     def youtube_api_log_out(self):
         if 'youtube_api_credentials' in self.cached_data_handler.getDict():
@@ -255,6 +331,18 @@ class Server(Flask):
         else:
             return Response("There are no Youtube Account logged-in, to log out.",
                             status="server-error", status_code=500)
+
+    # Test Uploading
+    def YoutubeTestUpload(self):
+        channel_id = request.args.get('channel_id')
+        if channel_id is None:
+            return Response("You need Channel_ID in args.", status='client-error', status_code=400)
+        ok, message = self.process_Handler.upload_test_run(channel_id)
+        if ok:
+            info("{0} has been added for test uploading.".format(channel_id))
+            return Response(None)
+        else:
+            return Response(message, status="server-error", status_code=500)
 
     # CUSTOM MESSAGES
     @staticmethod

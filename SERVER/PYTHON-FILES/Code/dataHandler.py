@@ -4,7 +4,7 @@ from os.path import exists, join
 
 import yaml
 
-from log import info
+from Code.log import info
 
 
 class CacheDataHandler:
