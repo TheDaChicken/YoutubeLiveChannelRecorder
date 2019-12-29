@@ -240,12 +240,12 @@ class Server(Flask):
         if video_id is '':
             return Response('You need to specify a valid video id.', status='client-error', status_code=400)
         channel_array = [channel_ for channel_ in self.process_Handler.channels_dict
-                         if video_id == channel_['class'].get('video_id') or
-                         video_id == channel_['class'].get('video_id')]
+                         if video_id == self.process_Handler.channels_dict.get(channel_).get('video_id')]
+
         if channel_array is None or len(channel_array) is not 0:
             return Response("Video Already in list!", status="server-error", status_code=500)
         del channel_array
-        ok, message = self.process_Handler.run_channel_with_video_id(video_id, addToData=True)
+        ok, message = self.process_Handler.run_channel_with_video_id(video_id)
         if ok:
             return Response(None)
         else:
