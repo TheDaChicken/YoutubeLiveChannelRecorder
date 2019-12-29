@@ -75,6 +75,8 @@ def build_cookies(cookies=None):
 
 class download_website:
     use_requests = requests is not None
+    text = None
+    response_headers = None
 
     def __init__(self, url, headers=None, data=None, CookieDict=None):
         if not headers:
@@ -89,8 +91,9 @@ class download_website:
                 r = requestSession.get(url, headers=headers)
                 self.status_code = r.status_code
                 self.text = r.text
+                self.response_headers = r.headers
             except requests.exceptions.ConnectionError:
-                self.text = None
+                pass
         else:
             opener = build_opener(HTTPCookieProcessor(self.cj))
             request = Request(url, headers=headers, data=data)
@@ -104,9 +107,9 @@ class download_website:
                 self.response_headers = response.getheaders()
                 self.text = response.read().decode('utf-8')
             except urllib.error.URLError:
-                self.text = None
+                pass
             except (OSError, TimeoutError):
-                self.text = None
+                pass
         self.cookies = self.cj.save()
 
     def parse_json(self):
