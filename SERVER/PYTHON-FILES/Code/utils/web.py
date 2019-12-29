@@ -9,9 +9,9 @@ from Code.log import stopped, warning, error_warning
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
             'Chrome/75.0.3770.100 Safari/537.36'
 
-
 try:
     import requests
+
     requestSession = requests.Session()
 except ImportError:
     requests = None
@@ -73,55 +73,50 @@ def build_cookies(cookies=None):
     return cj
 
 
-def download_website(url, headers=None, data=None, CookieDict=None):
-    try:
+class download_website:
+    use_requests = requests is not None
+
+    def __init__(self, url, headers=None, data=None, CookieDict=None):
         if not headers:
             headers = {}
-
         if 'User-Agent' not in headers:
             headers.update({'User-Agent': UserAgent})
-        if requests is None:
-            cj = build_cookies(CookieDict if CookieDict is not None else None)
-            opener = build_opener(HTTPCookieProcessor(cj))
+        self.headers = headers
+        self.cj = build_cookies(CookieDict if CookieDict is not None else None)
+        if self.use_requests:
+            requestSession.cookies = self.cj
+            try:
+                r = requestSession.get(url, headers=headers)
+                self.status_code = r.status_code
+                self.text = r.text
+            except requests.exceptions.ConnectionError:
+                self.text = None
+        else:
+            opener = build_opener(HTTPCookieProcessor(self.cj))
             request = Request(url, headers=headers, data=data)
             try:
                 response = opener.open(request)  # type: HTTPResponse
+                self.status_code = response.getcode()
+                self.response_headers = response.getheaders()
+                self.text = response.read().decode('utf-8')
             except urllib.error.HTTPError as e:
-                return e.code
-            except (TimeoutError, OSError):
-                return None
-            website_bytes = response.read()
-            decoded_bytes = website_bytes.decode('utf-8')
-            return decoded_bytes
-        else:
-            cj = build_cookies(CookieDict if CookieDict is not None else None)
-            requestSession.cookies = cj
-            r = requestSession.get(url, headers=headers)
-            if r.status_code != 200:
-                return r.status_code
-            decoded_bytes = r.text
-        try:
-            cj.save()
-        except Exception as e1:
-            if 'Permission denied' in str(e1):
-                print("")
-                stopped("Permission denied Saving Cookies!\n"
-                        "You can allow access by running sudo if you are on Linux.")
-            else:
-                error_warning(traceback.format_exc())
-                warning("Unable to save cookies.")
-        return decoded_bytes
-    except Exception:
-        warning("Unable to download website code!")
-        error_warning(traceback.format_exc())
-        return None
+                self.status_code = e.code
+                self.response_headers = response.getheaders()
+                self.text = response.read().decode('utf-8')
+            except urllib.error.URLError:
+                self.text = None
+            except (OSError, TimeoutError):
+                self.text = None
+        self.cookies = self.cj.save()
 
+    def parse_json(self):
+        """
 
-def download_json(url, headers=None, data=None, transform_source=None, CookieDict=None):
-    json_string = download_website(url, headers=headers, data=data, CookieDict=CookieDict)
-    if type(json_string) is str:
-        return parse_json(json_string, transform_source=transform_source)
-    return json_string
+        Parses Response As JSON DICT
+
+        :return: dict
+        """
+        return parse_json(self.text)
 
 
 def download_m3u8_formats(m3u8_url, headers=None):

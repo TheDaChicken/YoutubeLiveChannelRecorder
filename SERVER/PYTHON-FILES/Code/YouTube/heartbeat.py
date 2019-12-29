@@ -2,7 +2,7 @@ import traceback
 
 from Code.log import warning, reply, stopped, error_warning
 from Code.utils.other import get_highest_thumbnail, try_get
-from Code.utils.web import download_json
+from Code.utils.web import download_website
 
 
 def is_live(channel_Class, alreadyChecked=False, CookieDict=None):
@@ -10,6 +10,10 @@ def is_live(channel_Class, alreadyChecked=False, CookieDict=None):
 
     Checks if channel is live using the normal Youtube heartbeat.
     Also sets heartbeat related variables.
+
+    :type CookieDict: dict
+    :type alreadyChecked: bool
+    :type channel_Class: ChannelYouTube
 
     """
 
@@ -54,11 +58,14 @@ def is_live(channel_Class, alreadyChecked=False, CookieDict=None):
         if channel_Class.cpn is not None:
             url_arguments.update({'cpn': channel_Class.cpn})
 
-        json = download_json(
+        websiteClass = download_website(
             'https://www.youtube.com/heartbeat?{0}'.format(urlencode(url_arguments)),
             headers=headers, CookieDict=CookieDict)
-        if type(json) is bool or json is None:
+        CookieDict.update(websiteClass.cookies)
+        if websiteClass.text is None:
             return None
+        json = websiteClass.parse_json()
+
         channel_Class.sequence_number += 1
         reply('FROM YOUTUBE -> {0}'.format(json))
 
@@ -108,6 +115,8 @@ def is_live(channel_Class, alreadyChecked=False, CookieDict=None):
                 return False
             warning("The Program couldn't find any value that matches the normal heartbeat. Returning False.")
         return False
+    except KeyboardInterrupt:
+        pass
     except Exception:
         warning("Error occurred when doing Heartbeat.")
         error_warning(traceback.format_exc())

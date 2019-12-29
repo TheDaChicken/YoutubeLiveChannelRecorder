@@ -171,6 +171,8 @@ def runQueue(youtube_api_handler, queue_holder):
             else:
                 queue_holder.updateStatus("Waiting.")
             sleep(4)
+    except KeyboardInterrupt:
+        pass
     except:
         queue_holder.updateStatus("Crash: {0}".format(traceback.format_exc()))
         crash_warning("{0}:\n{1}".format("Queue Process", traceback.format_exc()))

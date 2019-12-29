@@ -121,8 +121,10 @@ class ChannelObject(TemplateChannel):
     # SERVER VARIABLES
     recording_status = None
     SharedVariables = False
-    sharedCookies = False
     queue_holder = None
+
+    # WEBSITE Handling
+    sharedCookieDict = None
 
     # YOUTUBE'S HEARTBEAT SYSTEM
     pollDelayMs = 8000
@@ -162,10 +164,11 @@ class ChannelObject(TemplateChannel):
 
         :type channel_id: str
         :type cachedDataHandler: CacheDataHandler
+        :type SharedCookieDict: dict
         """
         self.channel_id = channel_id
         self.cachedDataHandler = cachedDataHandler
-        self.SharedCookieDict = SharedCookieDict
+        self.sharedCookieDict = SharedCookieDict
         self.cachedDataHandler = cachedDataHandler
         self.DebugMode = SettingDict.get('debug_mode')
         self.EncoderClass = Encoder()
@@ -176,23 +179,25 @@ class ChannelObject(TemplateChannel):
 
     def loadVideoData(self, video_id=None):
         if video_id is not None:
-            website_string = download_website("https://www.youtube.com/watch?v={0}".
-                                              format(video_id), CookieDict=self.SharedCookieDict)
+            websiteClass = download_website("https://www.youtube.com/watch?v={0}".
+                                              format(video_id), CookieDict=self.sharedCookieDict)
             self.video_id = video_id
         else:
-            website_string = download_website("https://www.youtube.com/channel/{0}/live".
-                                              format(self.channel_id), CookieDict=self.SharedCookieDict)
-        if website_string is None:
+            websiteClass = download_website("https://www.youtube.com/channel/{0}/live".
+                                              format(self.channel_id), CookieDict=self.sharedCookieDict)
+        self.sharedCookieDict.update(websiteClass.cookies)
+        if websiteClass.text is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
-        if website_string == 404:
+        if websiteClass.status_code == 404:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
                 self.channel_id)]
+        website_string = websiteClass.text
 
-        endpoint_type = get_endpoint_type(website_string)
+        endpoint_type = get_endpoint_type(websiteClass.text)
         if endpoint_type:
             if endpoint_type == 'browse':
-                array = re.findall('property="og:title" content="(.+?)"', website_string)
+                array = re.findall(r'property="og:title" content="(.+?)"', website_string)
                 if array:
                     channel_name = array[0]
                     warning("{0} has the live stream "
@@ -294,7 +299,7 @@ class ChannelObject(TemplateChannel):
             verbose("Checking if account sponsored {0}.".format(self.channel_name))
             if html_code is None:
                 html_code = download_website("https://www.youtube.com/channel/{0}/live".format(self.channel_id),
-                                             CookieDict=self.sharedCookies)
+                                             CookieDict=self.sharedCookieDict)
                 if html_code is None:
                     return None
             html_code = str(html_code)
@@ -366,7 +371,6 @@ class ChannelObject(TemplateChannel):
                     self.add_youtube_queue()
                     exit(0)
 
-
         if self.live_streaming is not None:
             sleep(self.pollDelayMs / 1000)
         try:
@@ -412,5 +416,5 @@ class ChannelObject(TemplateChannel):
     def is_live(self, alreadyChecked=False):
         if self.DebugMode is True:
             self.last_heartbeat = datetime.now()
-        boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookies)
+        boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookieDict)
         return boolean_live
