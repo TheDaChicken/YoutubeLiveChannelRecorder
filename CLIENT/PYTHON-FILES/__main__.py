@@ -2,8 +2,8 @@ import os
 import platform
 import re
 from time import sleep
-from ServerFunctions import check_server, get_server_info, add_channel, remove_channel, youtube_fully_login, \
-    youtube_fully_logout, listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
+from ServerFunctions import check_server, get_server_info, add_channel, remove_channel, \
+    listRecordings, playbackRecording, downloadRecording, get_server_settings, swap_settings, \
     get_youtube_api_info, youtube_login, youtube_logout, test_upload, update_data_cache, add_video_id, \
     add_twitch_channel, record_at_resolution
 from utils import stringToInt
@@ -161,10 +161,6 @@ if __name__ == '__main__':
                                                                        problem_occurred.get('message')))
 
                 print("\n 1) Refresh Channel List.\n 2) Add Channel\n 3) Remove Channel\n 4) Change Settings")
-                if 'YoutubeLogin' in youtube and youtube['YoutubeLogin'] is False:
-                    print(" 5) " + Fore.LIGHTRED_EX + "Login to Youtube (FOR SPONSOR ONLY STREAMS) [VERY BUGGY] ")
-                else:
-                    print(" 5) " + Fore.LIGHTRED_EX + "Logout of Youtube.")
                 print(" 6) {0}View Recordings.".format(Fore.LIGHTYELLOW_EX))
                 print(" 7) Add Channel (USING A LIVE STREAM TYPE VIDEO ID).")
                 if toaster is not None and 'localhost' not in serverIP:
@@ -254,63 +250,6 @@ if __name__ == '__main__':
                 elif option is "N":  # WINDOWS 10 TOAST Notification HOLD
                     info("Now Checking.")
                     Screen = "NotificationHold"
-                elif option is "5":
-                    if youtube['YoutubeLogin'] is False:
-                        print("")
-                        print("")
-                        print("")
-                        username_google = input("Username/Email: ")
-                        print("")
-                        print("")
-                        password_google = input("Password: ")
-                        print("")
-                        print("")
-                        sleep(.4)
-                        print("")
-                        print(Fore.LIGHTRED_EX + "Logging in...")
-                        sleep(.3)
-                        print("")
-                        ok, reply = youtube_fully_login(serverIP, serverPort, username_google, password_google)
-                        if not ok:
-                            if not ok:
-                                print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
-                        else:
-                            print("{0}Login Successful!".format(Fore.LIGHTGREEN_EX))
-                        print("")
-                        print("")
-                        sleep(.3)
-                        print("")
-                        input("Press enter to go back to Selection.")
-                        print("")
-                        info("Getting Server Info.")
-                        ok, reply = get_server_info(serverIP, serverPort)
-                        if not ok:
-                            print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
-                            input("Press enter to go back to Selection.")
-                        else:
-                            serverInfo = reply
-                        del reply
-                    elif channel_info['YoutubeLogin'] is True:
-                        print("")
-                        print("")
-                        print("")
-                        print("")
-                        print(Fore.LIGHTRED_EX + "Logging out...")
-                        ok, reply = youtube_fully_logout(serverIP, serverPort)
-                        if not ok:
-                            print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, reply))
-                        else:
-                            print("{0}Logout Successful!".format(Fore.LIGHTGREEN_EX))
-                        print("\n")
-                        input("Press enter to go back to Selection.")
-                        info("Getting Server Info.")
-                        ok, reply = get_server_info(serverIP, serverPort)
-                        if not ok:
-                            print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, reply))
-                            input("Press enter to go back to Selection.")
-                        else:
-                            serverInfo = reply
-                        del reply
                 elif option is "6":
                     Screen = "View-Recording"
                 elif option is "7":

@@ -71,8 +71,8 @@ class Server(Flask):
         self.add_url_rule('/addVideoID', view_func=self.add_video_id)
 
         self.add_url_rule('/getLoginURL', view_func=self.youtube_api_get_login_url)
-        self.add_url_rule('/login', view_func=self.youtube_api_login)
-        self.add_url_rule('/login/callback', view_func=self.youtube_api_login_call_back)
+        self.add_url_rule('/youtubeAPI/login', view_func=self.youtube_api_login)
+        self.add_url_rule('/youtubeAPI/login/callback', view_func=self.youtube_api_login_call_back)
         self.add_url_rule('/logoutYouTubeAPI', view_func=self.youtube_api_log_out)
 
         self.add_url_rule('/getServerSettings', view_func=self.getSetting)

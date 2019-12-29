@@ -121,20 +121,8 @@ def test_upload(ip, port, channel_id):
     return server_reply(ip, port, function_name, arguments)
 
 
-def youtube_fully_login(ip, port, username, password):
-    function_name = 'youtubeLOGIN'
-    arguments = {'username': username, 'password': password}
-    return server_reply(ip, port, function_name, arguments)
-
-
 def update_data_cache(ip, port):
     function_name = 'updateDataCache'
-    arguments = {}
-    return server_reply(ip, port, function_name, arguments)
-
-
-def youtube_fully_logout(ip, port):
-    function_name = 'youtubeLOGout'
     arguments = {}
     return server_reply(ip, port, function_name, arguments)
 
