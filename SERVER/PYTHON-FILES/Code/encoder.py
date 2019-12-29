@@ -87,7 +87,7 @@ class Encoder:
                     ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
         if StartIndex0:
             command.extend(['-live_start_index', '0'])
-        command.extend(["-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
+        command.extend(["-hide_banner", "-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
                         "-metadata", "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
                         "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])
         if MPEGDASHSettings:
