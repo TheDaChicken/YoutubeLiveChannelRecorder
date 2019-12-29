@@ -123,7 +123,8 @@ class download_website:
 
 
 def download_m3u8_formats(m3u8_url, headers=None):
-    m3u8_doc = download_website(m3u8_url, headers)
-    if type(m3u8_doc) is str:
+    downloadClass = download_website(m3u8_url, headers)
+    m3u8_doc = downloadClass.text
+    if m3u8_doc:
         return parse_m3u8_formats(m3u8_doc)
-    return m3u8_doc
+    return None

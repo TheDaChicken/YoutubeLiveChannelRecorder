@@ -95,11 +95,11 @@ def get_video_info(channelClass, recordingHeight=None):
     if channelClass.cpn is not None:
         url_arguments.update({'cpn': channelClass.cpn})
 
-    video_info_website = download_website(
+    downloadClass = download_website(
         'https://www.youtube.com/get_video_info?{0}'.format(
             urlencode(url_arguments)))
-    if type(video_info_website) is not str:
-        return video_info_website
+    video_info_website = downloadClass.text
+
     video_info = parse_qs(video_info_website)
     player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
     if player_response:

@@ -194,7 +194,7 @@ class ChannelObject(TemplateChannel):
                 self.channel_id)]
         website_string = websiteClass.text
 
-        endpoint_type = get_endpoint_type(websiteClass.text)
+        endpoint_type = get_endpoint_type(website_string)
         if endpoint_type:
             if endpoint_type == 'browse':
                 array = re.findall(r'property="og:title" content="(.+?)"', website_string)
