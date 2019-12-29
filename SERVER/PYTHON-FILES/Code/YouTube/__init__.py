@@ -314,7 +314,8 @@ class ChannelObject(TemplateChannel):
 
         if not self.StreamInfo:
             # Not have gotten already
-            start_index_0 = True
+            if self.isVideoIDinTemp(self.video_id) is False:
+                start_index_0 = True  # stream just started for the first time.
             self.recording_status = "Getting Youtube Stream Info."
             self.StreamInfo = get_video_info(
                 self, recordingHeight=self.cachedDataHandler.getValue('recordingResolution'))
@@ -334,7 +335,7 @@ class ChannelObject(TemplateChannel):
                                                 "{0} is live and is now recording. \nRecording at {1}".format(
                                                     self.channel_name, self.StreamInfo['stream_resolution']))
                 self.title = self.StreamInfo.get('title')
-                self.add_VideoInfo_to_temp_({
+                self.addTemp({
                     'video_id': self.video_id, 'title': self.StreamInfo.get('title'), 'start_date': self.start_date,
                     'file_location': self.video_location, 'channel_name': self.channel_name,
                     'channel_id': self.channel_id, 'description': self.StreamInfo.get("description")})

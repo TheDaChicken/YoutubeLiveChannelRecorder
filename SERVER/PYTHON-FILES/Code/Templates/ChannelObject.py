@@ -54,7 +54,12 @@ class TemplateChannel(SharableHandler):
                 return file_name
             amount += 1
 
-    def add_VideoInfo_to_temp_(self, video_data):
+    def isVideoIDinTemp(self, video_id):
+        video_list = map(lambda x: x.get('video_id'), self.video_list)
+        return video_id in video_list
+
+
+    def addTemp(self, video_data):
         """
 
         :type video_data: dict
