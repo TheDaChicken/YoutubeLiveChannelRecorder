@@ -39,16 +39,16 @@ class TemplateChannel(SharableHandler):
         atexit.register(self.close)
 
     @staticmethod
-    def create_filename(channel_identifier, video_id, now):
+    def create_filename(channel_name, video_id, now):
         # Used to handle lots of names by creating new names and add numbers!
         amount = 1
         while True:
             if amount is 1:
                 file_name = "{3} - '{4}' - {0}-{1}-{2}".format(now.month, now.day, now.year,
-                                                               channel_identifier, video_id)
+                                                               channel_name, video_id)
             else:
                 file_name = "{3} - '{4}' - {0}-{1}-{2}_{5}".format(now.month, now.day, now.year,
-                                                                   channel_identifier, video_id, amount)
+                                                                   channel_name, video_id, amount)
             path = os.path.join("RecordedStreams", '{0}.mp4'.format(file_name))
             if not os.path.isfile(path):
                 return file_name

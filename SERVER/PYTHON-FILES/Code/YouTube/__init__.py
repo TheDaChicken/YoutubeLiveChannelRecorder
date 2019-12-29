@@ -323,7 +323,7 @@ class ChannelObject(TemplateChannel):
         if self.StreamInfo:
             self.start_date = datetime.now()
             self.recording_status = "Starting Recording."
-            filename = self.create_filename(self.channel_id, self.video_id, self.start_date)
+            filename = self.create_filename(self.channel_name, self.video_id, self.start_date)
             recordStreams = os.path.join(os.getcwd(), "RecordedStreams")
             if not os.path.exists(recordStreams):
                 os.mkdir(recordStreams)
