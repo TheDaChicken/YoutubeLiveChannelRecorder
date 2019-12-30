@@ -1,5 +1,5 @@
 # YoutubeLiveChannelRecorder
-  Records Youtube Livestreams (and now sometimes working Twitch. Twitch isn't the priority) streams for given specific channels automatically! Technically this program doesn't record, it downloads the stream, but whatever.
+  Downloads Youtube Livestreams (and now sometimes working Twitch. Twitch isn't the priority) streams for given specific channels automatically!
 
 ### NOTE
   This is a server program. You will need to use the client in order to control this program.
