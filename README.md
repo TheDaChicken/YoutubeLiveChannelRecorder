@@ -7,12 +7,12 @@
   This program does not work anything below PYTHON VERSION 3.
 
 ### LIMITATIONS (AS OF RIGHT NOW)
-  Resolution/fps changes in stream causes YouTube to buffer, waiting for the client (or whatever) to grab a new manifest url. As FFmpeg is an external program, you cannot really easily see if a resolution/fps change has occured and youtube is buffing, and then grab a new manifest url and start recording again.
+  Quick Resolution/fps in live streams that causes to lose the current quailty causes YouTube to reply with a blank [HLS](https://developer.apple.com/streaming/) playlist, waiting for the client (or whatever) to grab a new HLS manifest url since the quailty isn't available anymore. As FFmpeg is an external program, you cannot really see if this occured to then grab a new manifest url and start recording again.
 
 ### Inspiration
   
-  This idea came from when I wanted to record livestreams from [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
-  When he ends his livestreams, his deletes the VOD. Meaning if I were to miss a livestream or want to watch and look back on it. I can't. Since sometimes I am unable to watch Skeppy's streams he was live, I made the program to record it automatically so I can watch it later! (NOTE SKEPPY LIVE STREAMS MOSTLY ON HIS SECOND CHANNEL, [SKEP](https://www.youtube.com/channel/UCviw1uSMHnTFm9RQvacw6Mw))
+  This idea came from when I wanted to record livestreams from a YouTuber called [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
+  When he ends his livestreams, he deletes the VOD of the stream. If I were to miss a livestream or want to watch and look back on it. I can't. Since sometimes I am unable to watch Skeppy's streams when he was live, I made the program to record it automatically so I can watch it later! (NOTE SKEPPY LIVE STREAMS MAINLY ON HIS SECOND CHANNEL, [SKEP](https://www.youtube.com/channel/UCviw1uSMHnTFm9RQvacw6Mw))
 
 ### CREDITS
   
