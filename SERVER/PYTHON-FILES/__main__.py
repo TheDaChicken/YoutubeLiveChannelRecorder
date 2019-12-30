@@ -1,6 +1,8 @@
 import argparse
 from time import sleep
 
+from Code.YouTube import ChannelObject as ChannelYouTube
+from Code.Twitch import ChannelObject as ChannelTwitch
 from Code import ProcessHandler
 
 if __name__ == '__main__':

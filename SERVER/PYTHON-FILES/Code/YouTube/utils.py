@@ -123,8 +123,8 @@ def get_video_info(channelClass, recordingHeight=None):
                 try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'], str)),
             'HLSStreamURL': f['url'],
             'title': try_get(video_details, lambda x: x['title'], str),
-            'description': try_get(video_details, lambda x: x['shortDescription'], str),
-            'video_id': channelClass
         }
+        channelClass.title = try_get(video_details, lambda x: x['title'], str)
+        channelClass.description = try_get(video_details, lambda x: x['shortDescription'], str)
         return youtube_stream_info
     return None

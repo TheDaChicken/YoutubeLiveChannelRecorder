@@ -18,12 +18,15 @@ except ImportError:
     try:
         from http.client import HTTPResponse
         from urllib.request import urlopen, Request
-        from urllib.error import URLError
+        from urllib.error import URLError, HTTPError
+        from urllib.parse import urlencode
         from urllib.request import HTTPCookieProcessor, build_opener
     except ImportError:
+        urlencode = None
         Request = None
         HTTPResponse = None
         URLError = None
+        HTTPError = None
         HTTPCookieProcessor = None
         build_opener = None
         stopped("Unsupported version of Python.")
@@ -78,9 +81,11 @@ class download_website:
     text = None
     response_headers = None
 
-    def __init__(self, url, headers=None, data=None, CookieDict=None):
+    def __init__(self, url, headers=None, data=None, CookieDict=None, RequestMethod='GET'):
         if not headers:
             headers = {}
+        if not data:
+            data = {}
         if 'User-Agent' not in headers:
             headers.update({'User-Agent': UserAgent})
         self.headers = headers
@@ -88,7 +93,10 @@ class download_website:
         if self.use_requests:
             requestSession.cookies = self.cj
             try:
-                r = requestSession.get(url, headers=headers)
+                if RequestMethod == 'GET':
+                    r = requestSession.get(url, headers=headers)
+                if RequestMethod == 'POST':
+                    r = requestSession.post(url, headers=headers, json=data)
                 self.status_code = r.status_code
                 self.text = r.text
                 self.response_headers = r.headers
@@ -98,15 +106,15 @@ class download_website:
             opener = build_opener(HTTPCookieProcessor(self.cj))
             request = Request(url, headers=headers, data=data)
             try:
-                response = opener.open(request)  # type: HTTPResponse
+                response = opener.open(request, data=urlencode(data).encode("utf-8") if 'POST' in RequestMethod else None)  # type: HTTPResponse
                 self.status_code = response.getcode()
                 self.response_headers = response.getheaders()
                 self.text = response.read().decode('utf-8')
-            except urllib.error.HTTPError as e:
+            except HTTPError as e:
                 self.status_code = e.code
                 self.response_headers = response.getheaders()
                 self.text = response.read().decode('utf-8')
-            except urllib.error.URLError:
+            except URLError:
                 pass
             except (OSError, TimeoutError):
                 pass

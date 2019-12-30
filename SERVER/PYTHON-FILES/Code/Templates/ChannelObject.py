@@ -55,7 +55,7 @@ class TemplateChannel(SharableHandler):
             amount += 1
 
     def isVideoIDinTemp(self, video_id):
-        video_list = map(lambda x: x.get('video_id'), self.video_list)
+        video_list = list(map(lambda x: self.video_list.get(x).get('video_id'), self.video_list.keys()))
         return video_id in video_list
 
 

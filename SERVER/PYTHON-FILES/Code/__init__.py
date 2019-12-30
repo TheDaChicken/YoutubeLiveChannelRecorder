@@ -14,6 +14,7 @@ from Code.YouTubeAPI import YouTubeAPIHandler
 
 class ProcessHandler:
     channels_dict = {}
+    platforms = ['YOUTUBE', 'TWITCH']
 
     debug_mode = False
     serverPort = 31311
@@ -57,14 +58,7 @@ class ProcessHandler:
         self.shared_cookieDictHolder = self.baseManagerCookieDictHolder.Dict(cookies_)  # type: dict
 
     def run_channel(self, channel_identifier, platform='YOUTUBE', startup=False):
-        if 'YOUTUBE' in platform:
-            channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
-                channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
-        if 'TWITCH' in platform:
-            channel_holder_class = self.baseManagerChannelInfo.ChannelTwitch(
-                channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+        channel_holder_class = self.get_channel_class(channel_identifier, platform)
         if channel_holder_class:
             ok_bool, error_message = channel_holder_class.loadVideoData()
             if ok_bool:
@@ -90,7 +84,35 @@ class ProcessHandler:
                 return [False, error_message]
         return [False, "UNKNOWN PLATFORM GIVEN TO RUN_CHANNEL."]
 
-    def run_channel_with_video_id(self, video_id):
+    def run_channel_channel_holder_class(self, channel_identifier, channel_holder_class, startup=False):
+        if channel_holder_class.get('channel_name') is None:
+            ok_bool, error_message = channel_holder_class.loadVideoData()
+            if not ok_bool:
+                return [False, error_message]
+        channel_holder_class.registerCloseEvent()
+        channel_name = channel_holder_class.get("channel_name")
+        check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                 name="{0} - Channel Process".format(channel_name))
+        check_streaming_channel_thread.start()
+        self.channels_dict.update({
+            channel_identifier: {
+                'class': channel_holder_class,
+                'thread_class': check_streaming_channel_thread}
+        })
+        return [True, "OK"]
+
+    def get_channel_class(self, channel_identifier, platform='YOUTUBE'):
+        if 'YOUTUBE' in platform.upper():
+            channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
+                channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
+                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+        if 'TWITCH' in platform.upper():
+            channel_holder_class = self.baseManagerChannelInfo.ChannelTwitch(
+                channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
+                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+        return channel_holder_class
+
+    def run_channel_video_id(self, video_id):
         """
 
         Runs a Channel Instance without a channel id. Uses a Video ID to get channel id etc

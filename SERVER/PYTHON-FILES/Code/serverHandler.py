@@ -1,14 +1,18 @@
 import traceback
 from ipaddress import ip_address
 from os.path import exists
+from threading import Thread
 from time import sleep
+from uuid import uuid4
 
 import requests
 from flask import jsonify, request, Flask, redirect, url_for, session
 from multiprocessing import Process
 
+from werkzeug.datastructures import ImmutableMultiDict
+
 from Code.YouTube import ChannelObject as ChannelYouTube
-from Code.log import info, error_warning
+from Code.log import info, error_warning, verbose
 from Code.YouTubeAPI import YouTubeAPIHandler
 
 
@@ -79,6 +83,9 @@ class Server(Flask):
 
         self.add_url_rule('/testUpload', view_func=self.YoutubeTestUpload)
 
+        self.add_url_rule('/platforms', view_func=self.getPlatform)
+        self.add_url_rule('/getChannelInfo/<platform_name>', view_func=self.get_channel_info)
+
     @staticmethod
     def hello():
         return Response("Server is alive.")
@@ -91,6 +98,7 @@ class Server(Flask):
             process_class = self.process_Handler.channels_dict.get(channel_id).get('thread_class')  # type: Process
 
             error = self.process_Handler.channels_dict.get('error')
+            temp_channel[channel_id].update({'channel_identifier': channel_id})
             if error:
                 temp_channel[channel_id].update({'error': error})
             else:
@@ -161,28 +169,52 @@ class Server(Flask):
     def add_channel(self, platform_name):
         def get_channel_identifier_name():
             # YOUTUBE
-            if 'YOUTUBE' in platform_name:
+            if 'YOUTUBE' in platform_name.upper():
                 return "CHANNEL_ID", "channel id"
-            if 'TWITCH' in platform_name:
+            if 'TWITCH' in platform_name.upper():
                 return "CHANNEL_NAME", "channel name"
 
+        if platform_name.upper() not in self.process_Handler.platforms:
+            return Response("Unknown Platform: {0}.".format(platform_name), status="client-error", status_code=404)
         argument_name, name = get_channel_identifier_name()
-        channel_identifier = request.args.get(argument_name.lower())
-
-        if channel_identifier is None:
-            return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
-        if channel_identifier is '':
-            return Response('You need to specify a valid {0}.'.format(name), status='client-error', status_code=400)
-        if channel_identifier in self.process_Handler.channels_dict:
-            return Response("Channel Already in list!", status="server-error", status_code=500)
-        ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name)
-        if not ok:
-            return Response(message, status="server-error", status_code=500)
-        elif ok:
+        args = request.args  # type: ImmutableMultiDict
+        if "SessionID" in args:
+            SessionID = args.get('SessionID')
+            if SessionID not in self.sessions:
+                return Response("Unknown Session ID. The Session ID might have expired (might be wrong timing)",
+                                status="client-error", status_code=404)
+            sessionStuff = self.sessions.get(SessionID)  # type: dict
+            channel_holder_class = sessionStuff.get('class')
+            channel_identifier = sessionStuff.get('channel_identifier')
+            if channel_identifier in self.process_Handler.channels_dict:
+                return Response("Channel Already in list!", status="server-error", status_code=500)
+            ok, message = self.process_Handler.run_channel_channel_holder_class(channel_identifier,
+                                                                                channel_holder_class)
+            if not ok:
+                return Response(message, status="server-error", status_code=500)
             self.cached_data_handler.addValueList(
-                'channels_{0}'.format(platform_name), channel_identifier)
+                'channels_{0}'.format(platform_name.upper()), channel_identifier)
             info("{0} has been added to the list of channels.".format(channel_identifier))
             return Response(None)
+        else:
+            channel_identifier = args.get(argument_name.lower())
+            if channel_identifier is None:
+                channel_identifier = args.get("channel_identifier")
+
+            if channel_identifier is None:
+                return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
+            if channel_identifier is '':
+                return Response('You need to specify a valid {0}.'.format(name), status='client-error', status_code=400)
+            if channel_identifier in self.process_Handler.channels_dict:
+                return Response("Channel Already in list!", status="server-error", status_code=500)
+            ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name)
+            if not ok:
+                return Response(message, status="server-error", status_code=500)
+            elif ok:
+                self.cached_data_handler.addValueList(
+                    'channels_{0}'.format(platform_name.upper()), channel_identifier)
+                info("{0} has been added to the list of channels.".format(channel_identifier))
+                return Response(None)
         return self.server_internal_error(None)
 
     def remove_channel(self):
@@ -194,7 +226,7 @@ class Server(Flask):
                                  self.process_Handler.channels_dict.get(channel_)['class'].get(
                                      'channel_name').casefold()]
                 if channel_array is None or len(channel_array) is 0:
-                    return None
+                    return [channel_identifier, None]
                 return channel_array[0], self.process_Handler.channels_dict.get(channel_array[0])
             return channel_identifier, channel_dict_
 
@@ -205,9 +237,14 @@ class Server(Flask):
             if 'TWITCH' in platform_name:
                 return "CHANNEL_NAME", "channel name"
 
-        channel_identifier = request.args.get('channel_id')
+        args = request.args  # type: ImmutableMultiDict
+        channel_identifier = args.get("channel_id")
         if channel_identifier is None:
-            return Response("You need Channel_ID in args.", status="client-error", status_code=400)
+            channel_identifier = args.get("channel_identifier")
+        if channel_identifier is '':
+            return Response('You need to specify a valid {0}.'.format(channel_identifier), status='client-error', status_code=400)
+        if channel_identifier is None:
+            return Response("You need {0} in args.".format("channel_identifier"), status="client-error", status_code=400)
         channel_identifier, channel_dict = searchChannel()
         if channel_dict is None:
             return Response(
@@ -227,7 +264,7 @@ class Server(Flask):
         platform_name = channel_dict['class'].get('platform_name')
         self.cached_data_handler.removeValueList(
             'channels_{0}'.format(platform_name), channel_dict['class'].get(
-                get_channel_identifier_name()[1]))
+                get_channel_identifier_name()[0].lower()))
         del self.process_Handler.channels_dict[channel_identifier]
         sleep(.01)
         info("{0} has been removed.".format(channel_identifier))
@@ -245,11 +282,76 @@ class Server(Flask):
         if channel_array is None or len(channel_array) is not 0:
             return Response("Video Already in list!", status="server-error", status_code=500)
         del channel_array
-        ok, message = self.process_Handler.run_channel_with_video_id(video_id)
+        ok, message = self.process_Handler.run_channel_video_id(video_id)
         if ok:
             return Response(None)
         else:
             return Response(message, status="server-error", status_code=500)
+
+    # USED TO ADD CHANNEL USING SESSION ID FROM GET_CHANNEL_INFO
+    sessions = {}
+    removeSessionThread = None
+
+    def remove_SessionThread(self):
+        """
+        Used for removing Session ID after a while. We don't want that many Session IDs in a list. >_>
+        """
+        verbose("Starting Remove Session Thread.")
+        sleep(110)
+        verbose("Clearing Sessions.")
+        self.sessions.clear()
+        self.removeSessionThread = None
+
+    def get_channel_info(self, platform_name):
+        """
+        :type platform_name: str
+        """
+
+        def get_channel_identifier_name():
+            # YOUTUBE
+            if 'youtube' in platform_name.lower():
+                return "CHANNEL_ID", "channel id"
+            if 'twitch' in platform_name.lower():
+                return "CHANNEL_NAME", "channel name"
+
+        if platform_name.upper() not in self.process_Handler.platforms:
+            return Response("Unknown Platform: {0}.".format(platform_name), status="client-error", status_code=404)
+        argument_name, name = get_channel_identifier_name()
+        channel_identifier = request.args.get(argument_name.lower())
+        if channel_identifier is None:
+            channel_identifier = request.args.get("channel_identifier")
+        if channel_identifier is None:
+            return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
+        if channel_identifier is '':
+            return Response('You need to specify a valid {0}.'.format(name), status='client-error', status_code=400)
+
+        if channel_identifier not in self.process_Handler.channels_dict:
+            channelClass = self.process_Handler.get_channel_class(
+                channel_identifier, platform_name)  # type: ChannelYouTube
+        else:
+            channelClass = self.process_Handler.channels_dict.get(channel_identifier).get('class')
+        ok, message = channelClass.loadVideoData()
+        if not ok:
+            return Response(message, status="server-error", status_code=500)
+        response = {
+            'channel_name': channelClass.get('channel_name'),
+            'channel_identifier': channel_identifier,
+            'live': channelClass.get('live_streaming'),
+            'alreadyList': channel_identifier in self.process_Handler.channels_dict
+        }
+        if channelClass.get('live_streaming') is True:
+            response.update({'dvr_enabled': channelClass.get('dvr_enabled')})
+        new_uuid = uuid4()
+        while str(new_uuid) in session:
+            new_uuid = uuid4()  # just in case anything happens. I know, probably useless. :P
+        response.update({'sessionID': str(new_uuid)})
+        # Session allow not repeating requests and use the same class that was created. :/
+        self.sessions.update({str(new_uuid): {'class': channelClass, 'channel_identifier': channel_identifier}})
+        if self.removeSessionThread is None:
+            self.removeSessionThread = Thread(target=self.remove_SessionThread)
+            self.removeSessionThread.daemon = True
+            self.removeSessionThread.start()
+        return Response(response)
 
     def getSetting(self):
         json = {
@@ -343,6 +445,9 @@ class Server(Flask):
             return Response(None)
         else:
             return Response(message, status="server-error", status_code=500)
+
+    def getPlatform(self):
+        return Response(self.process_Handler.platforms)
 
     # CUSTOM MESSAGES
     @staticmethod

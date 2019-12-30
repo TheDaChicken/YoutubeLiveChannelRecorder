@@ -145,6 +145,7 @@ class ChannelObject(TemplateChannel):
     start_date = None
     privateStream = False
     thumbnail_url = None
+    dvr_enabled = False
 
     thumbnail_location = None
     video_location = None
@@ -230,6 +231,9 @@ class ChannelObject(TemplateChannel):
                 if not self.privateStream:
                     # TO AVOID REPEATING REQUESTS.
                     if player_response:
+                        import json
+                        with open('data.json', 'w', encoding='utf-8') as f:
+                            json.dump(yt_player_config, f, ensure_ascii=False, indent=4)
                         # playabilityStatus is legit heartbeat all over again..
                         playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
                         status = try_get(playabilityStatus, lambda x: x['status'], str)
@@ -260,6 +264,7 @@ class ChannelObject(TemplateChannel):
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
                                     if thumbnails:
                                         self.thumbnail_url = get_highest_thumbnail(thumbnails)
+                                    self.dvr_enabled = try_get(videoDetails, lambda x: x['isLiveDvrEnabled'], bool)
                                     self.StreamInfo = {
                                         'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
                                         'HLSManifestURL': manifest_url,
@@ -267,9 +272,9 @@ class ChannelObject(TemplateChannel):
                                             try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'],
                                                     str)),
                                         'HLSStreamURL': f['url'],
-                                        'title': try_get(videoDetails, lambda x: x['title'], str),
-                                        'description': videoDetails['shortDescription'],
                                     }
+                                    self.title = try_get(videoDetails, lambda x: x['title'], str)
+                                    self.description = videoDetails['shortDescription']
                                 else:
                                     return [False, "No StreamingData, YouTube bugged out!"]
                             if 'live_stream_offline' in status:
@@ -312,7 +317,7 @@ class ChannelObject(TemplateChannel):
     def start_recording(self):
         start_index_0 = False
 
-        if not self.StreamInfo:
+        if self.StreamInfo is None:
             # Not have gotten already
             if self.isVideoIDinTemp(self.video_id) is False:
                 start_index_0 = True  # stream just started for the first time.
@@ -334,11 +339,10 @@ class ChannelObject(TemplateChannel):
                 show_windows_toast_notification("Live Recording Notifications",
                                                 "{0} is live and is now recording. \nRecording at {1}".format(
                                                     self.channel_name, self.StreamInfo['stream_resolution']))
-                self.title = self.StreamInfo.get('title')
                 self.addTemp({
                     'video_id': self.video_id, 'title': self.StreamInfo.get('title'), 'start_date': self.start_date,
                     'file_location': self.video_location, 'channel_name': self.channel_name,
-                    'channel_id': self.channel_id, 'description': self.StreamInfo.get("description")})
+                    'channel_id': self.channel_id, 'description': self.description})
                 self.StreamInfo = None
                 return True
             else:
@@ -419,3 +423,8 @@ class ChannelObject(TemplateChannel):
             self.last_heartbeat = datetime.now()
         boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookieDict)
         return boolean_live
+
+    def close(self):
+        if self.EncoderClass:
+            self.EncoderClass.stop_recording()
+        self.stop_heartbeat = True
