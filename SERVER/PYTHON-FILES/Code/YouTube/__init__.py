@@ -231,9 +231,6 @@ class ChannelObject(TemplateChannel):
                 if not self.privateStream:
                     # TO AVOID REPEATING REQUESTS.
                     if player_response:
-                        import json
-                        with open('data.json', 'w', encoding='utf-8') as f:
-                            json.dump(yt_player_config, f, ensure_ascii=False, indent=4)
                         # playabilityStatus is legit heartbeat all over again..
                         playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
                         status = try_get(playabilityStatus, lambda x: x['status'], str)
