@@ -57,9 +57,9 @@ class MainMenu(Screen):
         arguments = {}
         return server_reply(self.ip, self.port, function_name, arguments)
 
-    def add_channel(self, SessionID, platform):
+    def add_channel(self, SessionID, platform, dvr_recording):
         function_name = "addChannel/{0}".format(platform)
-        arguments = {'SessionID': SessionID}
+        arguments = {'SessionID': SessionID, 'dvr_recording': dvr_recording}
         return server_reply(self.ip, self.port, function_name, arguments)
 
     def remove_channel(self, channel_identifier):
@@ -202,8 +202,16 @@ class MainMenu(Screen):
                     else:
                         record_dvr = False
                         if channelInfo.get('dvr_enabled') is True:
-                            pass
-                        ok, message = self.add_channel(SessionID, platform)
+                            print("{0}[BETA]\n{1}"
+                                  "      This channel is streaming and has DVR enabled. \n"
+                                  "      Would you want to download the DVR? \n"
+                                  "      This will allow to download the whole stream "
+                                  "if the stream's DVR starts at the beginning of the stream.".format(Fore.LIGHTRED_EX, Fore.LIGHTWHITE_EX))
+                            booleanString = input('Boolean [Yes, No]:')
+                            if 'y' in booleanString.lower():
+                                print("\nEnabling Downloading DVR for {0} for this channel instance.".format(channelInfo.get('channel_name')))
+                                record_dvr = True
+                        ok, message = self.add_channel(SessionID, platform, record_dvr)
                         print("\n")
                         if not ok:
                             print("{0}Error Response from Server: {1}".format(Fore.LIGHTRED_EX, message))

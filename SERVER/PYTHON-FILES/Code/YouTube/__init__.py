@@ -311,8 +311,8 @@ class ChannelObject(TemplateChannel):
             return False
         # return False
 
-    def start_recording(self):
-        start_index_0 = False
+    def start_recording(self, enableDVR=False):
+        start_index_0 = enableDVR
 
         if self.StreamInfo is None:
             # Not have gotten already
@@ -364,9 +364,9 @@ class ChannelObject(TemplateChannel):
                     break
             sleep(1)
 
-    def channel_thread(self):
+    def channel_thread(self, enableDVR=False):
         if self.live_streaming is True:
-            if self.start_recording():
+            if self.start_recording(enableDVR=enableDVR):
                 if self.TestUpload is True:
                     sleep(10)
                     self.EncoderClass.stop_recording()

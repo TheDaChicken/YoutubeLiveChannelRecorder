@@ -180,6 +180,7 @@ class Server(Flask):
         args = request.args  # type: ImmutableMultiDict
         if "SessionID" in args:
             SessionID = args.get('SessionID')
+            record_dvr = args.get('dvr_recording').lower() == 'true' if 'dvr_recording' in args else False
             if SessionID not in self.sessions:
                 return Response("Unknown Session ID. The Session ID might have expired (might be wrong timing)",
                                 status="client-error", status_code=404)
@@ -189,7 +190,7 @@ class Server(Flask):
             if channel_identifier in self.process_Handler.channels_dict:
                 return Response("Channel Already in list!", status="server-error", status_code=500)
             ok, message = self.process_Handler.run_channel_channel_holder_class(channel_identifier,
-                                                                                channel_holder_class)
+                                                                                channel_holder_class, record_dvr)
             if not ok:
                 return Response(message, status="server-error", status_code=500)
             self.cached_data_handler.addValueList(

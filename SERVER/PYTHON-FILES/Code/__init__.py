@@ -84,15 +84,24 @@ class ProcessHandler:
                 return [False, error_message]
         return [False, "UNKNOWN PLATFORM GIVEN TO RUN_CHANNEL."]
 
-    def run_channel_channel_holder_class(self, channel_identifier, channel_holder_class, startup=False):
+    def run_channel_channel_holder_class(self, channel_identifier, channel_holder_class,
+                                         download_dvr=False):
+        """
+        :type channel_identifier: str
+        :type channel_holder_class: ChannelYouTube
+        :type download_dvr: bool
+        """
         if channel_holder_class.get('channel_name') is None:
             ok_bool, error_message = channel_holder_class.loadVideoData()
             if not ok_bool:
                 return [False, error_message]
+        args = ()
+        if download_dvr is True:
+            args = (download_dvr,)
         channel_holder_class.registerCloseEvent()
         channel_name = channel_holder_class.get("channel_name")
         check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
-                                                 name="{0} - Channel Process".format(channel_name))
+                                                 name="{0} - Channel Process".format(channel_name), args=args)
         check_streaming_channel_thread.start()
         self.channels_dict.update({
             channel_identifier: {
