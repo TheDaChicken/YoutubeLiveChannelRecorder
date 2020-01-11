@@ -9,7 +9,7 @@ if platform.release() is '10':
 
         toaster = ToastNotifier()
     except ImportError:
-        warning("win10toast isn't installed!"
+        warning("win10toast isn't installed! "
                 "Since you are using Windows 10, you can use that!")
         ToastNotifier = None
         toaster = None
