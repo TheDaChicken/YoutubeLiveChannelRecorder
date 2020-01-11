@@ -9,106 +9,12 @@ from Code.YouTube.utils import get_yt_player_config, get_yt_initial_data, get_en
 from Code.Templates.ChannelObject import TemplateChannel
 from Code.utils.web import download_website, download_m3u8_formats
 from Code.log import verbose, warning, info, crash_warning
-from Code.utils.other import try_get, getTimeZone, get_format_from_data, get_highest_thumbnail
+from Code.utils.other import try_get, getTimeZone, get_format_from_data, get_highest_thumbnail, get_utc_offset
 from Code.dataHandler import CacheDataHandler
 from Code.utils.parser import parse_json
 from Code.YouTube.heartbeat import is_live
 from Code.utils.windows import show_windows_toast_notification
 from Code.encoder import Encoder
-
-# GLOBAL YOUTUBE VARIABLES
-page_build_label = None
-page_cl = None
-utf_offset = None
-variants_checksum = None
-account_playback_token = None
-client_version = None
-client_name = None
-timezone = None
-ps = None
-sts = None
-cbr = None
-client_os = None
-client_os_version = None
-
-
-def set_global_youtube_variables(html_code, youtube_player_config=None, youtube_initial_data=None):
-    global page_build_label, page_cl, utf_offset, variants_checksum, account_playback_token, \
-        client_version, client_name, timezone, ps, sts, cbr, client_os, client_os_version
-
-    def getServiceSettings(serviceTrackingParamsList, service_nameLook):
-        if serviceTrackingParamsList:
-            for service in serviceTrackingParamsList:
-                service_name = try_get(service, lambda x: x['service'], str)
-                if service_name is not None and service_name in service_nameLook:
-                    return service
-        return None
-
-    def getSettingsValue(ServiceSettings, settings_nameLook, name=None):
-        for service in ServiceSettings:
-            service_name = try_get(service, lambda x: x['key'], str)
-            if service_name is not None and service_name in settings_nameLook:
-                value = try_get(service, lambda x: x['value'], str)
-                if name:
-                    if not value:
-                        warning("Something happened when finding the " + name)
-                        return None
-                return value
-        return None
-
-    def get_utc_offset():
-        # Mostly from https://stackoverflow.com/a/16061385 but as been changed.
-        from datetime import datetime
-        utc_offset = int((round((datetime.now() - datetime.utcnow()).total_seconds())) / 60)
-        return utc_offset
-
-    def get_time_zone():
-        return getTimeZone()
-
-    if not page_build_label or not account_playback_token:
-        verbose("Getting Global YouTube Variables.")
-        if not youtube_player_config:
-            youtube_player_config = get_yt_player_config(html_code)
-        if not youtube_initial_data:
-            youtube_initial_data = get_yt_initial_data(html_code)
-        e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
-            'serviceTrackingParams'], list), "ECATCHER")
-        if not youtube_player_config:
-            warning("Unable to get Youtube Player Config. Cannot find all Youtube Variables.")
-        else:
-            account_playback_token = try_get(youtube_player_config, lambda x: x['args']['account_playback_token'][:-1],
-                                             str)
-            ps = try_get(youtube_player_config, lambda x: x['args']['ps'], str)
-            sts = try_get(youtube_player_config, lambda x: x['sts'], int)
-            cbr = try_get(youtube_player_config, lambda x: x['args']['cbr'])
-            client_os = try_get(youtube_player_config, lambda x: x['args']['cos'])
-            client_os_version = try_get(youtube_player_config, lambda x: x['args']['cosver'])
-            if account_playback_token is None:
-                warning("Unable to find account playback token in the YouTube player config.")
-            if ps is None:
-                warning("Unable to find ps in the YouTube player config.")
-            if sts is None:
-                warning("Unable to find sts in the YouTube player config.")
-            if cbr is None:
-                warning("Unable to find cbr in the YouTube player config.")
-            if client_os is None:
-                warning("Unable to find Client OS in the YouTube player config.")
-            if client_os_version is None:
-                warning("Unable to find Client OS Version in the YouTube player config.")
-
-        if not youtube_initial_data:
-            warning("Unable to get Youtube Initial Data. Cannot find all Youtube Variables.")
-        elif not e_catcher:
-            warning("Unable to get ECATCHER service data in Youtube Initial Data. Cannot find all Youtube Variables.")
-        else:
-            params = try_get(e_catcher, lambda x: x['params'], list)
-            page_build_label = getSettingsValue(params, 'innertube.build.label', name="Page Build Label")
-            page_cl = getSettingsValue(params, 'innertube.build.changelist', name="Page CL")
-            variants_checksum = getSettingsValue(params, 'innertube.build.variants.checksum', name="Variants Checksum")
-            client_version = getSettingsValue(params, 'client.version', name="Client Version")
-            utf_offset = get_utc_offset()
-            client_name = getSettingsValue(params, 'client.name', name="Client Name")
-            timezone = get_time_zone()
 
 
 class ChannelObject(TemplateChannel):
@@ -120,7 +26,6 @@ class ChannelObject(TemplateChannel):
 
     # SERVER VARIABLES
     recording_status = None
-    SharedVariables = False
     queue_holder = None
 
     # WEBSITE Handling
@@ -160,17 +65,20 @@ class ChannelObject(TemplateChannel):
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
 
-    def __init__(self, channel_id, SettingDict, SharedCookieDict=None, cachedDataHandler=None, queue_holder=None):
+    def __init__(self, channel_id, SettingDict, SharedCookieDict=None, cachedDataHandler=None, queue_holder=None,
+                 globalVariables=None):
         """
 
         :type channel_id: str
         :type cachedDataHandler: CacheDataHandler
         :type SharedCookieDict: dict
+        :type globalVariables: GlobalVariables
         """
         self.channel_id = channel_id
         self.cachedDataHandler = cachedDataHandler
         self.sharedCookieDict = SharedCookieDict
         self.cachedDataHandler = cachedDataHandler
+        self.globalVariables = globalVariables
         self.DebugMode = SettingDict.get('debug_mode')
         self.EncoderClass = Encoder()
         self.EncoderClass.enable_logs = SettingDict.get('ffmpeg_logs')
@@ -181,11 +89,11 @@ class ChannelObject(TemplateChannel):
     def loadVideoData(self, video_id=None):
         if video_id is not None:
             websiteClass = download_website("https://www.youtube.com/watch?v={0}".
-                                              format(video_id), CookieDict=self.sharedCookieDict)
+                                            format(video_id), CookieDict=self.sharedCookieDict)
             self.video_id = video_id
         else:
             websiteClass = download_website("https://www.youtube.com/channel/{0}/live".
-                                              format(self.channel_id), CookieDict=self.sharedCookieDict)
+                                            format(self.channel_id), CookieDict=self.sharedCookieDict)
         self.sharedCookieDict.update(websiteClass.cookies)
         if websiteClass.text is None:
             return [False, "Failed getting Youtube Data from the internet! "
@@ -211,8 +119,8 @@ class ChannelObject(TemplateChannel):
                 if not endpoint_type == 'watch':
                     warning("Unrecognized endpoint type. Endpoint Type: {0}.".format(endpoint_type))
                 verbose("Getting Video ID.")
-                yt_player_config = try_get(get_yt_player_config(website_string), lambda x: x['args'], dict)
-                player_response = parse_json(try_get(yt_player_config, lambda x: x['player_response'], str))
+                yt_player_config = try_get(get_yt_player_config(website_string), lambda x: x, dict)
+                player_response = parse_json(try_get(yt_player_config, lambda x: x['args']['player_response'], str))
                 videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                 if yt_player_config and videoDetails:
                     if "isLiveContent" in videoDetails and \
@@ -252,7 +160,7 @@ class ChannelObject(TemplateChannel):
                                     if not manifest_url:
                                         return [False, "Unable to find HLS Manifest URL."]
                                     formats = download_m3u8_formats(manifest_url)
-                                    if formats is None or len(formats) is 0:
+                                    if formats is None or len(formats) == 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
                                     f = get_format_from_data(
                                         formats, self.cachedDataHandler.getValue('recordingResolution'))
@@ -276,15 +184,102 @@ class ChannelObject(TemplateChannel):
                                     return [False, "No StreamingData, YouTube bugged out!"]
                             if 'live_stream_offline' in status:
                                 self.live_streaming = False  # UPDATE SERVER VARIABLE
+                    # GET YOUTUBE GLOBAL VARIABLES
+                    if self.globalVariables.get("checkedYouTubeVariables") is None:
+                        def getSettingsValue(ServiceSettings, settings_nameLook, name=None):
+                            for service in ServiceSettings:
+                                service_name = try_get(service, lambda x: x['key'], str)
+                                if service_name is not None and service_name in settings_nameLook:
+                                    value = try_get(service, lambda x: x['value'], str)
+                                    if name:
+                                        if not value:
+                                            warning("Something happened when finding the " + name)
+                                            return None
+                                    return value
+                            return None
 
-        if not self.privateStream:
-            set_global_youtube_variables(html_code=website_string)
+                        def getServiceSettings(serviceTrackingParamsList, service_nameLook):
+                            if serviceTrackingParamsList:
+                                for service in serviceTrackingParamsList:
+                                    service_name = try_get(service, lambda x: x['service'], str)
+                                    if service_name is not None and service_name in service_nameLook:
+                                        return service
+                            return None
+
+                        verbose("Getting Global YouTube Variables.")
+                        youtube_initial_data = get_yt_initial_data(website_string)
+                        e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
+                            'serviceTrackingParams'], list), "ECATCHER")
+                        account_playback_token = try_get(yt_player_config, lambda x: x['args']['account_playback_token'][:-1], str)
+                        ps = try_get(yt_player_config, lambda x: x['args']['ps'], str)
+                        cbr = try_get(yt_player_config, lambda x: x['args']['cbr'])
+                        client_os = try_get(yt_player_config, lambda x: x['args']['cos'])
+                        client_os_version = try_get(yt_player_config, lambda x: x['args']['cosver'])
+                        if account_playback_token is None:
+                            warning("Unable to find account playback token in the YouTube player config.")
+                        if ps is None:
+                            warning("Unable to find ps in the YouTube player config.")
+                        if cbr is None:
+                            warning("Unable to find cbr in the YouTube player config.")
+                        if client_os is None:
+                            warning("Unable to find Client OS in the YouTube player config.")
+                        if client_os_version is None:
+                            warning("Unable to find Client OS Version in the YouTube player config.")
+                        self.globalVariables.set("checkedYouTubeVariables", None)
+                        if not youtube_initial_data:
+                            warning("Unable to get Youtube Initial Data. Cannot find all Youtube Variables.")
+                        elif e_catcher is None:
+                            warning("Unable to get ECATCHER service data in Youtube Initial Data. "
+                                    "Cannot find all Youtube Variables.")
+                        else:
+                            params = try_get(e_catcher, lambda x: x['params'], list)
+                            page_build_label = getSettingsValue(params, 'innertube.build.label',
+                                                                name="Page Build Label")
+                            page_cl = getSettingsValue(params, 'innertube.build.changelist', name="Page CL")
+                            variants_checksum = getSettingsValue(params, 'innertube.build.variants.checksum',
+                                                                 name="Variants Checksum")
+                            client_version = getSettingsValue(params, 'client.version', name="Client Version")
+                            client_name = getSettingsValue(params, 'client.name', name="Client Name")
+                            self.globalVariables.set("page_build_label", page_build_label)
+                            self.globalVariables.set("page_cl", page_cl)
+                            self.globalVariables.set("client_version", client_version)
+                            self.globalVariables.set("client_name", client_name)
+                            self.globalVariables.set("variants_checksum", variants_checksum)
+                        self.globalVariables.set("ps", ps)
+                        self.globalVariables.set("cbr", cbr)
+                        self.globalVariables.set("client_os", client_os)
+                        self.globalVariables.set("client_os_version", client_os_version)
+                        self.globalVariables.set("account_playback_token", account_playback_token)
+                        self.globalVariables.set("utf_offset", get_utc_offset())
+                        self.globalVariables.set("timezone", getTimeZone())
 
         # ONLY WORKS IF LOGGED IN
         self.sponsor_on_channel = self.get_sponsor_channel(html_code=website_string)
 
         self.cpn = self.generate_cpn()
         return [True, "OK"]
+
+    @staticmethod
+    def getServiceSettings(serviceTrackingParamsList, service_nameLook):
+        if serviceTrackingParamsList:
+            for service in serviceTrackingParamsList:
+                service_name = try_get(service, lambda x: x['service'], str)
+                if service_name is not None and service_name in service_nameLook:
+                    return service
+        return None
+
+    @staticmethod
+    def getSettingsValue(ServiceSettings, settings_nameLook, name=None):
+        for service in ServiceSettings:
+            service_name = try_get(service, lambda x: x['key'], str)
+            if service_name is not None and service_name in settings_nameLook:
+                value = try_get(service, lambda x: x['value'], str)
+                if name:
+                    if not value:
+                        warning("Something happened when finding the " + name)
+                        return None
+                return value
+        return None
 
     @staticmethod
     def generate_cpn():
@@ -380,7 +375,7 @@ class ChannelObject(TemplateChannel):
                 # LOOP
                 self.live_streaming = self.is_live()
                 # HEARTBEAT ERROR
-                if self.live_streaming is 1:
+                if self.live_streaming == 1:
                     # IF CRASHED.
                     info("Error on Heartbeat on {0}! Trying again ...".format(self.channel_name))
                     sleep(1)
@@ -418,7 +413,8 @@ class ChannelObject(TemplateChannel):
     def is_live(self, alreadyChecked=False):
         if self.DebugMode is True:
             self.last_heartbeat = datetime.now()
-        boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookieDict)
+        boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookieDict,
+                               globalVariables=self.globalVariables)
         return boolean_live
 
     def close(self):

@@ -12,7 +12,7 @@ from multiprocessing import Process
 from werkzeug.datastructures import ImmutableMultiDict
 
 from Code.YouTube import ChannelObject as ChannelYouTube
-from Code.log import info, error_warning, verbose
+from Code.log import info, error_warning, verbose, warning
 from Code.YouTubeAPI import YouTubeAPIHandler
 
 
@@ -204,7 +204,7 @@ class Server(Flask):
 
             if channel_identifier is None:
                 return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
-            if channel_identifier is '':
+            if channel_identifier == '':
                 return Response('You need to specify a valid {0}.'.format(name), status='client-error', status_code=400)
             if channel_identifier in self.process_Handler.channels_dict:
                 return Response("Channel Already in list!", status="server-error", status_code=500)
@@ -226,7 +226,7 @@ class Server(Flask):
                                  if channel_identifier.casefold() ==
                                  self.process_Handler.channels_dict.get(channel_)['class'].get(
                                      'channel_name').casefold()]
-                if channel_array is None or len(channel_array) is 0:
+                if channel_array is None or len(channel_array) == 0:
                     return [channel_identifier, None]
                 return channel_array[0], self.process_Handler.channels_dict.get(channel_array[0])
             return channel_identifier, channel_dict_
@@ -242,7 +242,7 @@ class Server(Flask):
         channel_identifier = args.get("channel_id")
         if channel_identifier is None:
             channel_identifier = args.get("channel_identifier")
-        if channel_identifier is '':
+        if channel_identifier == '':
             return Response('You need to specify a valid {0}.'.format(channel_identifier), status='client-error', status_code=400)
         if channel_identifier is None:
             return Response("You need {0} in args.".format("channel_identifier"), status="client-error", status_code=400)
@@ -275,12 +275,12 @@ class Server(Flask):
         video_id = request.args.get('video_id')
         if video_id is None:
             return Response("You need VIDEO_ID in args.", status="client-error", status_code=400)
-        if video_id is '':
+        if video_id == '':
             return Response('You need to specify a valid video id.', status='client-error', status_code=400)
         channel_array = [channel_ for channel_ in self.process_Handler.channels_dict
                          if video_id == self.process_Handler.channels_dict.get(channel_).get('video_id')]
 
-        if channel_array is None or len(channel_array) is not 0:
+        if channel_array is None or len(channel_array) != 0:
             return Response("Video Already in list!", status="server-error", status_code=500)
         del channel_array
         ok, message = self.process_Handler.run_channel_video_id(video_id)
@@ -323,7 +323,7 @@ class Server(Flask):
             channel_identifier = request.args.get("channel_identifier")
         if channel_identifier is None:
             return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
-        if channel_identifier is '':
+        if channel_identifier == '':
             return Response('You need to specify a valid {0}.'.format(name), status='client-error', status_code=400)
 
         if channel_identifier not in self.process_Handler.channels_dict:
@@ -466,6 +466,7 @@ def loadServer(process_Handler, cached_data_handler, port, youtube_api_handler, 
     try:
         from gevent.pywsgi import WSGIServer as WSGIServer
     except ImportError:
+        error_warning("Get gevent package! Unable to run.")
         WSGIServer = None
     if WSGIServer:
         ssl_args = dict()

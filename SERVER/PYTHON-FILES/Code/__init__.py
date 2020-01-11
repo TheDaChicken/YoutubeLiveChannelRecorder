@@ -12,6 +12,19 @@ from Code.utils.other import try_get
 from Code.YouTubeAPI import YouTubeAPIHandler
 
 
+class GlobalVariables:
+    holder = {}
+
+    def set(self, variable, value):
+        self.holder.update({variable: value})
+
+    def get(self, variable):
+        return self.holder.get(variable)
+
+    def getHolder(self):
+        return self.holder
+
+
 class ProcessHandler:
     channels_dict = {}
     platforms = ['YOUTUBE', 'TWITCH']
@@ -31,6 +44,7 @@ class ProcessHandler:
         BaseManager.register("Dict", dict)
         BaseManager.register("QueueHandler", QueueHandler)
         BaseManager.register("YouTubeAPIHandler", YouTubeAPIHandler)
+        BaseManager.register("GlobalVariables", GlobalVariables)
 
         # Channel Class
         self.baseManagerChannelInfo = BaseManager()
@@ -56,6 +70,11 @@ class ProcessHandler:
         cookieHandler.load()
         cookies_ = cookieHandler.get_cookie_list()  # type: dict
         self.shared_cookieDictHolder = self.baseManagerCookieDictHolder.Dict(cookies_)  # type: dict
+
+        # Global Variables
+        self.baseManagerGlobalVariables = BaseManager()
+        self.baseManagerGlobalVariables.start()
+        self.shared_globalVariables = self.baseManagerGlobalVariables.GlobalVariables()  # type: GlobalVariables
 
     def run_channel(self, channel_identifier, platform='YOUTUBE', startup=False):
         channel_holder_class = self.get_channel_class(channel_identifier, platform)
@@ -114,7 +133,7 @@ class ProcessHandler:
         if 'YOUTUBE' in platform.upper():
             channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
                 channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder, self.shared_globalVariables)
         if 'TWITCH' in platform.upper():
             channel_holder_class = self.baseManagerChannelInfo.ChannelTwitch(
                 channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
@@ -200,4 +219,3 @@ class ProcessHandler:
         if cookie is None or len(cookie) is 0:
             return False
         return True
-

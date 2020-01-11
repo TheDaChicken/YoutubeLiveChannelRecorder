@@ -3,7 +3,7 @@ from ..log import warning
 import platform
 
 # Windows ToastNotifier
-if platform.release() is '10':
+if platform.release() == '10':
     try:
         from win10toast import ToastNotifier
 

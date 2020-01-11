@@ -81,3 +81,10 @@ def getTimeZone():
             warning(e)
             return None
     return None
+
+
+def get_utc_offset():
+    # Mostly from https://stackoverflow.com/a/16061385 but as been changed.
+    from datetime import datetime
+    utc_offset = int((round((datetime.now() - datetime.utcnow()).total_seconds())) / 60)
+    return utc_offset
