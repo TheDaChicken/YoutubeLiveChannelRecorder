@@ -1,5 +1,5 @@
-from Code.log import stopped
-from Code.utils.parser import parse_json
+from ClientCode.log import stopped
+from ClientCode.utils.parser import parse_json
 
 UserAgent = 'Python Client'
 

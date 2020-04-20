@@ -23,7 +23,7 @@ from Code.Twitch import searchChannels as SearchChannelsTwitch
 from Code.log import info, error_warning, verbose
 
 
-# from ClientCode.YouTubeAPI import YouTubeAPIHandler
+# from Code.YouTubeAPI import YouTubeAPIHandler
 
 
 def Response(response, json_on=True, status="OK", status_code=200, headers=None, **kwargs):

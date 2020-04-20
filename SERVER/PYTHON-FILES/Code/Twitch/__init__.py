@@ -3,7 +3,7 @@ import json
 import os
 import re
 
-# from ClientCode import GlobalVariables
+# from Code import GlobalVariables
 import traceback
 from _sha256 import sha256
 from datetime import datetime
