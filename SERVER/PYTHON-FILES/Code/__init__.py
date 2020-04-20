@@ -130,14 +130,14 @@ class ProcessHandler:
         return [True, "OK"]
 
     def get_channel_class(self, channel_identifier, platform='YOUTUBE'):
+        SettingDict = {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs}
+        channel_holder_class = None
         if 'YOUTUBE' in platform.upper():
             channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
-                channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder, self.shared_globalVariables)
+                channel_identifier, SettingDict, self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder, self.shared_globalVariables)
         if 'TWITCH' in platform.upper():
             channel_holder_class = self.baseManagerChannelInfo.ChannelTwitch(
-                channel_identifier, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
-                self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+                channel_identifier, SettingDict, self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder, self.shared_globalVariables)
         return channel_holder_class
 
     def run_channel_video_id(self, video_id):
@@ -192,12 +192,15 @@ class ProcessHandler:
             return [False, error_message]
 
     def loadChannels(self):
-        youtube_channel_ids = self.cachedDataHandler.getValue('channels_YOUTUBE')
-        if youtube_channel_ids:
-            for channel_id in youtube_channel_ids:
-                ok, error_message = self.run_channel(channel_id, startup=True)
-                if not ok:
-                    warning(error_message)
+        channels = self.cachedDataHandler.getValue('channels')
+        if channels:
+            for platform in channels:
+                channel_list = channels.get(platform)
+                for channel_id in channel_list:
+                    ok, error_message = self.run_channel(channel_id, startup=True,
+                                                         platform=platform)
+                    if not ok:
+                        warning(error_message)
 
     def run_youtube_queue(self):
         if self.cachedDataHandler.getValue('UploadLiveStreams'):

@@ -14,6 +14,7 @@ from . import YouTubeAPIHandler
 class QueueHandler:
     _queue = []
     _status = 'RUNNING'
+    _last_problem = None
 
     def addQueue(self, video_data):
         self._queue.append(video_data)
@@ -30,11 +31,15 @@ class QueueHandler:
     def getStatus(self):
         return self._status
 
-    def getProblemOccurred(self):
-        return None, None
+    def setProblemOccurred(self, channelName, action, problemMessage):
+        self._last_problem = dict({
+            'channel_name': channelName,
+            'message': '{0}'.format(problemMessage), # FOR OLD CLIENTS
+            'action': action
+        })
 
-    def setProblemOccurred(self):
-        pass
+    def getProblemOccurred(self):
+        return self._last_problem
 
 
 def runQueue(youtube_api_handler, queue_holder):
@@ -161,13 +166,24 @@ def runQueue(youtube_api_handler, queue_holder):
                             mkdir(OldFromMergedFiles)
 
                         # MOVE TO ANOTHER FOLDER
-                        for file_location in file_location:
+                        for file_location in file_locations:
                             move(file_location, join(OldFromMergedFiles, basename(file_location)))
                         file_locations = [final_file]
+                    if not ok:
+                        queue_holder.setProblemOccurred(
+                            video_data.get('channel_name'), 'FFmpeg Concat Merging',
+                            "Not unable to Merge Recordings for {0} \'{1}\'".format(video_data.get('channel_name'), video_id))
+                        continue
                 if len(file_locations) == 1:
                     queue_holder.updateStatus('Uploading {0} \'{1}\' merged recording to YouTube.'.format(
                         video_data.get('channel_name'), video_id))
-                    uploadYouTube()
+                    ok, traceback_crash = uploadYouTube()
+                    if not ok:
+                        if 'quota' in traceback_crash:
+                            youtube_api_quota = True
+                        queue_holder.setProblemOccurred(
+                            video_data.get("channel_name"), "Unable to upload {0} \'{1}\' recording to YouTube.".format(
+                                video_data.get("channel_name"), traceback_crash), 'Uploading [YouTubeAPI]')
             else:
                 queue_holder.updateStatus("Waiting.")
             sleep(4)

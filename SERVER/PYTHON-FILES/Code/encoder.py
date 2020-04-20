@@ -8,25 +8,30 @@ from .log import verbose, info, EncoderLog, warning
 
 
 class Encoder:
-    """
-
-    FFmpeg Handler Class.
-
-    :type crashFunction: function
-    """
-
-    running = None
+    recording_metadata = ["service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
+                          "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)"]
     process = None
-    last_frame_time = None
+    running = None
     enable_logs = False
 
-    def __init__(self, crashFunction=None, Headers=None):
-        self.crashFunction = crashFunction
-        self.Headers = Headers
-
-    def start_recording(self, videoInput, videoLocation, MPEGDASHSettings=None, StartIndex0=False):
+    def start_recording(self, videoInput, videoLocation, headers=None,
+                        format=None, StartIndex0=False):
         self.running = None
-        self.requestFFmpeg(videoInput, videoLocation, MPEGDASHSettings, StartIndex0)
+        command = ["-hide_banner"]
+        if headers is None:
+            headers = {}
+        for header in headers:
+            command.extend(
+                ["-headers", '{0}: {1}'.format(header, headers[header])])
+        if StartIndex0 is True:
+            command.extend(['-live_start_index', '0'])
+        if format is not None:
+            command.extend(['-f', format])
+        command.extend(['-i', videoInput, "-c:v", "copy", "-c:a", "copy", '-f', 'mpegts'])
+        for metadata in self.recording_metadata:
+            command.extend(['-metadata', metadata])
+        command.extend([videoLocation])
+        self.requestFFmpeg(command)
         self.__hold()
         if self.running is False:
             return False
@@ -53,62 +58,24 @@ class Encoder:
                 if video:
                     file.write('file \'{0}\'\n'.format(video))
             file.close()
-        self.requestFFmpegConcat(concat_file, videoLocation)
+        self.requestFFmpeg(["-f", "concat", "-y", "-safe", "0", "-i",
+                            concat_file, "-c:v", "copy", "-c:a", "copy", videoLocation])
         self.__hold()
         if self.running is False:
             return False
         info("Merge Started.")
         return True
 
-    def requestFFmpegConcat(self, concatFile, videoLocation):
-        self.running = None
-        verbose("Opening FFmpeg.")
+    def requestFFmpeg(self, arguments):
         command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
-        if self.Headers:
-            for header in self.Headers:
-                command.extend(
-                    ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
-        command.extend(["-f", "concat", "-y", "-safe", "0", "-i", concatFile,
-                        "-c:v", "copy", "-c:a", "copy", videoLocation])
-        self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                        stdin=subprocess.PIPE, universal_newlines=True)
-        self.__startHandler()
-
-    def requestFFmpeg(self, videoInput, videoLocation,
-                      MPEGDASHSettings=None, StartIndex0=False):
-        if MPEGDASHSettings is None:
-            MPEGDASHSettings = {}
-        self.running = None
-        EncoderLog("FFmpeg Input: {0}.".format(videoInput))
-        command = ["ffmpeg", "-loglevel", "verbose"]  # Enables Full Logs
-        if self.Headers:
-            for header in self.Headers:
-                command.extend(
-                    ["-headers", '{0}: {1}'.format(header, self.Headers[header])])
-        if StartIndex0:
-            command.extend(['-live_start_index', '0'])
-        command.extend(["-hide_banner", "-y", "-i", videoInput, "-c:v", "copy", "-c:a", "copy",
-                        "-metadata", "service_provider=FFmpeg (https://ffmpeg.org) <- YoutubeLiveChannelRecorder ("
-                        "https://github.com/TheDaChicken/YoutubeLiveChannelRecorder)", "-f", "mpegts", videoLocation])
-        if MPEGDASHSettings:
-            mpeg_dash_manifest = MPEGDASHSettings.get('mpeg_dash_manifest')
-            media_seg_name = MPEGDASHSettings.get('media_seg_name')
-            init_seg_name = MPEGDASHSettings.get('init_seg_name')
-
-            command.extend(["-c:v", "copy", "-f", "dash", "-vtag", "avc1",
-                            "-adaptation_sets", "id=0,streams=v id=1,streams=a",
-                            "-dash_segment_type", "mp4", "-media_seg_name", media_seg_name,
-                            "-init_seg_name", init_seg_name, mpeg_dash_manifest])
-
+        command.extend(arguments)
         self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         stdin=subprocess.PIPE, universal_newlines=True)
         self.__startHandler()
 
     def __hold(self):
-        while True:
-            if self.running is not None:
-                return None
-            sleep(.1)
+        while self.running is not None:
+            sleep(1)
 
     def __startHandler(self):
         log = []
@@ -150,10 +117,11 @@ class Encoder:
             if self.running is True:
                 info("Recording Stopped.")
                 try:
-                    self.process.kill()
+                    self.process.terminate()
                     verbose("SENT KILL TO FFMPEG.")
                     # wait until kill.
                     self.process.wait()
                 except subprocess:
                     warning(
                         "There was a problem terminating FFmpeg. It might be because it already closed. Oh NO")
+

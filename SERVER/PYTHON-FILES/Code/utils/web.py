@@ -1,10 +1,8 @@
 import os
-import traceback
-import urllib
 from time import sleep
 
 from Code.utils.parser import parse_json, parse_m3u8_formats
-from Code.log import stopped, warning, error_warning
+from Code.log import stopped, warning
 
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
             'Chrome/75.0.3770.100 Safari/537.36'
@@ -79,7 +77,7 @@ def build_cookies(cookies=None):
 class download_website:
     use_requests = requests is not None
     text = None
-    response_headers = None
+    response_headers = {}
 
     def __init__(self, url, headers=None, data=None, CookieDict=None, RequestMethod='GET'):
         if not headers:
@@ -94,7 +92,7 @@ class download_website:
             requestSession.cookies = self.cj
             try:
                 if RequestMethod == 'GET':
-                    r = requestSession.get(url, headers=headers)
+                    r = requestSession.get(url, headers=headers, stream=True)
                 if RequestMethod == 'POST':
                     r = requestSession.post(url, headers=headers, json=data)
                 self.status_code = r.status_code
@@ -119,6 +117,10 @@ class download_website:
             except (OSError, TimeoutError):
                 pass
         self.cookies = self.cj.save()
+        if CookieDict is not None:
+            CookieDict.update(self.cookies)
+        else:
+            warning("No CookieDict")
 
     def parse_json(self):
         """
@@ -129,10 +131,11 @@ class download_website:
         """
         return parse_json(self.text)
 
+    def parse_m3u8_formats(self):
+        """
 
-def download_m3u8_formats(m3u8_url, headers=None):
-    downloadClass = download_website(m3u8_url, headers)
-    m3u8_doc = downloadClass.text
-    if m3u8_doc:
-        return parse_m3u8_formats(m3u8_doc)
-    return None
+        Parses Response As JSON DICT
+
+        :return: dict
+        """
+        return parse_m3u8_formats(self.text)

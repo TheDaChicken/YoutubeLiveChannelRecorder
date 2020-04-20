@@ -1,7 +1,7 @@
 from time import sleep
 
-from Code.screenHandler import Screen
-from Code.log import info, warning
+from ClientCode.screenHandler import Screen
+from ClientCode.log import info, warning
 from .serverHandler import isServerOnline, server_reply
 from colorama import Fore, init
 

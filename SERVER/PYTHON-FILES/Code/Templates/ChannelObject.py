@@ -1,7 +1,16 @@
 import atexit
+import codecs
 import os
+import pickle
+from abc import ABC
+from datetime import datetime, timezone
+from os.path import basename
+from time import sleep
 
 from Code.log import verbose
+from Code.utils.windows import show_windows_toast_notification
+from Code.encoder import Encoder
+from Code.dataHandler import CacheDataHandler
 
 
 class SharableHandler:
@@ -15,10 +24,11 @@ class SharableHandler:
         return setattr(self, variable_name, value)
 
 
-class TemplateChannel(SharableHandler):
+class TemplateChannel(SharableHandler, ABC):
     # VIDEO DATA
     title = None
-    StreamInfo = None  # DICT THAT HOLDS STREAM URLS
+    video_id = None
+    description = None
 
     # SERVER
     crashed_traceback = None
@@ -27,9 +37,42 @@ class TemplateChannel(SharableHandler):
     # FFMPEG!
     EncoderClass = None
 
+    # Channel
+    channel_name = None
+    channel_id = None
+    channel_image = None
+
     # UPLOADING
     video_list = None
     queue_holder = None
+
+    start_date = None
+    start_dateUTC = None
+    video_location = None
+
+    StreamFormat = None
+
+    # SERVER VARIABLES
+    recording_status = None
+
+    def __init__(self, channel_identifier, SettingDict, SharedCookieDict=None, cachedDataHandler=None,
+                 queue_holder=None, globalVariables=None):
+        """
+        :type channel_identifier: str
+        :type cachedDataHandler: CacheDataHandler
+        :type SharedCookieDict: dict
+        :type globalVariables: GlobalVariables
+        """
+        self.channel_identifier = channel_identifier
+        self.cachedDataHandler = cachedDataHandler
+        self.sharedCookieDict = SharedCookieDict
+        self.globalVariables = globalVariables
+        self.DebugMode = SettingDict.get('debug_mode')
+        self.EncoderClass = Encoder()
+        self.EncoderClass.enable_logs = SettingDict.get('ffmpeg_logs')
+        self.queue_holder = queue_holder
+        if 'testUpload' in SettingDict:
+            self.TestUpload = True
 
     def close(self):
         if self.EncoderClass:
@@ -37,6 +80,49 @@ class TemplateChannel(SharableHandler):
 
     def registerCloseEvent(self):
         atexit.register(self.close)
+
+    def start_recording(self, format_, StartIndex0=False):
+        self.start_date = datetime.now()
+        self.start_dateUTC = datetime.now(timezone.utc)
+        self.recording_status = "Starting Recording."
+        filename = self.create_filename(self.channel_name, self.video_id, self.start_date)
+        recordStreams = os.path.join(os.getcwd(), "RecordedStreams")
+        if not os.path.exists(recordStreams):
+            os.mkdir(recordStreams)
+        self.video_location = os.path.join(recordStreams, '{0}.mp4'.format(filename))
+        if self.EncoderClass.start_recording(format_['url'], self.video_location,
+                                             StartIndex0=StartIndex0, format=format_['format']):
+            self.recording_status = "Recording."
+            show_windows_toast_notification("Live Recording Notifications",
+                                            "{0} is live and is now recording. \nRecording at {1}".format(
+                                                self.channel_name, format_['stream_resolution']))
+            self.addTemp({
+                'video_id': self.video_id, 'title': format_.get('title'), 'start_date': self.start_date,
+                'file_location': self.video_location, 'channel_name': self.channel_name,
+                'channel_id': self.channel_id, 'description': self.description})
+            recordingList = self.cachedDataHandler.getValue("recordings")
+            if recordingList is None:
+                recordingList = []
+            recordingList.append({
+                'video_id': self.video_id,
+                'channel_name': self.channel_name,
+                'start_timeUTC': self.start_dateUTC.strftime("%Y-%m-%d %H:%M:%S %Z"),
+                'stream_name': basename(self.video_location),
+            })
+            self.cachedDataHandler.setValue("recordings", recordingList)
+            return True
+
+    def stop_recording(self):
+        while True:
+            if self.EncoderClass.last_frame_time:
+                last_seconds = (datetime.now() - self.EncoderClass.last_frame_time).total_seconds()
+                # IF BACK LIVE AGAIN IN THE MIDDLE OF WAITING FOR NON ACTIVITY.
+                if self.live_streaming is True:
+                    break
+                if last_seconds > 11:
+                    self.EncoderClass.stop_recording()
+                    break
+            sleep(1)
 
     @staticmethod
     def create_filename(channel_name, video_id, now):
@@ -57,7 +143,6 @@ class TemplateChannel(SharableHandler):
     def isVideoIDinTemp(self, video_id):
         video_list = list(map(lambda x: self.video_list.get(x).get('video_id'), self.video_list.keys()))
         return video_id in video_list
-
 
     def addTemp(self, video_data):
         """

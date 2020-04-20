@@ -1,22 +1,32 @@
+import os
+import subprocess
 import traceback
-from ipaddress import ip_address
-from os.path import exists
+from datetime import datetime
+from io import BytesIO
+from os import getcwd, walk
+from os.path import exists, join
 from threading import Thread
 from time import sleep
+from urllib.parse import urlencode
 from uuid import uuid4
 
 import requests
-from flask import jsonify, request, Flask, redirect, url_for, session
+from flask import jsonify, request, Flask, redirect, url_for, session, send_from_directory, make_response, send_file
 from multiprocessing import Process
 
 from werkzeug.datastructures import ImmutableMultiDict
 
+from Code.utils.other import try_get
 from Code.YouTube import ChannelObject as ChannelYouTube
-from Code.log import info, error_warning, verbose, warning
-from Code.YouTubeAPI import YouTubeAPIHandler
+from Code.YouTube import searchChannels as SearchChannelsYouTube
+from Code.Twitch import searchChannels as SearchChannelsTwitch
+from Code.log import info, error_warning, verbose
 
 
-def Response(response, json_on=True, status="OK", status_code=200, headers=None):
+# from ClientCode.YouTubeAPI import YouTubeAPIHandler
+
+
+def Response(response, json_on=True, status="OK", status_code=200, headers=None, **kwargs):
     """
     Allows a custom json formatted response.
     :type response: str, None
@@ -34,6 +44,7 @@ def Response(response, json_on=True, status="OK", status_code=200, headers=None)
         'response': response,
         'status_code': status_code
     }
+    json_dict.update(kwargs)
     return jsonify(json_dict), status_code, headers
 
 
@@ -66,78 +77,106 @@ class Server(Flask):
         self.register_error_handler(404, self.unable_to_find)
 
         self.add_url_rule('/', view_func=self.hello)
-
         self.add_url_rule('/serverInfo', view_func=self.ServerInfo)
-
         self.add_url_rule('/addChannel', view_func=self.old_add_channel)
-        self.add_url_rule('/addChannel/<platform_name>', view_func=self.add_channel)
+        self.add_url_rule('/addChannel/<platform_name>', view_func=self.add_channel, methods=['GET', 'POST'])
         self.add_url_rule('/removeChannel', view_func=self.remove_channel)
         self.add_url_rule('/addVideoID', view_func=self.add_video_id)
-
         self.add_url_rule('/getLoginURL', view_func=self.youtube_api_get_login_url)
         self.add_url_rule('/youtubeAPI/login', view_func=self.youtube_api_login)
         self.add_url_rule('/youtubeAPI/login/callback', view_func=self.youtube_api_login_call_back)
         self.add_url_rule('/logoutYouTubeAPI', view_func=self.youtube_api_log_out)
-
         self.add_url_rule('/getServerSettings', view_func=self.getSetting)
-
         self.add_url_rule('/testUpload', view_func=self.YoutubeTestUpload)
-
         self.add_url_rule('/platforms', view_func=self.getPlatform)
-        self.add_url_rule('/getChannelInfo/<platform_name>', view_func=self.get_channel_info)
+        self.add_url_rule('/getChannel/<platform_name>', view_func=self.get_channel)
+        self.add_url_rule('/listRecordings', view_func=self.list_recordings)
+        self.add_url_rule('/recordings', view_func=self.recordings)
+        self.add_url_rule('/playRecording', view_func=self.playRecording)
+        self.add_url_rule('/searchChannels/<platform_name>', view_func=self.searchChannels)
+        self.add_url_rule('/liveChannels', view_func=self.liveChannels)
+        self.add_url_rule('/generateThumbnail', view_func=self.generateThumbnail)
 
     @staticmethod
     def hello():
         return Response("Server is alive.")
 
+    @staticmethod
+    def translateTimezone(timezoneName, datetime):
+        """
+        :type datetime: datetime
+        """
+        if timezoneName is None:
+            return datetime
+        try:
+            from pytz import timezone
+            timezone = timezone(timezoneName)
+            return datetime.astimezone(timezone)
+        except ImportError:
+            print("Import Error when converting timezone. :p")
+            return datetime
+        except Exception as e:
+            error_warning(traceback.format_exc())
+            return datetime
+
     def ServerInfo(self):
-        channel = {}
-        for channel_id in self.process_Handler.channels_dict:
-            temp_channel = {channel_id: {}}
+        headers = request.headers  # type: ImmutableMultiDict
+        timezoneName = headers.get("TimeZone")
+
+        def formatChannel(channel_id):
             channel_class = self.process_Handler.channels_dict.get(channel_id).get('class')  # type: ChannelYouTube
             process_class = self.process_Handler.channels_dict.get(channel_id).get('thread_class')  # type: Process
+            channel = {
+                'name': channel_class.get("channel_name"),
+                'is_alive': process_class.is_alive() if process_class is not None else False,
+                'platform': channel_class.get('platform_name'),
+                'live': channel_class.get('live_streaming'),
+                'channel_image': channel_class.get("channel_image")
+            }
+            if not process_class.is_alive():
+                channel.update({
+                    'crashed_traceback': channel_class.get('crashed_traceback')
+                })
+            if 'YOUTUBE' in channel_class.get('platform_name'):
+                last_heartbeat = None
+                if channel_class.get("last_heartbeat") is not None:
+                    last_heartbeat = self.translateTimezone(timezoneName, channel_class.get('last_heartbeat')).strftime(
+                        "%I:%M %p")
+                channel.update({
+                    'video_id': channel_class.get('video_id'),
+                    'privateStream': channel_class.get('privateStream'),
+                    'broadcastId': channel_class.get('broadcast_id'),
+                    'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
+                    'last_heartbeat': last_heartbeat,
+                })
+                live_scheduled = {
+                    'live_scheduled': channel_class.get('live_scheduled')
+                }
+                if channel_class.get('live_scheduled') is True:
+                    time = channel_class.get('live_scheduled_timeString')
+                    datetime_ = channel_class.get("live_scheduled_time")  # type: datetime
+                    if datetime_ is not None:
+                        time = self.translateTimezone(timezoneName, datetime_).strftime("%B %d %Y, %I:%M %p")
+                    live_scheduled.update({
+                        'live_scheduled_time': time
+                    })
+                channel.update({'live_scheduled': live_scheduled})
+            elif 'TWITCH' in channel_class.get('platform_name'):
+                channel.update({
+                    'broadcast_id': channel_class.get('broadcast_id'),
+                    'viewers': channel_class.get("viewers"),
+                })
+            if channel_class.get('live_streaming') is True:
+                channel.update({
+                    'recording_status': channel_class.get('recording_status')
+                })
+            return {
+                channel_id: channel
+            }
 
-            error = self.process_Handler.channels_dict.get('error')
-            temp_channel[channel_id].update({'channel_identifier': channel_id})
-            if error:
-                temp_channel[channel_id].update({'error': error})
-            else:
-                temp_channel[channel_id].update({'is_alive': process_class.is_alive()})
-                if not process_class.is_alive():
-                    temp_channel[channel_id].update({
-                        'crashed_traceback': channel_class.get('crashed_traceback')
-                    })
-                else:
-                    temp_channel[channel_id].update({
-                        'name': channel_class.get('channel_name'),
-                        'is_alive': process_class.is_alive() if process_class is not None else False,
-                        'platform': channel_class.get('platform'),
-                    })
-                    if 'YOUTUBE' in channel_class.get('platform_name'):
-                        temp_channel[channel_id].update({
-                            'video_id': channel_class.get('video_id'),
-                            'live': channel_class.get('live_streaming'),
-                            'privateStream': channel_class.get('privateStream'),
-                            'live_scheduled': channel_class.get('live_scheduled'),
-                            'broadcastId': channel_class.get('broadcast_id'),
-                            'sponsor_on_channel': channel_class.get('sponsor_on_channel'),
-                            'last_heartbeat': channel_class.get('last_heartbeat').strftime("%I:%M %p")
-                            if channel_class.get('last_heartbeat') is not None else None,
-                        })
-                    elif 'TWITCH' in channel_class.get('platform_name'):
-                        temp_channel[channel_id].update({
-                            'broadcast_id': channel_class.get('broadcast_id'),
-                            'live': channel_class.get('live_streaming'),
-                        })
-                    if channel_class.get('live_streaming') is True:
-                        temp_channel[channel_id].update({
-                            'recording_status': channel_class.get('recording_status')
-                        })
-                    if channel_class.get('live_scheduled') is True:
-                        temp_channel[channel_id].update({
-                            'live_scheduled_time': channel_class.get('live_scheduled_time')
-                        })
-            channel.update(temp_channel)
+        channels = {}
+
+        list(map(channels.update, list(map(formatChannel, self.process_Handler.channels_dict))))
 
         # YOUTUBE UPLOAD QUEUE
         uploadQueue = {
@@ -147,11 +186,11 @@ class Server(Flask):
         }
         if self.process_Handler.YouTubeQueueThread:
             uploadQueue.update({'status': self.process_Handler.queue_holder.getStatus()})
-            problem_message, last_traceback = self.process_Handler.queue_holder.getProblemOccurred()
-            if problem_message:
-                uploadQueue.update({'problem_occurred': {'message': problem_message, 'traceback': last_traceback}})
+            problemInformation = self.process_Handler.queue_holder.getProblemOccurred()  # type: dict
+            if problemInformation:
+                uploadQueue.update({'problem_occurred': problemInformation})
         return Response({
-            'channelInfo': {'channel': channel},
+            'channelInfo': {'channel': channels},
             'youtube': {'YoutubeLogin': self.process_Handler.is_google_account_login_in()},
             'youtubeAPI': {
                 'uploadQueue': uploadQueue
@@ -167,56 +206,65 @@ class Server(Flask):
         return redirect(url_for('add_channel', platform_name="YOUTUBE", channel_id=channel_id))
 
     def add_channel(self, platform_name):
-        def get_channel_identifier_name():
-            # YOUTUBE
-            if 'YOUTUBE' in platform_name.upper():
-                return "CHANNEL_ID", "channel id"
-            if 'TWITCH' in platform_name.upper():
-                return "CHANNEL_NAME", "channel name"
-
+        """
+        :type platform_name: str
+        """
         if platform_name.upper() not in self.process_Handler.platforms:
             return Response("Unknown Platform: {0}.".format(platform_name), status="client-error", status_code=404)
-        argument_name, name = get_channel_identifier_name()
-        args = request.args  # type: ImmutableMultiDict
-        if "SessionID" in args:
-            SessionID = args.get('SessionID')
-            record_dvr = args.get('dvr_recording').lower() == 'true' if 'dvr_recording' in args else False
-            if SessionID not in self.sessions:
-                return Response("Unknown Session ID. The Session ID might have expired (might be wrong timing)",
+        if request.method == 'GET':
+            return Response("Bad Request.", status='client-error',
+                            status_code=400)
+        if request.method == 'POST':
+            content_type = request.headers.get("Content-Type")
+            if content_type:
+                if 'application/json' in content_type:
+                    json = request.get_json()  # type: dict
+                    dvr_recording = False
+                    channel_holder_class = None
+                    session_id = try_get(json, lambda x: x['SessionID'], str)
+                    channel_identifier = try_get(json, lambda x: x['channel_identifier'])
+                    if session_id:
+                        dvr_recording = try_get(json, lambda x: x['dvr_recording'], str) or False
+                        if session_id not in self.sessions:
+                            return Response(
+                                "Unknown Session ID. The Session ID might have expired.",
                                 status="client-error", status_code=404)
-            sessionStuff = self.sessions.get(SessionID)  # type: dict
-            channel_holder_class = sessionStuff.get('class')
-            channel_identifier = sessionStuff.get('channel_identifier')
-            if channel_identifier in self.process_Handler.channels_dict:
-                return Response("Channel Already in list!", status="server-error", status_code=500)
-            ok, message = self.process_Handler.run_channel_channel_holder_class(channel_identifier,
-                                                                                channel_holder_class, record_dvr)
-            if not ok:
-                return Response(message, status="server-error", status_code=500)
-            self.cached_data_handler.addValueList(
-                'channels_{0}'.format(platform_name.upper()), channel_identifier)
-            info("{0} has been added to the list of channels.".format(channel_identifier))
-            return Response(None)
-        else:
-            channel_identifier = args.get(argument_name.lower())
-            if channel_identifier is None:
-                channel_identifier = args.get("channel_identifier")
-
-            if channel_identifier is None:
-                return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
-            if channel_identifier == '':
-                return Response('You need to specify a valid {0}.'.format(name), status='client-error', status_code=400)
-            if channel_identifier in self.process_Handler.channels_dict:
-                return Response("Channel Already in list!", status="server-error", status_code=500)
-            ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name)
-            if not ok:
-                return Response(message, status="server-error", status_code=500)
-            elif ok:
-                self.cached_data_handler.addValueList(
-                    'channels_{0}'.format(platform_name.upper()), channel_identifier)
-                info("{0} has been added to the list of channels.".format(channel_identifier))
-                return Response(None)
-        return self.server_internal_error(None)
+                        sessionStuff = self.sessions.get(session_id)  # type: dict
+                        channel_holder_class = sessionStuff.get('class')
+                        channel_identifier = sessionStuff.get('channel_identifier')
+                        if channel_identifier in self.process_Handler.channels_dict:
+                            return Response("Channel Already in list!", status="server-error", status_code=500)
+                    if channel_identifier:
+                        if channel_identifier == '':
+                            return Response('You need to specify a valid {0}.'.format("channel_identifier"),
+                                            status='client-error',
+                                            status_code=400)
+                        if channel_identifier in self.process_Handler.channels_dict:
+                            return Response("Channel Already in list!", status="server-error", status_code=500)
+                        if channel_holder_class is None:
+                            ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name)
+                        else:
+                            ok, message = self.process_Handler.run_channel_channel_holder_class(channel_identifier,
+                                                                                                channel_holder_class,
+                                                                                                dvr_recording)
+                        if not ok:
+                            return Response(message, status="server-error", status_code=500)
+                        elif ok:
+                            channels = self.cached_data_handler.getValue("channels")
+                            if channels is None:
+                                channels = {}
+                            if platform_name.upper() not in channels:
+                                channels.update({platform_name.upper(): []})
+                            list_ = channels.get(platform_name.upper())  # type: list
+                            list_.append(channel_identifier)
+                            channels.update({platform_name.upper(): list_})
+                            self.cached_data_handler.setValue("channels", channels)
+                            info("{0} has been added to the list of channels.".format(channel_identifier))
+                            return Response(None)
+                    return Response("You need {0} in response.".format("channel_identifier"), status="client-error",
+                                    status_code=400)
+            return Response("Bad Request.", status='client-error',
+                            status_code=400)
 
     def remove_channel(self):
         def searchChannel():
@@ -231,21 +279,17 @@ class Server(Flask):
                 return channel_array[0], self.process_Handler.channels_dict.get(channel_array[0])
             return channel_identifier, channel_dict_
 
-        def get_channel_identifier_name():
-            # YOUTUBE
-            if 'YOUTUBE' in platform_name:
-                return "CHANNEL_ID", "channel id"
-            if 'TWITCH' in platform_name:
-                return "CHANNEL_NAME", "channel name"
-
         args = request.args  # type: ImmutableMultiDict
         channel_identifier = args.get("channel_id")
         if channel_identifier is None:
             channel_identifier = args.get("channel_identifier")
         if channel_identifier == '':
-            return Response('You need to specify a valid {0}.'.format(channel_identifier), status='client-error', status_code=400)
+            return Response('You need to specify a valid {0}.'.format(channel_identifier), status='client-error',
+                            status_code=400)
         if channel_identifier is None:
-            return Response("You need {0} in args.".format("channel_identifier"), status="client-error", status_code=400)
+            return Response("You need {0} in args.".format("channel_identifier"), status="client-error",
+                            status_code=400)
+
         channel_identifier, channel_dict = searchChannel()
         if channel_dict is None:
             return Response(
@@ -263,9 +307,15 @@ class Server(Flask):
                 error_warning(traceback.format_exc())
                 return Response("Unable to remove channel. {0}".format(str(e)), status="server-error", status_code=500)
         platform_name = channel_dict['class'].get('platform_name')
-        self.cached_data_handler.removeValueList(
-            'channels_{0}'.format(platform_name), channel_dict['class'].get(
-                get_channel_identifier_name()[0].lower()))
+        channels = self.cached_data_handler.getValue("channels")
+        if channels is None:
+            channels = {}
+        if platform_name.upper() not in channels:
+            channels.update({platform_name.upper(): []})
+        list_ = channels.get(platform_name.upper())  # type: list
+        list_.remove(channel_identifier)
+        channels.update({platform_name.upper(): list_})
+        self.cached_data_handler.setValue("channels", channels)
         del self.process_Handler.channels_dict[channel_identifier]
         sleep(.01)
         info("{0} has been removed.".format(channel_identifier))
@@ -303,7 +353,7 @@ class Server(Flask):
         self.sessions.clear()
         self.removeSessionThread = None
 
-    def get_channel_info(self, platform_name):
+    def get_channel(self, platform_name):
         """
         :type platform_name: str
         """
@@ -329,15 +379,22 @@ class Server(Flask):
         if channel_identifier not in self.process_Handler.channels_dict:
             channelClass = self.process_Handler.get_channel_class(
                 channel_identifier, platform_name)  # type: ChannelYouTube
+            ok, message = channelClass.loadVideoData()
+            if not ok:
+                return Response(message, status="server-error", status_code=500)
         else:
             channelClass = self.process_Handler.channels_dict.get(channel_identifier).get('class')
-        ok, message = channelClass.loadVideoData()
-        if not ok:
-            return Response(message, status="server-error", status_code=500)
-        response = {
+        channel = {
             'channel_name': channelClass.get('channel_name'),
             'channel_identifier': channel_identifier,
             'live': channelClass.get('live_streaming'),
+        }
+        if 'YOUTUBE' in platform_name:
+            channel.update({
+                'privateStream': channelClass.get('privateStream'),
+            })
+        response = {
+            'channel': channel,
             'alreadyList': channel_identifier in self.process_Handler.channels_dict
         }
         if channelClass.get('live_streaming') is True:
@@ -345,7 +402,7 @@ class Server(Flask):
         new_uuid = uuid4()
         while str(new_uuid) in session:
             new_uuid = uuid4()  # just in case anything happens. I know, probably useless. :P
-        response.update({'sessionID': str(new_uuid)})
+        response.update({'SessionID': str(new_uuid)})
         # Session allow not repeating requests and use the same class that was created. :/
         self.sessions.update({str(new_uuid): {'class': channelClass, 'channel_identifier': channel_identifier}})
         if self.removeSessionThread is None:
@@ -449,6 +506,122 @@ class Server(Flask):
 
     def getPlatform(self):
         return Response(self.process_Handler.platforms)
+
+    @staticmethod
+    def list_recordings():
+        """
+        For Old CLIENT :p
+        """
+        recorded_streams_dir = join(getcwd(), "RecordedStreams")
+        list_recordings = []
+        for (dir_path, dir_names, file_names) in walk(recorded_streams_dir):
+            for file_name in file_names:
+                if 'mp4' in file_name:
+                    list_recordings.append(file_name)
+        list_recordings.sort()
+        return Response(list_recordings)
+
+    def recordings(self):
+        """
+        For newer clients :p
+        """
+
+        def formatTime(recording):
+            """
+            :type recording: dict
+            """
+            stream_name = recording.get("stream_name")
+            if stream_name:
+                if not exists(join("RecordedStreams", stream_name)):
+                    self.cached_data_handler.removeValueList("recordings", recording)
+                    return None
+            start_time = recording.get("start_timeUTC")
+            if start_time:
+                time = self.translateTimezone(timezoneName, datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S %Z"))
+                recording.update({'date': time.strftime("%Y-%m-%d")})
+                recording.update({'time': time.strftime("%H:%M:%S")})
+            recording.update({'thumbnail': "{0}?{1}".format(url_for('generateThumbnail', _external=True),
+                                                            urlencode({'stream_name': stream_name}))})
+            return recording
+
+        headers = request.headers  # type: ImmutableMultiDict
+        timezoneName = headers.get("TimeZone")
+
+        recordingList = self.cached_data_handler.getValue("recordings")
+        if recordingList is None:
+            recordingList = []
+        recordingList = list(map(formatTime, recordingList))
+        recordingList = [recording for recording in recordingList if recording is not None]
+        return Response(recordingList)
+
+    # Playback recordings / downloading them.
+
+    @staticmethod
+    def generateThumbnail():
+        stream_name = request.args.get('stream_name')
+        width = request.args.get('width')
+        height = request.args.get('height')
+        stream_location = join(getcwd(), "RecordedStreams", stream_name)
+        devnull = open(os.devnull)
+        commands = ['ffmpeg', '-i', stream_location, '-ss', '00:00:00', '-vframes', '1',
+                    '-c:v', 'png']
+        if width is not None or height is not None:
+            resolution = "{0}x{1}".format(width, height)
+            commands.extend(['-s', resolution])
+        commands.extend(['-f', 'image2pipe', '-'])
+        proc = subprocess.Popen(commands,
+                                stdout=subprocess.PIPE, stderr=devnull)
+        devnull.close()
+        image = proc.stdout.read()
+        return image, 200, {'Content-Type': 'image/png', 'Content-Length': len(image)}
+
+    @staticmethod
+    def playRecording():
+        stream_name = request.args.get('stream_name')
+        if stream_name is None:
+            return Response("You need stream_name in args.", status='client-error', status_code=400)
+        stream_folder = join(getcwd(), "RecordedStreams")
+        return send_from_directory(directory=stream_folder, filename=stream_name)
+
+    def searchChannels(self, platform_name):
+        channel_name = request.args.get('channel_name')
+        if channel_name is None:
+            return Response("You need {0} in args.".format("channel_name"), status="client-error",
+                            status_code=400)
+        if channel_name == '':
+            return Response('You need to specify a valid {0}.'.format("channel_name"), status='client-error',
+                            status_code=400)
+        if 'YOUTUBE' in platform_name:
+            okay, channels = SearchChannelsYouTube(channel_name, self.process_Handler.shared_cookieDictHolder)
+            if okay is True:
+                return Response(channels)
+            return Response(channels, status_code=500, status='server-error')
+        if 'TWITCH' in platform_name:
+            okay, channels = SearchChannelsTwitch(channel_name, self.process_Handler.shared_cookieDictHolder,
+                                                  self.process_Handler.shared_globalVariables)
+            if okay is True:
+                return Response(channels)
+            return Response(channels, status_code=500, status='server-error')
+        return Response(
+            "Not such a platform, {0} on server or platform doesn't support searching.".format(platform_name),
+            status_code=404,
+            status='client-error')
+
+    def liveChannels(self):
+        def formatChannel(channel_id):
+            channel_class = self.process_Handler.channels_dict.get(channel_id).get('class')  # type: ChannelYouTube
+            process_class = self.process_Handler.channels_dict.get(channel_id).get('thread_class')  # type: Process
+            channel = {
+                'name': channel_class.get("channel_name"),
+                'is_alive': process_class.is_alive() if process_class is not None else False,
+                'platform': channel_class.get('platform_name'),
+                'live': channel_class.get('live_streaming'),
+                'channel_image': channel_class.get("channel_image")
+            }
+            return channel
+
+        channels = [x for x in list(map(formatChannel, self.process_Handler.channels_dict)) if x.get("live") is True]
+        return Response(channels)
 
     # CUSTOM MESSAGES
     @staticmethod

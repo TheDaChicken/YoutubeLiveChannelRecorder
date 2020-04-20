@@ -4,10 +4,11 @@ from datetime import datetime
 from random import randint
 from threading import Thread
 from time import sleep
+from urllib.parse import urlencode, parse_qs
 
-from Code.YouTube.utils import get_yt_player_config, get_yt_initial_data, get_endpoint_type, re, get_video_info
+from Code.YouTube.utils import get_yt_player_config, get_yt_initial_data, get_endpoint_type, re
 from Code.Templates.ChannelObject import TemplateChannel
-from Code.utils.web import download_website, download_m3u8_formats
+from Code.utils.web import download_website
 from Code.log import verbose, warning, info, crash_warning
 from Code.utils.other import try_get, getTimeZone, get_format_from_data, get_highest_thumbnail, get_utc_offset
 from Code.dataHandler import CacheDataHandler
@@ -25,7 +26,6 @@ class ChannelObject(TemplateChannel):
     channel_name = None
 
     # SERVER VARIABLES
-    recording_status = None
     queue_holder = None
 
     # WEBSITE Handling
@@ -47,26 +47,25 @@ class ChannelObject(TemplateChannel):
     video_id = None
     title = None
     description = None
-    start_date = None
     privateStream = False
     thumbnail_url = None
     dvr_enabled = False
 
     thumbnail_location = None
-    video_location = None
 
     # (USED FOR SERVER)
     TestUpload = False
 
     # Scheduled Live Stream. [HEARTBEAT]
     live_scheduled = False
-    live_scheduled_time = None
+    live_scheduled_time = None  # type: datetime
+    live_scheduled_timeString = None
 
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
 
-    def __init__(self, channel_id, SettingDict, SharedCookieDict=None, cachedDataHandler=None, queue_holder=None,
-                 globalVariables=None):
+    def __init__(self, channel_id, SettingDict, SharedCookieDict=None, cachedDataHandler=None,
+                 queue_holder=None, globalVariables=None):
         """
 
         :type channel_id: str
@@ -75,16 +74,7 @@ class ChannelObject(TemplateChannel):
         :type globalVariables: GlobalVariables
         """
         self.channel_id = channel_id
-        self.cachedDataHandler = cachedDataHandler
-        self.sharedCookieDict = SharedCookieDict
-        self.cachedDataHandler = cachedDataHandler
-        self.globalVariables = globalVariables
-        self.DebugMode = SettingDict.get('debug_mode')
-        self.EncoderClass = Encoder()
-        self.EncoderClass.enable_logs = SettingDict.get('ffmpeg_logs')
-        self.queue_holder = queue_holder
-        if 'testUpload' in SettingDict:
-            self.TestUpload = True
+        super().__init__(channel_id, SettingDict, SharedCookieDict, cachedDataHandler, queue_holder, globalVariables)
 
     def loadVideoData(self, video_id=None):
         if video_id is not None:
@@ -94,7 +84,7 @@ class ChannelObject(TemplateChannel):
         else:
             websiteClass = download_website("https://www.youtube.com/channel/{0}/live".
                                             format(self.channel_id), CookieDict=self.sharedCookieDict)
-        self.sharedCookieDict.update(websiteClass.cookies)
+        # self.sharedCookieDict.update(websiteClass.cookies)
         if websiteClass.text is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
@@ -119,6 +109,7 @@ class ChannelObject(TemplateChannel):
                 if not endpoint_type == 'watch':
                     warning("Unrecognized endpoint type. Endpoint Type: {0}.".format(endpoint_type))
                 verbose("Getting Video ID.")
+                youtube_initial_data = get_yt_initial_data(website_string)
                 yt_player_config = try_get(get_yt_player_config(website_string), lambda x: x, dict)
                 player_response = parse_json(try_get(yt_player_config, lambda x: x['args']['player_response'], str))
                 videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
@@ -135,19 +126,28 @@ class ChannelObject(TemplateChannel):
                         return [False, "Found a stream, the stream seemed to be a non-live stream."]
                 else:
                     return [False, "Unable to get yt player config, and videoDetails."]
-
+                contents = try_get(youtube_initial_data,
+                                   lambda x: x['contents']['twoColumnWatchNextResults']['results']['results'][
+                                       'contents'], list)
+                videoSecondaryInfoRenderer = try_get(
+                    [content for content in contents if content.get("videoSecondaryInfoRenderer") is not None],
+                    lambda x: x[0], dict).get("videoSecondaryInfoRenderer")
+                channelImageFormats = try_get(videoSecondaryInfoRenderer, lambda x:
+                x['owner']['videoOwnerRenderer']['thumbnail']['thumbnails'], list)
+                if channelImageFormats is not None:
+                    self.channel_image = max(channelImageFormats, key=lambda x: x.get("height")).get("url")
                 if not self.privateStream:
                     # TO AVOID REPEATING REQUESTS.
                     if player_response:
                         # playabilityStatus is legit heartbeat all over again..
                         playabilityStatus = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-                        status = try_get(playabilityStatus, lambda x: x['status'], str)
-                        reason = try_get(playabilityStatus, lambda x: x['reason'], str)
+                        status = try_get(playabilityStatus, lambda x: x['status'], str)  # type: str
+                        reason = try_get(playabilityStatus, lambda x: x['reason'], str)  # type: str
                         if playabilityStatus and status:
-                            if 'OK' in status:
+                            if 'OK' in status.upper():
                                 if reason and 'ended' in reason:
                                     return [False, reason]
-                                self.live_streaming = True  # UPDATE SERVER VARIABLE
+
                                 streamingData = try_get(player_response, lambda x: x['streamingData'], dict)
                                 if streamingData:
                                     if 'licenseInfos' in streamingData:
@@ -159,10 +159,11 @@ class ChannelObject(TemplateChannel):
                                         try_get(streamingData, lambda x: x['hlsManifestUrl'], str))
                                     if not manifest_url:
                                         return [False, "Unable to find HLS Manifest URL."]
-                                    formats = download_m3u8_formats(manifest_url)
+                                    downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict)
+                                    formats = downloadOBJECT.parse_m3u8_formats()
                                     if formats is None or len(formats) == 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
-                                    f = get_format_from_data(
+                                    format_ = get_format_from_data(
                                         formats, self.cachedDataHandler.getValue('recordingResolution'))
                                     if not videoDetails:
                                         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
@@ -170,20 +171,12 @@ class ChannelObject(TemplateChannel):
                                     if thumbnails:
                                         self.thumbnail_url = get_highest_thumbnail(thumbnails)
                                     self.dvr_enabled = try_get(videoDetails, lambda x: x['isLiveDvrEnabled'], bool)
-                                    self.StreamInfo = {
-                                        'stream_resolution': '{0}x{1}'.format(str(f['width']), str(f['height'])),
-                                        'HLSManifestURL': manifest_url,
-                                        'DashManifestURL': str(
-                                            try_get(player_response, lambda x: x['streamingData']['dashManifestUrl'],
-                                                    str)),
-                                        'HLSStreamURL': f['url'],
-                                    }
+                                    self.StreamFormat = format_
                                     self.title = try_get(videoDetails, lambda x: x['title'], str)
                                     self.description = videoDetails['shortDescription']
                                 else:
                                     return [False, "No StreamingData, YouTube bugged out!"]
-                            if 'live_stream_offline' in status:
-                                self.live_streaming = False  # UPDATE SERVER VARIABLE
+                            self.live_streaming = self.is_live(json=playabilityStatus)
                     # GET YOUTUBE GLOBAL VARIABLES
                     if self.globalVariables.get("checkedYouTubeVariables") is None:
                         def getSettingsValue(ServiceSettings, settings_nameLook, name=None):
@@ -206,52 +199,54 @@ class ChannelObject(TemplateChannel):
                                         return service
                             return None
 
-                        verbose("Getting Global YouTube Variables.")
-                        youtube_initial_data = get_yt_initial_data(website_string)
-                        e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
-                            'serviceTrackingParams'], list), "ECATCHER")
-                        account_playback_token = try_get(yt_player_config, lambda x: x['args']['account_playback_token'][:-1], str)
-                        ps = try_get(yt_player_config, lambda x: x['args']['ps'], str)
-                        cbr = try_get(yt_player_config, lambda x: x['args']['cbr'])
-                        client_os = try_get(yt_player_config, lambda x: x['args']['cos'])
-                        client_os_version = try_get(yt_player_config, lambda x: x['args']['cosver'])
-                        if account_playback_token is None:
-                            warning("Unable to find account playback token in the YouTube player config.")
-                        if ps is None:
-                            warning("Unable to find ps in the YouTube player config.")
-                        if cbr is None:
-                            warning("Unable to find cbr in the YouTube player config.")
-                        if client_os is None:
-                            warning("Unable to find Client OS in the YouTube player config.")
-                        if client_os_version is None:
-                            warning("Unable to find Client OS Version in the YouTube player config.")
-                        self.globalVariables.set("checkedYouTubeVariables", None)
-                        if not youtube_initial_data:
-                            warning("Unable to get Youtube Initial Data. Cannot find all Youtube Variables.")
-                        elif e_catcher is None:
-                            warning("Unable to get ECATCHER service data in Youtube Initial Data. "
-                                    "Cannot find all Youtube Variables.")
-                        else:
-                            params = try_get(e_catcher, lambda x: x['params'], list)
-                            page_build_label = getSettingsValue(params, 'innertube.build.label',
-                                                                name="Page Build Label")
-                            page_cl = getSettingsValue(params, 'innertube.build.changelist', name="Page CL")
-                            variants_checksum = getSettingsValue(params, 'innertube.build.variants.checksum',
-                                                                 name="Variants Checksum")
-                            client_version = getSettingsValue(params, 'client.version', name="Client Version")
-                            client_name = getSettingsValue(params, 'client.name', name="Client Name")
-                            self.globalVariables.set("page_build_label", page_build_label)
-                            self.globalVariables.set("page_cl", page_cl)
-                            self.globalVariables.set("client_version", client_version)
-                            self.globalVariables.set("client_name", client_name)
-                            self.globalVariables.set("variants_checksum", variants_checksum)
-                        self.globalVariables.set("ps", ps)
-                        self.globalVariables.set("cbr", cbr)
-                        self.globalVariables.set("client_os", client_os)
-                        self.globalVariables.set("client_os_version", client_os_version)
-                        self.globalVariables.set("account_playback_token", account_playback_token)
-                        self.globalVariables.set("utf_offset", get_utc_offset())
-                        self.globalVariables.set("timezone", getTimeZone())
+                        if self.globalVariables.get("alreadyChecked") is False or self.globalVariables.get("alreadyChecked") is None:
+                            verbose("Getting Global YouTube Variables.")
+                            e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
+                                'serviceTrackingParams'], list), "ECATCHER")
+                            account_playback_token = try_get(yt_player_config,
+                                                             lambda x: x['args']['account_playback_token'][:-1], str)
+                            ps = try_get(yt_player_config, lambda x: x['args']['ps'], str)
+                            cbr = try_get(yt_player_config, lambda x: x['args']['cbr'])
+                            client_os = try_get(yt_player_config, lambda x: x['args']['cos'])
+                            client_os_version = try_get(yt_player_config, lambda x: x['args']['cosver'])
+                            if account_playback_token is None:
+                                warning("Unable to find account playback token in the YouTube player config.")
+                            if ps is None:
+                                warning("Unable to find ps in the YouTube player config.")
+                            if cbr is None:
+                                warning("Unable to find cbr in the YouTube player config.")
+                            if client_os is None:
+                                warning("Unable to find Client OS in the YouTube player config.")
+                            if client_os_version is None:
+                                warning("Unable to find Client OS Version in the YouTube player config.")
+                            self.globalVariables.set("checkedYouTubeVariables", None)
+                            if not youtube_initial_data:
+                                warning("Unable to get Youtube Initial Data. Cannot find all Youtube Variables.")
+                            elif e_catcher is None:
+                                warning("Unable to get ECATCHER service data in Youtube Initial Data. "
+                                        "Cannot find all Youtube Variables.")
+                            else:
+                                params = try_get(e_catcher, lambda x: x['params'], list)
+                                page_build_label = getSettingsValue(params, 'innertube.build.label',
+                                                                    name="Page Build Label")
+                                page_cl = getSettingsValue(params, 'innertube.build.changelist', name="Page CL")
+                                variants_checksum = getSettingsValue(params, 'innertube.build.variants.checksum',
+                                                                     name="Variants Checksum")
+                                client_version = getSettingsValue(params, 'client.version', name="Client Version")
+                                client_name = getSettingsValue(params, 'client.name', name="Client Name")
+                                self.globalVariables.set("page_build_label", page_build_label)
+                                self.globalVariables.set("page_cl", page_cl)
+                                self.globalVariables.set("client_version", client_version)
+                                self.globalVariables.set("client_name", client_name)
+                                self.globalVariables.set("variants_checksum", variants_checksum)
+                            self.globalVariables.set("ps", ps)
+                            self.globalVariables.set("cbr", cbr)
+                            self.globalVariables.set("client_os", client_os)
+                            self.globalVariables.set("client_os_version", client_os_version)
+                            self.globalVariables.set("account_playback_token", account_playback_token)
+                            self.globalVariables.set("utf_offset", get_utc_offset())
+                            self.globalVariables.set("timezone", getTimeZone())
+                            self.globalVariables.set("alreadyChecked", True)
 
         # ONLY WORKS IF LOGGED IN
         self.sponsor_on_channel = self.get_sponsor_channel(html_code=website_string)
@@ -306,62 +301,63 @@ class ChannelObject(TemplateChannel):
             return False
         # return False
 
-    def start_recording(self, enableDVR=False):
-        start_index_0 = enableDVR
+    def get_video_info(self):
+        """
+        Gets the stream info from channelClass.
+        Looked at for reference:
+        https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/youtube.py#L1675
+        """
+        url_arguments = {'html5': 1, 'video_id': self.video_id}
+        if self.globalVariables.get("ps") is not None:
+            url_arguments.update({'ps': self.globalVariables.get("ps")})
+        url_arguments.update({'eurl': ''})
+        url_arguments.update({'hl': 'en_US'})
+        if self.globalVariables.get("client_name") is not None:
+            url_arguments.update({'c': self.globalVariables.get("client_name")})
+        if self.globalVariables.get("cbr") is not None:
+            url_arguments.update({'cbr': self.globalVariables.get("cbr")})
+        if self.globalVariables.get("client_version") is not None:
+            url_arguments.update({'cver': self.globalVariables.get("client_version")})
+        if self.globalVariables.get("client_os") is not None:
+            url_arguments.update({'cos': self.globalVariables.get("client_os")})
+        if self.globalVariables.get("client_os_version") is not None:
+            url_arguments.update({'cosver': self.globalVariables.get("client_os_version")})
+        if self.cpn is not None:
+            url_arguments.update({'cpn': self.cpn})
 
-        if self.StreamInfo is None:
-            # Not have gotten already
-            if self.isVideoIDinTemp(self.video_id) is False:
-                start_index_0 = True  # stream just started for the first time.
-            self.recording_status = "Getting Youtube Stream Info."
-            self.StreamInfo = get_video_info(
-                self, recordingHeight=self.cachedDataHandler.getValue('recordingResolution'))
+        downloadClass = download_website(
+            'https://www.youtube.com/get_video_info?{0}'.format(
+                urlencode(url_arguments)), CookieDict=self.sharedCookieDict)
+        video_info_website = downloadClass.text
 
-        if self.StreamInfo:
-            self.start_date = datetime.now()
-            self.recording_status = "Starting Recording."
-            filename = self.create_filename(self.channel_name, self.video_id, self.start_date)
-            recordStreams = os.path.join(os.getcwd(), "RecordedStreams")
-            if not os.path.exists(recordStreams):
-                os.mkdir(recordStreams)
-            self.video_location = os.path.join(recordStreams, '{0}.mp4'.format(filename))
-            if self.EncoderClass.start_recording(self.StreamInfo['HLSStreamURL'], self.video_location,
-                                                 StartIndex0=start_index_0):
-                self.recording_status = "Recording."
-                show_windows_toast_notification("Live Recording Notifications",
-                                                "{0} is live and is now recording. \nRecording at {1}".format(
-                                                    self.channel_name, self.StreamInfo['stream_resolution']))
-                self.addTemp({
-                    'video_id': self.video_id, 'title': self.StreamInfo.get('title'), 'start_date': self.start_date,
-                    'file_location': self.video_location, 'channel_name': self.channel_name,
-                    'channel_id': self.channel_id, 'description': self.description})
-                self.StreamInfo = None
-                return True
-            else:
-                self.recording_status = "Unable to get Youtube Stream Info."
-                self.live_streaming = -2
-                warning("Unable to get Youtube Stream Info from this stream: ")
-                warning("VIDEO ID: {0}".format(str(self.video_id)))
-                warning("CHANNEL ID: {0}".format(str(self.channel_id)))
-                return False
-        return False
-
-    def stop_recording(self):
-        while True:
-            if self.EncoderClass.last_frame_time:
-                last_seconds = (datetime.now() - self.EncoderClass.last_frame_time).total_seconds()
-                # IF BACK LIVE AGAIN IN THE MIDDLE OF WAITING FOR NON ACTIVITY.
-                if self.live_streaming is True:
-                    break
-                if last_seconds > 11:
-                    self.EncoderClass.stop_recording()
-                    self.StreamInfo = None
-                    break
-            sleep(1)
+        video_info = parse_qs(video_info_website)
+        player_response = parse_json(try_get(video_info, lambda x: x['player_response'][0], str))
+        if player_response:
+            video_details = try_get(player_response, lambda x: x['videoDetails'], dict)
+            if "streamingData" not in player_response:
+                warning("No StreamingData, Youtube bugged out!")
+                return None
+            manifest_url = str(try_get(player_response, lambda x: x['streamingData']['hlsManifestUrl'], str))
+            if not manifest_url:
+                warning("Unable to find HLS Manifest URL.")
+                return None
+            downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict)
+            if downloadOBJECT.status_code != 200:
+                return None
+            formats = downloadOBJECT.parse_m3u8_formats()
+            if formats is None or len(formats) is 0:
+                warning("There were no formats found! Even when the streamer is live.")
+                return None
+            return {
+                'formats': formats,
+                'manifest_url': manifest_url,
+                'video_details': video_details,
+            }
+        return None
 
     def channel_thread(self, enableDVR=False):
-        if self.live_streaming is True:
-            if self.start_recording(enableDVR=enableDVR):
+        if self.StreamFormat is not None:
+            if self.start_recording(self.StreamFormat, StartIndex0=enableDVR):
                 if self.TestUpload is True:
                     sleep(10)
                     self.EncoderClass.stop_recording()
@@ -375,7 +371,7 @@ class ChannelObject(TemplateChannel):
                 # LOOP
                 self.live_streaming = self.is_live()
                 # HEARTBEAT ERROR
-                if self.live_streaming == 1:
+                if self.live_streaming is 1:
                     # IF CRASHED.
                     info("Error on Heartbeat on {0}! Trying again ...".format(self.channel_name))
                     sleep(1)
@@ -401,7 +397,16 @@ class ChannelObject(TemplateChannel):
                 elif self.live_streaming is True:
                     # IF FFMPEG IS NOT ALIVE THEN TURN ON RECORDING.
                     if self.EncoderClass.running is not True:
-                        x = Thread(target=self.start_recording)
+                        video_details = self.get_video_info()
+                        formats = video_details.get("formats")
+                        videoDetails = video_details.get("video_details")
+                        format_ = get_format_from_data(
+                            formats, self.cachedDataHandler.getValue('recordingResolution'))
+                        self.StreamFormat = format_
+                        self.title = try_get(videoDetails, lambda x: x['title'], str)
+                        self.description = try_get(videoDetails, lambda x: x['shortDescription'], str)
+                        self.dvr_enabled = try_get(videoDetails, lambda x: x['isLiveDvrEnabled'], bool)
+                        x = Thread(target=self.start_recording, args=(format_,))
                         x.daemon = True
                         x.start()
                     sleep(self.pollDelayMs / 1000)
@@ -410,14 +415,77 @@ class ChannelObject(TemplateChannel):
             self.crashed_traceback = traceback.format_exc()
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
 
-    def is_live(self, alreadyChecked=False):
+    def is_live(self, json=None):
         if self.DebugMode is True:
             self.last_heartbeat = datetime.now()
-        boolean_live = is_live(self, alreadyChecked=alreadyChecked, CookieDict=self.sharedCookieDict,
+        boolean_live = is_live(self, json=json, CookieDict=self.sharedCookieDict,
                                globalVariables=self.globalVariables)
         return boolean_live
 
     def close(self):
-        if self.EncoderClass:
-            self.EncoderClass.stop_recording()
+        super().close()
         self.stop_heartbeat = True
+
+
+def searchChannels(search, CookieDict):
+    def formatChannel(channelContent):
+        channelRenderer = channelContent.get("channelRenderer")
+        channel_image = None
+        channelImageFormats = try_get(channelRenderer, lambda x: x['thumbnail']['thumbnails'], list)
+        if channelImageFormats is not None:
+            channel_image = "https:{0}".format(max(channelImageFormats, key=lambda x: x.get("height")).get("url"))
+        channel = {
+            'channel_identifier': try_get(channelRenderer, lambda x: x['channelId'], str),
+            'channel_name': try_get(channelRenderer, lambda x: x['title']['simpleText'], str),
+            'follower_count': try_get(channelRenderer, lambda x: x['subscriberCountText']['simpleText'], str),
+            'channel_image': channel_image,
+            'platform': 'YOUTUBE'
+        }
+        return channel
+
+    def formatDidYouMean(didYouMeanContent):
+        didYouMeanRenderer = didYouMeanContent.get("didYouMeanRenderer")
+        didYouMean = {
+            'didYouMean': try_get(didYouMeanRenderer, lambda x: x['didYouMean']['runs'][0]['text'], str),
+            'correctedQuery': try_get(didYouMeanRenderer, lambda x: x['correctedQuery']['runs'][0]['text'], str)
+        }
+        return didYouMean
+
+    # For some stupid reason, YouTube will only provide Searches on BR Content Encoding
+    downloadOBJECT = download_website(
+        "https://www.youtube.com/results?{0}".format(urlencode({'search_query': search, 'sp': 'EgIQAg%3D%3D'})),
+        headers={
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept': '*/*',
+        }, CookieDict=CookieDict)
+    if downloadOBJECT.response_headers.get('Content-Encoding') == 'br':
+        # Check for support for that.
+        try:
+            import brotli
+        except ImportError:
+            return [False, 'No Support for BR Content Encoding on Server. Required Packages: requests, brotlipy.']
+    websiteString = downloadOBJECT.text
+    youtube_initial_data = get_yt_initial_data(websiteString)
+    if youtube_initial_data is None:
+        return [False, 'Unable to find YouTube initial data.']
+    contents = try_get(youtube_initial_data,
+                       lambda x: x['contents']['twoColumnSearchResultsRenderer']['primaryContents'][
+                           'sectionListRenderer']['contents'], list)
+    if contents is None:
+        return [False, 'Unable to find contents.']
+    itemSectionRenderer = try_get(
+        [content for content in contents if content.get("itemSectionRenderer") is not None] or [],
+        lambda x: x[0], dict).get("itemSectionRenderer")
+    if itemSectionRenderer is None:
+        return [False, 'Unable to find itemSectionRenderer.']
+    contents = itemSectionRenderer.get("contents")
+    if itemSectionRenderer is None:
+        return [False, "Unable to find itemSectionRenderer contents."]
+    channels = list(map(formatChannel, [x for x in contents if 'channelRenderer' in x]))
+    response = {
+        'channels': channels
+    }
+    didYouMean = list(map(formatDidYouMean, [x for x in contents if 'didYouMeanRenderer' in x]))
+    if len(didYouMean) > 0:
+        response.update({'didYouMean': didYouMean})
+    return [True, response]

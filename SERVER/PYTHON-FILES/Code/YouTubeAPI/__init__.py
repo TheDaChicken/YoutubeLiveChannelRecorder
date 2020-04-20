@@ -14,10 +14,8 @@ class YouTubeAPIHandler:
         pass
 
     youtube_username = None
-
     CLIENT_SECRETS_FILE = os.path.join(os.getcwd(), "client_id.json")
-
-    YOUTUBE_READ_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube"
+    YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube"]
     YOUTUBE_API_SERVICE_NAME = "youtube"
     YOUTUBE_API_VERSION = "v3"
 
@@ -27,7 +25,8 @@ class YouTubeAPIHandler:
     def __init__(self, cached_data_handler):
         # Safe way of checking packages with a list of missing packages. :P
         self.packages = self.__getPackages__(
-            {"httplib2": [], "apiclient": ['discovery', 'errors'], "google": ['oauth2'], "google_auth_oauthlib": ['flow'],
+            {"httplib2": [], "apiclient": ['discovery', 'errors'], "google": ['oauth2'],
+             "google_auth_oauthlib": ['flow'],
              'oauthlib': ['oauth2'], 'googleapiclient': ['http', 'errors']})
         self.cached_data_handler = cached_data_handler
 
@@ -86,9 +85,10 @@ class YouTubeAPIHandler:
                     'client_id': credentials.client_id,
                     'client_secret': credentials.client_secret,
                     'scopes': credentials.scopes}
+
         try:
             flow = self.getPackage('google_auth_oauthlib').flow.Flow.from_client_secrets_file(
-                self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_READ_WRITE_SCOPE, state=state)
+                self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_SCOPES, state=state)
             flow.redirect_uri = url
             flow.fetch_token(authorization_response=authorization_response)
             credentials = flow.credentials
@@ -96,10 +96,9 @@ class YouTubeAPIHandler:
         except self.getPackage('oauthlib').oauth2.rfc6749.errors.InvalidGrantError:
             return None
 
-
     def generate_login_link(self, redirect_url):
         flow = self.getPackage('google_auth_oauthlib').flow.Flow.from_client_secrets_file(
-            self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_READ_WRITE_SCOPE)
+            self.CLIENT_SECRETS_FILE, scopes=self.YOUTUBE_SCOPES)
         flow.redirect_uri = redirect_url
         if 'youtube_api_credentials' not in self.cached_data_handler.getDict():
             arguments = dict(

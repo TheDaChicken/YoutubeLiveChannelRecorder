@@ -59,6 +59,7 @@ def parse_m3u8_formats(m3u8_doc):
             manifest_url = line.strip()
             f = {
                 'url': manifest_url,
+                'format': 'hls'
             }
             resolution = last_stream_inf.get('RESOLUTION')
             if resolution:
@@ -66,6 +67,7 @@ def parse_m3u8_formats(m3u8_doc):
                 if search:
                     f['width'] = int(search.group('width'))
                     f['height'] = int(search.group('height'))
+                    f['stream_resolution'] = "{0}x{1}".format(f['width'], f['height'])
             formats.append(f)
             last_stream_inf = {}
     return formats

@@ -1,5 +1,5 @@
-from Code.log import stopped, Fore
-from Code.utils.web import download_website
+from ClientCode.log import stopped, Fore
+from ClientCode.utils.web import download_website
 
 try:
     from urllib.parse import urlencode
