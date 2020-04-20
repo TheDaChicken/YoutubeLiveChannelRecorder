@@ -68,7 +68,7 @@ class MainMenu(Screen):
         return server_reply(self.ip, self.port, function_name, arguments)
 
     def get_channel_info(self, channel_identifier, platform_name):
-        function_name = "getChannelInfo/{0}".format(platform_name)
+        function_name = "getChannel/{0}".format(platform_name)
         arguments = {'channel_identifier': channel_identifier}
         return server_reply(self.ip, self.port, function_name, arguments)
 
@@ -193,7 +193,7 @@ class MainMenu(Screen):
                     print("\n{0}Error Response from Server: {1}\n".format(Fore.LIGHTRED_EX, channelInfo))
                     input("Press enter to go back to Selection.")
                 else:
-                    SessionID = channelInfo.get('sessionID')
+                    SessionID = channelInfo.get('SessionID')
                     if channelInfo.get('alreadyList') is True:
                         print("")
                         print("\n{0}Error Response from Server: {1}\n".format(
