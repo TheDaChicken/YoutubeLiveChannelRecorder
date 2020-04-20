@@ -89,6 +89,7 @@ class MainMenu(Screen):
                                                Fore.WHITE,
                                                channel_name
                                                if channel_name is not None else channel_id)]
+        
         if channel_name is None:
             if 'error' in channelInfo:
                 message.append("{0} [FAILED GETTING YOUTUBE DATA]".format(Fore.LIGHTRED_EX))
@@ -135,6 +136,7 @@ class MainMenu(Screen):
             elif not is_alive:
                 message.append("{0} [CRASHED]".format(Fore.LIGHTYELLOW_EX))
             return message
+        return message
 
     def onScreen(self):
         channelList = self.serverInfo.get('channelInfo')
