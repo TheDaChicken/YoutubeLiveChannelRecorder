@@ -37,7 +37,10 @@ class download_website:
         self.headers = headers
         if self.use_requests:
             try:
-                r = requestSession.get(url, headers=headers)
+                if RequestMethod == 'GET':
+                    r = requestSession.get(url, headers=headers, stream=True)
+                if RequestMethod == 'POST':
+                    r = requestSession.post(url, headers=headers, json=data)
                 self.status_code = r.status_code
                 self.text = r.text
                 self.response_headers = r.headers
