@@ -53,11 +53,11 @@ def build_cookies(cookies=None):
                 if os.path.exists(self.filename):
                     super().load(**kwargs)
 
-        def save(self, **kwargs):
+        def save(self, **kwargs) -> dict:
             super().save(**kwargs)
             return self._cookies
 
-        def get_cookie_list(self):
+        def get_cookie_list(self) -> dict:
             return self._cookies
 
     cj = CustomCookieJar(filename="cookies.txt")
@@ -102,9 +102,9 @@ class download_website:
                 pass
         else:
             opener = build_opener(HTTPCookieProcessor(self.cj))
-            request = Request(url, headers=headers, data=data)
+            request = Request(url, headers=headers, data=urlencode(data).encode("utf-8") if 'POST' in RequestMethod else None)
             try:
-                response = opener.open(request, data=urlencode(data).encode("utf-8") if 'POST' in RequestMethod else None)  # type: HTTPResponse
+                response = opener.open(request)  # type: HTTPResponse
                 self.status_code = response.getcode()
                 self.response_headers = response.getheaders()
                 self.text = response.read().decode('utf-8')

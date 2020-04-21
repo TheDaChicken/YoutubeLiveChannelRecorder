@@ -1,5 +1,6 @@
 from multiprocessing import Process
 from multiprocessing.managers import BaseManager
+from typing import Tuple
 
 from Code.utils.web import build_cookies
 from Code.YouTube import ChannelObject as ChannelYouTube
@@ -68,7 +69,7 @@ class ProcessHandler:
         self.baseManagerCookieDictHolder.start()
         cookieHandler = build_cookies()
         cookieHandler.load()
-        cookies_ = cookieHandler.get_cookie_list()  # type: dict
+        cookies_ = cookieHandler.get_cookie_list()
         self.shared_cookieDictHolder = self.baseManagerCookieDictHolder.Dict(cookies_)  # type: dict
 
         # Global Variables
@@ -76,7 +77,7 @@ class ProcessHandler:
         self.baseManagerGlobalVariables.start()
         self.shared_globalVariables = self.baseManagerGlobalVariables.GlobalVariables()  # type: GlobalVariables
 
-    def run_channel(self, channel_identifier, platform='YOUTUBE', startup=False):
+    def run_channel(self, channel_identifier, platform='YOUTUBE', startup=False) -> Tuple[bool, str]:
         channel_holder_class = self.get_channel_class(channel_identifier, platform)
         if channel_holder_class:
             ok_bool, error_message = channel_holder_class.loadVideoData()
