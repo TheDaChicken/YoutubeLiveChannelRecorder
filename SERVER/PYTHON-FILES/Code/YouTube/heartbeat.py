@@ -114,7 +114,8 @@ def is_live(channel_Class, CookieDict=None, globalVariables=None, json=None):
                 channel_Class.loadVideoData()
                 return False
             if "ERROR" in status.upper():
-                warning("Getting the Live Data, failed on Youtube's Side. Youtube Replied with: " + json['reason'])
+                warning("Getting the Live Data, failed on Youtube's Side. "
+                        "Youtube Replied with: {0}.".format(json['reason']))
                 return False
             if "LIVE_STREAM_OFFLINE" in status.upper():
                 return False
