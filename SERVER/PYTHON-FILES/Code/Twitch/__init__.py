@@ -105,9 +105,6 @@ class ChannelObject(TemplateChannel):
             'allow_spectre': 'true',
             'fast_bread': 'true',
             'p': randint(1000000, 10000000),
-            'player_backend': 'mediaplayer',
-            'playlist_include_framerate': 'true',
-            'reassignments_supported': 'true',
             'sig': access_token['sig'].encode('utf-8'),
             'supported_codecs': 'avc1',
             'token': access_token['token'].encode('utf-8'),
@@ -118,6 +115,7 @@ class ChannelObject(TemplateChannel):
         downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict, headers={
             'Accept': 'application/x-mpegURL, application/vnd.apple.mpegurl, application/json, text/plain'
         })
+        print(downloadOBJECT.response_headers)
         if downloadOBJECT.status_code == 404:
             if 'text/plain' in downloadOBJECT.response_headers['Content-Type']:
                 if 'Can not find channel' in downloadOBJECT.text:
@@ -128,12 +126,34 @@ class ChannelObject(TemplateChannel):
         formats = downloadOBJECT.parse_m3u8_formats()
         return formats
 
-    def channel_thread(self, enableDVR=False):
-        def pingThread():
-            while self.TwitchWebSocket.ws.connected:
-                self.TwitchWebSocket.ping()
-                sleep(240)
+    def on_message(self, json: dict):
+        if json:
+            reply('FROM TWITCH -> {0}'.format(json))
+            message_type = try_get(json, lambda x: x['type'], str) or ''
+            message_data = parse_json(try_get(json, lambda x: x['data']['message'], str))
+            # TODO ONLY HERE FOR TESTING.
+            if "MESSAGE" in message_type:
+                data_message_type = try_get(message_data, lambda x: x['type']) or ''
+                if 'stream-up' in data_message_type:
+                    self.live_streaming = True
+                    self.broadcast_id = try_get(message_data, lambda x: x['data']['broadcast_id'], int)
+                    formats = self.getTwitchStreamInfo()
+                    if formats is None or formats == 404:
+                        self.live_streaming = None
+                    else:
+                        self.StreamFormat = get_format_from_data(
+                            formats, self.cachedDataHandler.getValue('recordingResolution'))
+                        self.start_recording(self.StreamFormat)
+                if 'stream-down' in data_message_type:
+                    self.live_streaming = False
+                    self.stop_recording()
+                if 'viewcount' in data_message_type:
+                    self.viewers = try_get(
+                        message_data, lambda x: x['viewers'], int)
+            if "RESPONSE" in message_type:
+                pass
 
+    def channel_thread(self, enableDVR=False):
         try:
             if self.live_streaming is True:
                 self.start_recording(self.StreamFormat)
@@ -141,44 +161,11 @@ class ChannelObject(TemplateChannel):
             if self.stop_websockets is False:
                 exit()
 
-            self.TwitchWebSocket = TwitchPubSubEdgeWebSocket()
-
-            # PING WEBSOCKET THREAD
-            x = Thread(target=pingThread)
-            x.daemon = True
-            x.start()
+            self.TwitchWebSocket = TwitchPubSubEdgeWebSocket(['video-playback-by-id.{0}'.format(self.channel_id)], self.on_message)
+            self.TwitchWebSocket.create_forever_connection()
 
             # REGISTER FOR VIDEO PLAYBACK MESSAGES
-            self.TwitchWebSocket.registerListen('video-playback-by-id.{0}'.format(self.channel_id))
-
-            while True:
-                if self.TwitchWebSocket.ws.connected:
-                    json = self.TwitchWebSocket.recv()
-                    if json:
-                        reply('FROM TWITCH -> {0}'.format(json))
-                        message_type = try_get(json, lambda x: x['type'], str) or ''
-                        message_data = parse_json(try_get(json, lambda x: x['data']['message'], str))
-                        # TODO ONLY HERE FOR TESTING.
-                        if "MESSAGE" in message_type:
-                            data_message_type = try_get(message_data, lambda x: x['type']) or ''
-                            if 'stream-up' in data_message_type:
-                                self.live_streaming = True
-                                self.broadcast_id = try_get(message_data, lambda x: x['data']['broadcast_id'], int)
-                                formats = self.getTwitchStreamInfo()
-                                if formats is None or formats == 404:
-                                    self.live_streaming = None
-                                else:
-                                    self.StreamFormat = get_format_from_data(
-                                        formats, self.cachedDataHandler.getValue('recordingResolution'))
-                                    self.start_recording(self.StreamFormat)
-                            if 'stream-down' in data_message_type:
-                                self.live_streaming = False
-                                self.stop_recording()
-                            if 'viewcount' in data_message_type:
-                                self.viewers = try_get(
-                                    message_data, lambda x: x['viewers'], int)
-                        if "RESPONSE" in message_type:
-                            pass
+            # self.TwitchWebSocket.registerListen('video-playback-by-id.{0}'.format(self.channel_id))
         except Exception:
             self.crashed_traceback = traceback.format_exc()
             crash_warning("{0}:\n{1}".format(self.channel_name, traceback.format_exc()))
