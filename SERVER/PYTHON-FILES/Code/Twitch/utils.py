@@ -35,6 +35,7 @@ class TwitchPubSubEdgeWebSocket:
 
     registers = None
     on_message_ = None
+    ws = None
 
     def __init__(self, registers: list, on_message_):
         self.registers = registers
@@ -47,9 +48,11 @@ class TwitchPubSubEdgeWebSocket:
         # print(error)
         pass
 
+    def terminate(self):
+        self.ws.close()
+
     def on_close(self, ws: CustomWebSocketApp):
-        warning("Websocket, Connection Closed..")
-        warning("Trying again in 5 seconds")
+        warning("[TWITCH] Websocket Connection Closed..")
         sleep(5)
 
     def on_open(self, ws):
@@ -73,12 +76,12 @@ class TwitchPubSubEdgeWebSocket:
             'Cache-Control': 'no-cache',
             'User-Agent': UserAgent}
         # enableTrace(True)
-        ws = CustomWebSocketApp("wss://pubsub-edge.twitch.tv/v1",
+        self.ws = CustomWebSocketApp("wss://pubsub-edge.twitch.tv/v1",
                                 on_message=self.on_message,
                                 on_error=self.on_error,
                                 on_close=self.on_close, header=headers, on_open=self.on_open)
         # ws.on_open = self.on_open
-        ws.run_forever()
+        self.ws.run_forever()
 
     def send(self, ws, object_: dict):
         # DUMPS IS JSON.DUMPS. OOF

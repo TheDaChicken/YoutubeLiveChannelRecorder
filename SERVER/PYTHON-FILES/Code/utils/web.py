@@ -1,7 +1,8 @@
 import os
 from time import sleep
 
-from Code.utils.parser import parse_json, parse_m3u8_formats
+from Code.utils.parser import parse_json
+from Code.utils.m3u8 import parse_formats as parse_m3u8_formats
 from Code.log import stopped, warning
 
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
@@ -135,7 +136,5 @@ class download_website:
         """
 
         Parses Response As JSON DICT
-
-        :return: dict
         """
         return parse_m3u8_formats(self.text)

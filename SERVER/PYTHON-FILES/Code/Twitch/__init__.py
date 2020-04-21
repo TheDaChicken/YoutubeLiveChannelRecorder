@@ -10,6 +10,7 @@ from datetime import datetime
 from random import randint
 from threading import Thread
 from time import sleep
+from typing import Union, List
 from urllib.parse import urlencode
 
 from Code.log import warning, verbose, crash_warning, reply
@@ -20,6 +21,7 @@ from Code.encoder import Encoder
 from Code.utils.parser import parse_json
 from Code.Twitch.utils import TwitchPubSubEdgeWebSocket, find_client_id
 from Code.utils.windows import show_windows_toast_notification
+from Code.utils.m3u8 import HLS
 
 
 class ChannelObject(TemplateChannel):
@@ -57,7 +59,7 @@ class ChannelObject(TemplateChannel):
     def close(self):
         super().close()
         if self.TwitchWebSocket is not None:
-            self.TwitchWebSocket.ws.close()
+            self.TwitchWebSocket.terminate()
 
     def loadVideoData(self):
         url = "https://www.twitch.tv/{0}".format(self.channel_name)
@@ -79,23 +81,18 @@ class ChannelObject(TemplateChannel):
             self.channel_name))
         self.channel_image = try_get(website_dict, lambda x: x['logo'])
         self.channel_id = try_get(website_dict, lambda x: x['_id'], int)
-        formats = self.getTwitchStreamInfo()
-        if formats is not None:
-            if formats is None:
-                self.live_streaming = None
-            elif formats == 404:
-                # TRANSCODE DOESNT EXIST. THAT IS NORMAL. SO NOT LIVE
-                self.live_streaming = False
-            else:
-                self.live_streaming = True
-                self.StreamFormat = get_format_from_data(
-                    formats, self.cachedDataHandler.getValue('recordingResolution'))
+
+        self.live_streaming, hls = self.getTwitchStreamInfo()
+
+        if hls is not None:
+            self.StreamFormat = get_format_from_data(
+                hls, self.cachedDataHandler.getValue('recordingResolution'))
 
         if not self.channel_id:
             return [False, "Unable to find Channel ID."]
         return [True, "OK"]
 
-    def getTwitchStreamInfo(self):
+    def getTwitchStreamInfo(self) -> List[Union[bool, HLS]]:
         access_token = self.__callAPI__('api/channels/{0}/access_token?{1}&oauth_token'.format(
             self.channel_name, urlencode({'need_https': 'true', 'platform': 'web',
                                           'player_backend': 'mediaplayer',
@@ -115,16 +112,13 @@ class ChannelObject(TemplateChannel):
         downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict, headers={
             'Accept': 'application/x-mpegURL, application/vnd.apple.mpegurl, application/json, text/plain'
         })
-        print(downloadOBJECT.response_headers)
         if downloadOBJECT.status_code == 404:
-            if 'text/plain' in downloadOBJECT.response_headers['Content-Type']:
-                if 'Can not find channel' in downloadOBJECT.text:
-                    return None
-            return 404
-        if downloadOBJECT.status_code != 200:
-            return None
-        formats = downloadOBJECT.parse_m3u8_formats()
-        return formats
+            # TRANSCODE DOESNT EXIST. THAT IS NORMAL. SO NOT LIVE
+            return [False, None]
+        elif downloadOBJECT.response_headers['Content-Type'] == "application/vnd.apple.mpegurl":
+            return [True, downloadOBJECT.parse_m3u8_formats()]
+        print("Unable To Handle Status: {0} For Twitch.".format(downloadOBJECT.status_code))
+        return [False, None]
 
     def on_message(self, json: dict):
         if json:
@@ -137,12 +131,10 @@ class ChannelObject(TemplateChannel):
                 if 'stream-up' in data_message_type:
                     self.live_streaming = True
                     self.broadcast_id = try_get(message_data, lambda x: x['data']['broadcast_id'], int)
-                    formats = self.getTwitchStreamInfo()
-                    if formats is None or formats == 404:
-                        self.live_streaming = None
-                    else:
+                    self.live_streaming, hls = self.getTwitchStreamInfo()
+                    if hls is not None:
                         self.StreamFormat = get_format_from_data(
-                            formats, self.cachedDataHandler.getValue('recordingResolution'))
+                            hls, self.cachedDataHandler.getValue('recordingResolution'))
                         self.start_recording(self.StreamFormat)
                 if 'stream-down' in data_message_type:
                     self.live_streaming = False

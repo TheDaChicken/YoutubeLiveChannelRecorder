@@ -25,53 +25,6 @@ def parse_json(json_string, transform_source=None):
     return None
 
 
-def parse_m3u8_formats(m3u8_doc):
-    """
-    Taken and have been edited from:
-    https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/common.py#L1608
-    """
-    compiled_attributes_re = re.compile(r'(?P<key>[A-Z0-9-]+)=(?P<val>"[^"]+"|[^",]+)(?:,|$)')
-    compiled_search_re = re.compile(r'(?P<width>\d+)[xX](?P<height>\d+)')
-
-    def parse_m3u8_attributes(attrib):
-        """
-        Taken from https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/utils.py#L3801
-        """
-        info = {}
-        for (key, val) in compiled_attributes_re.findall(attrib):
-            if val.startswith('"'):
-                val = val[1:-1]
-            info[key] = val
-        return info
-
-    if '#EXT-X-FAXS-CM:' in m3u8_doc:  # Adobe Flash Access
-        return []
-    if re.search(r'#EXT-X-SESSION-KEY:.*?URI="skd://', m3u8_doc):  # Apple FairPlay
-        return []
-    last_stream_inf = {}
-    formats = []
-    for line in m3u8_doc.splitlines():
-        if line.startswith('#EXT-X-STREAM-INF:'):
-            last_stream_inf = parse_m3u8_attributes(line)
-        elif line.startswith('#') or not line.strip():
-            continue
-        else:
-            manifest_url = line.strip()
-            f = {
-                'url': manifest_url,
-                'format': 'hls'
-            }
-            resolution = last_stream_inf.get('RESOLUTION')
-            if resolution:
-                search = compiled_search_re.search(resolution)
-                if search:
-                    f['width'] = int(search.group('width'))
-                    f['height'] = int(search.group('height'))
-                    f['stream_resolution'] = "{0}x{1}".format(f['width'], f['height'])
-            formats.append(f)
-            last_stream_inf = {}
-    return formats
-
 
 def parse_html_attributes(html_element):
     """

@@ -14,8 +14,6 @@ from Code.utils.other import try_get, getTimeZone, get_format_from_data, get_hig
 from Code.dataHandler import CacheDataHandler
 from Code.utils.parser import parse_json
 from Code.YouTube.heartbeat import is_live
-from Code.utils.windows import show_windows_toast_notification
-from Code.encoder import Encoder
 
 
 class ChannelObject(TemplateChannel):
@@ -161,10 +159,11 @@ class ChannelObject(TemplateChannel):
                                         return [False, "Unable to find HLS Manifest URL."]
                                     downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict)
                                     formats = downloadOBJECT.parse_m3u8_formats()
-                                    if formats is None or len(formats) == 0:
+                                    hls = downloadOBJECT.parse_m3u8_formats()
+                                    if len(hls.formats) is 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
                                     format_ = get_format_from_data(
-                                        formats, self.cachedDataHandler.getValue('recordingResolution'))
+                                        hls.formats, self.cachedDataHandler.getValue('recordingResolution'))
                                     if not videoDetails:
                                         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
@@ -344,12 +343,12 @@ class ChannelObject(TemplateChannel):
             downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict)
             if downloadOBJECT.status_code != 200:
                 return None
-            formats = downloadOBJECT.parse_m3u8_formats()
-            if formats is None or len(formats) is 0:
+            hls = downloadOBJECT.parse_m3u8_formats()
+            if len(hls.formats) is 0:
                 warning("There were no formats found! Even when the streamer is live.")
                 return None
             return {
-                'formats': formats,
+                'formats': hls.formats,
                 'manifest_url': manifest_url,
                 'video_details': video_details,
             }

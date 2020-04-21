@@ -11,6 +11,7 @@ from Code.log import verbose
 from Code.utils.windows import show_windows_toast_notification
 from Code.encoder import Encoder
 from Code.dataHandler import CacheDataHandler
+from Code.utils.m3u8 import HLSMedia
 
 
 class SharableHandler:
@@ -81,7 +82,7 @@ class TemplateChannel(SharableHandler, ABC):
     def registerCloseEvent(self):
         atexit.register(self.close)
 
-    def start_recording(self, format_, StartIndex0=False):
+    def start_recording(self, format_: HLSMedia, StartIndex0=False):
         self.start_date = datetime.now()
         self.start_dateUTC = datetime.now(timezone.utc)
         self.recording_status = "Starting Recording."
@@ -90,14 +91,14 @@ class TemplateChannel(SharableHandler, ABC):
         if not os.path.exists(recordStreams):
             os.mkdir(recordStreams)
         self.video_location = os.path.join(recordStreams, '{0}.mp4'.format(filename))
-        if self.EncoderClass.start_recording(format_['url'], self.video_location,
-                                             StartIndex0=StartIndex0, format=format_['format']):
+        if self.EncoderClass.start_recording(format_.url, self.video_location,
+                                             StartIndex0=StartIndex0, format=format_.format):
             self.recording_status = "Recording."
             show_windows_toast_notification("Live Recording Notifications",
                                             "{0} is live and is now recording. \nRecording at {1}".format(
-                                                self.channel_name, format_['stream_resolution']))
+                                                self.channel_name, format_.stream_resolution))
             self.addTemp({
-                'video_id': self.video_id, 'title': format_.get('title'), 'start_date': self.start_date,
+                'video_id': self.video_id, 'title': self.title, 'start_date': self.start_date,
                 'file_location': self.video_location, 'channel_name': self.channel_name,
                 'channel_id': self.channel_id, 'description': self.description})
             recordingList = self.cachedDataHandler.getValue("recordings")
@@ -129,7 +130,7 @@ class TemplateChannel(SharableHandler, ABC):
         # Used to handle lots of names by creating new names and add numbers!
         amount = 1
         while True:
-            if amount is 1:
+            if amount == 1:
                 file_name = "{3} - '{4}' - {0}-{1}-{2}".format(now.month, now.day, now.year,
                                                                channel_name, video_id)
             else:
