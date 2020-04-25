@@ -11,9 +11,6 @@ class HLS:
     def __init__(self):
         self.formats = []  # type: List[HLSMedia]
 
-    def is_twitch_ad(self):
-        pass
-
     def add_format(self, format: dict):
         self.formats.append(HLSMedia(
             format['url'], format['height'], format['width'],
