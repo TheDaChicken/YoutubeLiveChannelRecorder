@@ -4,7 +4,7 @@ from typing import Tuple, List, Union
 
 from Code.utils.web import build_cookies
 from Code.YouTube import ChannelObject as ChannelYouTube
-from Code.Twitch import ChannelObject as ChannelTwitch
+from Code.Twitch import ChannelObject as ChannelTwitch, TemplateChannel
 from Code.dataHandler import CacheDataHandler
 from Code.log import warning
 from Code.YouTubeAPI.uploadQueue import QueueHandler, runQueue
@@ -77,15 +77,24 @@ class ProcessHandler:
         self.baseManagerGlobalVariables.start()
         self.shared_globalVariables = self.baseManagerGlobalVariables.GlobalVariables()  # type: GlobalVariables
 
-    def run_channel(self, channel_identifier, platform='YOUTUBE', startup=False) -> List[Union[bool, str]]:
-        channel_holder_class = self.get_channel_class(channel_identifier, platform)
+    def run_channel(self, channel: str or ChannelYouTube or ChannelTwitch, platform='YOUTUBE', startup=False, **kwargs) -> List[Union[bool, str]]:
+        channel_holder_class = None
+        if type(channel) is str:
+            channel_holder_class = self.get_channel_class(channel, platform)
+        elif TemplateChannel in channel.__subclasses__:
+            channel_holder_class = channel
+
+        channel_name = channel_holder_class.get("channel_name")
         if channel_holder_class:
+            args = (kwargs,)
+            channel_identifier = channel_holder_class.get("channel_identifier")
             ok_bool, error_message = channel_holder_class.loadVideoData()
             if ok_bool:
                 channel_holder_class.registerCloseEvent()
+
                 channel_name = channel_holder_class.get("channel_name")
                 check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
-                                                         name="{0} - Channel Process".format(channel_name))
+                                                         name="{0} - Channel Process".format(channel_name), args=args)
                 check_streaming_channel_thread.start()
                 self.channels_dict.update({
                     channel_identifier: {
@@ -102,7 +111,7 @@ class ProcessHandler:
                             'thread_class': None}
                     })
                 return [False, error_message]
-        return [False, "UNKNOWN PLATFORM GIVEN TO RUN_CHANNEL."]
+
 
     def run_channel_channel_holder_class(self, channel_identifier, channel_holder_class,
                                          download_dvr=False):
@@ -130,7 +139,7 @@ class ProcessHandler:
         })
         return [True, "OK"]
 
-    def get_channel_class(self, channel_identifier, platform='YOUTUBE'):
+    def get_channel_class(self, channel_identifier, platform='YOUTUBE') -> TemplateChannel:
         SettingDict = {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs}
         channel_holder_class = None
         if 'YOUTUBE' in platform.upper():

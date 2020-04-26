@@ -100,7 +100,6 @@ class ChannelObject(TemplateChannel):
         arguments = {
             'allow_source': 'true',
             'allow_spectre': 'true',
-            'fast_bread': 'true',
             'p': randint(1000000, 10000000),
             'sig': access_token['sig'].encode('utf-8'),
             'supported_codecs': 'avc1',
@@ -125,7 +124,6 @@ class ChannelObject(TemplateChannel):
             reply('FROM TWITCH -> {0}'.format(json))
             message_type = try_get(json, lambda x: x['type'], str) or ''
             message_data = parse_json(try_get(json, lambda x: x['data']['message'], str))
-            # TODO ONLY HERE FOR TESTING.
             if "MESSAGE" in message_type:
                 data_message_type = try_get(message_data, lambda x: x['type']) or ''
                 if 'stream-up' in data_message_type:
@@ -145,7 +143,9 @@ class ChannelObject(TemplateChannel):
             if "RESPONSE" in message_type:
                 pass
 
-    def channel_thread(self, enableDVR=False):
+    def channel_thread(self, arguments):
+        enableDVR = arguments.get("enableDVR")
+
         try:
             if self.live_streaming is True:
                 self.start_recording(self.StreamFormat)

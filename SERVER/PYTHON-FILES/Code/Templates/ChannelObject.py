@@ -2,7 +2,7 @@ import atexit
 import codecs
 import os
 import pickle
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from os.path import basename
 from time import sleep
@@ -76,8 +76,7 @@ class TemplateChannel(SharableHandler, ABC):
             self.TestUpload = True
 
     def close(self):
-        if self.EncoderClass:
-            self.EncoderClass.stop_recording()
+        self.EncoderClass.stop_recording()
 
     def registerCloseEvent(self):
         atexit.register(self.close)
@@ -86,11 +85,10 @@ class TemplateChannel(SharableHandler, ABC):
         self.start_date = datetime.now()
         self.start_dateUTC = datetime.now(timezone.utc)
         self.recording_status = "Starting Recording."
+        recording_dir = os.path.join(os.getcwd(), "RecordedStreams")
+        self.create_folder(recording_dir)
         filename = self.create_filename(self.channel_name, self.video_id, self.start_date)
-        recordStreams = os.path.join(os.getcwd(), "RecordedStreams")
-        if not os.path.exists(recordStreams):
-            os.mkdir(recordStreams)
-        self.video_location = os.path.join(recordStreams, '{0}.mp4'.format(filename))
+        self.video_location = os.path.join(recording_dir, '{0}.mp4'.format(filename))
         if self.EncoderClass.start_recording(format_.url, self.video_location,
                                              StartIndex0=StartIndex0, format=format_.format):
             self.recording_status = "Recording."
@@ -141,6 +139,12 @@ class TemplateChannel(SharableHandler, ABC):
                 return file_name
             amount += 1
 
+    @staticmethod
+    def create_folder(recording_dir):
+        if not os.path.exists(recording_dir):
+            os.mkdir(recording_dir)
+
+
     def isVideoIDinTemp(self, video_id):
         video_list = list(map(lambda x: self.video_list.get(x).get('video_id'), self.video_list.keys()))
         return video_id in video_list
@@ -171,9 +175,15 @@ class TemplateChannel(SharableHandler, ABC):
         """
         To add videos to be uploaded in the YouTube Queue.
         """
+        print(self.video_list)
         if len(self.video_list) != 0:
             if self.queue_holder:
                 verbose("Adding streams to youtube upload queue.")
                 for video_id in self.video_list:
                     self.queue_holder.addQueue(self.video_list.get(video_id))
                 self.video_list.clear()
+
+    @abstractmethod
+    def channel_thread(self, args: dict):
+        pass
+

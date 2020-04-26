@@ -158,12 +158,11 @@ class ChannelObject(TemplateChannel):
                                     if not manifest_url:
                                         return [False, "Unable to find HLS Manifest URL."]
                                     downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict)
-                                    formats = downloadOBJECT.parse_m3u8_formats()
                                     hls = downloadOBJECT.parse_m3u8_formats()
                                     if len(hls.formats) is 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
                                     format_ = get_format_from_data(
-                                        hls.formats, self.cachedDataHandler.getValue('recordingResolution'))
+                                        hls, self.cachedDataHandler.getValue('recordingResolution'))
                                     if not videoDetails:
                                         videoDetails = try_get(player_response, lambda x: x['videoDetails'], dict)
                                     thumbnails = try_get(videoDetails, lambda x: x['thumbnail']['thumbnails'], list)
@@ -348,13 +347,16 @@ class ChannelObject(TemplateChannel):
                 warning("There were no formats found! Even when the streamer is live.")
                 return None
             return {
-                'formats': hls.formats,
+                'formats': hls,
                 'manifest_url': manifest_url,
                 'video_details': video_details,
             }
         return None
 
-    def channel_thread(self, enableDVR=False):
+    def channel_thread(self, args: dict):
+        print(args)
+        enableDVR = args.get("enableDVR")
+
         if self.StreamFormat is not None:
             if self.start_recording(self.StreamFormat, StartIndex0=enableDVR):
                 if self.TestUpload is True:
@@ -370,7 +372,7 @@ class ChannelObject(TemplateChannel):
                 # LOOP
                 self.live_streaming = self.is_live()
                 # HEARTBEAT ERROR
-                if self.live_streaming is 1:
+                if self.live_streaming == 1:
                     # IF CRASHED.
                     info("Error on Heartbeat on {0}! Trying again ...".format(self.channel_name))
                     sleep(1)
@@ -395,6 +397,7 @@ class ChannelObject(TemplateChannel):
                 # LIVE
                 elif self.live_streaming is True:
                     # IF FFMPEG IS NOT ALIVE THEN TURN ON RECORDING.
+                    print(self.EncoderClass.running)
                     if self.EncoderClass.running is not True:
                         video_details = self.get_video_info()
                         formats = video_details.get("formats")
@@ -417,6 +420,9 @@ class ChannelObject(TemplateChannel):
     def is_live(self, json=None):
         if self.DebugMode is True:
             self.last_heartbeat = datetime.now()
+        if self.privateStream:
+            self.loadVideoData()
+            return False
         boolean_live = is_live(self, json=json, CookieDict=self.sharedCookieDict,
                                globalVariables=self.globalVariables)
         return boolean_live

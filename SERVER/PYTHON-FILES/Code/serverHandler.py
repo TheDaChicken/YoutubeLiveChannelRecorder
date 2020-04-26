@@ -219,12 +219,13 @@ class Server(Flask):
             if content_type:
                 if 'application/json' in content_type:
                     json = request.get_json()  # type: dict
-                    dvr_recording = False
                     channel_holder_class = None
+
+                    dvr_recording = try_get(json, lambda x: x['dvr_recording'], str) or False
                     session_id = try_get(json, lambda x: x['SessionID'], str)
                     channel_identifier = try_get(json, lambda x: x['channel_identifier'])
+                    test_upload = try_get(json, lambda x: x['test_upload'], bool)
                     if session_id:
-                        dvr_recording = try_get(json, lambda x: x['dvr_recording'], str) or False
                         if session_id not in self.sessions:
                             return Response(
                                 "Unknown Session ID. The Session ID might have expired.",
@@ -241,12 +242,9 @@ class Server(Flask):
                                             status_code=400)
                         if channel_identifier in self.process_Handler.channels_dict:
                             return Response("Channel Already in list!", status="server-error", status_code=500)
-                        if channel_holder_class is None:
-                            ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name)
-                        else:
-                            ok, message = self.process_Handler.run_channel_channel_holder_class(channel_identifier,
-                                                                                                channel_holder_class,
-                                                                                                dvr_recording)
+
+                        ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name, enableDVR=dvr_recording)
+
                         if not ok:
                             return Response(message, status="server-error", status_code=500)
                         elif ok:
