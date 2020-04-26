@@ -354,7 +354,6 @@ class ChannelObject(TemplateChannel):
         return None
 
     def channel_thread(self, args: dict):
-        print(args)
         enableDVR = args.get("enableDVR")
 
         if self.StreamFormat is not None:
