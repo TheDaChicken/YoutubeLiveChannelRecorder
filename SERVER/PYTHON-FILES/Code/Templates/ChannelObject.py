@@ -82,7 +82,6 @@ class TemplateChannel(SharableHandler, ABC):
             self.enableDVR = SettingDict.get("enableDVR")
 
     def send_updated_setting_dict(self, SettingDict: dict):
-        print(SettingDict)
         if 'testUpload' in SettingDict:
             self.TestUpload = SettingDict.get("testUpload")
         if 'enableDVR' in SettingDict:
