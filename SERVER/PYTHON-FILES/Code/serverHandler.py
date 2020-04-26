@@ -221,10 +221,10 @@ class Server(Flask):
                     json = request.get_json()  # type: dict
                     channel_holder_class = None
 
-                    dvr_recording = try_get(json, lambda x: x['dvr_recording'], str) or False
+                    dvr_recording = try_get(json, lambda x: x['dvr_recording']) or False
                     session_id = try_get(json, lambda x: x['SessionID'], str)
                     channel_identifier = try_get(json, lambda x: x['channel_identifier'])
-                    test_upload = try_get(json, lambda x: x['test_upload'], bool)
+                    test_upload = try_get(json, lambda x: x['test_upload']) or False
                     if session_id:
                         if session_id not in self.sessions:
                             return Response(
@@ -243,7 +243,10 @@ class Server(Flask):
                         if channel_identifier in self.process_Handler.channels_dict:
                             return Response("Channel Already in list!", status="server-error", status_code=500)
 
-                        ok, message = self.process_Handler.run_channel(channel_identifier, platform=platform_name, enableDVR=dvr_recording)
+                        if channel_holder_class is None:
+                            channel_identifier = channel_holder_class
+                        ok, message = self.process_Handler.run_channel(channel_holder_class, platform=platform_name, enableDVR=dvr_recording,
+                                                                       testUpload=test_upload)
 
                         if not ok:
                             return Response(message, status="server-error", status_code=500)

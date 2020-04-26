@@ -81,7 +81,7 @@ class ProcessHandler:
         channel_holder_class = None
         if type(channel) is str:
             channel_holder_class = self.get_channel_class(channel, platform)
-        elif TemplateChannel in channel.__subclasses__:
+        else:
             channel_holder_class = channel
 
         if channel_holder_class:

@@ -354,6 +354,7 @@ class ChannelObject(TemplateChannel):
         if self.StreamFormat is not None:
             if self.start_recording(self.StreamFormat, StartIndex0=self.enableDVR):
                 if self.TestUpload is True:
+                    warning("Test Upload Enabled For {0}".format(self.channel_name))
                     sleep(10)
                     self.EncoderClass.stop_recording()
                     self.add_youtube_queue()

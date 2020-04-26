@@ -72,7 +72,7 @@ class Encoder:
         self.__startHandler()
 
     def __hold(self):
-        while self.running is not None:
+        while self.running is None:
             sleep(1)
 
     def print_handle(self):
@@ -109,6 +109,7 @@ class Encoder:
             del now
             logfile.write('\n'.join(log))
             logfile.close()
+            self.running = False
         if self.running is True:
             self.running = False
             warning("FFmpeg has stopped.")
