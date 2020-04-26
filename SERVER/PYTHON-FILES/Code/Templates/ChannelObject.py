@@ -56,7 +56,11 @@ class TemplateChannel(SharableHandler, ABC):
     # SERVER VARIABLES
     recording_status = None
 
-    def __init__(self, channel_identifier, SettingDict, SharedCookieDict=None, cachedDataHandler=None,
+    # (USED FOR SERVER)
+    TestUpload = False
+    enableDVR = False
+
+    def __init__(self, channel_identifier, SettingDict: dict, SharedCookieDict=None, cachedDataHandler=None,
                  queue_holder=None, globalVariables=None):
         """
         :type channel_identifier: str
@@ -73,7 +77,15 @@ class TemplateChannel(SharableHandler, ABC):
         self.EncoderClass.enable_logs = SettingDict.get('ffmpeg_logs')
         self.queue_holder = queue_holder
         if 'testUpload' in SettingDict:
-            self.TestUpload = True
+            self.TestUpload = SettingDict.get("testUpload")
+        if 'enableDVR' in SettingDict:
+            self.enableDVR = SettingDict.get("enableDVR")
+
+    def send_updated_setting_dict(self, SettingDict: dict):
+        if 'testUpload' in SettingDict:
+            self.TestUpload = SettingDict.get("testUpload")
+        if 'enableDVR' in SettingDict:
+            self.enableDVR = SettingDict.get("enableDVR")
 
     def close(self):
         self.EncoderClass.stop_recording()
@@ -184,6 +196,6 @@ class TemplateChannel(SharableHandler, ABC):
                 self.video_list.clear()
 
     @abstractmethod
-    def channel_thread(self, args: dict):
+    def channel_thread(self):
         pass
 

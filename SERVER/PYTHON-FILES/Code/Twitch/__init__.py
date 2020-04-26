@@ -143,8 +143,8 @@ class ChannelObject(TemplateChannel):
             if "RESPONSE" in message_type:
                 pass
 
-    def channel_thread(self, arguments):
-        enableDVR = arguments.get("enableDVR")
+    def channel_thread(self):
+        # enableDVR = arguments.get("enableDVR")
 
         try:
             if self.live_streaming is True:

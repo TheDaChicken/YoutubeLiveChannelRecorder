@@ -84,9 +84,9 @@ class ProcessHandler:
         elif TemplateChannel in channel.__subclasses__:
             channel_holder_class = channel
 
-        channel_name = channel_holder_class.get("channel_name")
         if channel_holder_class:
-            args = (kwargs,)
+            channel_holder_class.send_updated_setting_dict(kwargs)
+
             channel_identifier = channel_holder_class.get("channel_identifier")
             ok_bool, error_message = channel_holder_class.loadVideoData()
             if ok_bool:
@@ -94,7 +94,7 @@ class ProcessHandler:
 
                 channel_name = channel_holder_class.get("channel_name")
                 check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
-                                                         name="{0} - Channel Process".format(channel_name), args=args)
+                                                         name="{0} - Channel Process".format(channel_name))
                 check_streaming_channel_thread.start()
                 self.channels_dict.update({
                     channel_identifier: {
@@ -111,33 +111,6 @@ class ProcessHandler:
                             'thread_class': None}
                     })
                 return [False, error_message]
-
-
-    def run_channel_channel_holder_class(self, channel_identifier, channel_holder_class,
-                                         download_dvr=False):
-        """
-        :type channel_identifier: str
-        :type channel_holder_class: ChannelYouTube
-        :type download_dvr: bool
-        """
-        if channel_holder_class.get('channel_name') is None:
-            ok_bool, error_message = channel_holder_class.loadVideoData()
-            if not ok_bool:
-                return [False, error_message]
-        args = ()
-        if download_dvr is True:
-            args = (download_dvr,)
-        channel_holder_class.registerCloseEvent()
-        channel_name = channel_holder_class.get("channel_name")
-        check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
-                                                 name="{0} - Channel Process".format(channel_name), args=args)
-        check_streaming_channel_thread.start()
-        self.channels_dict.update({
-            channel_identifier: {
-                'class': channel_holder_class,
-                'thread_class': check_streaming_channel_thread}
-        })
-        return [True, "OK"]
 
     def get_channel_class(self, channel_identifier, platform='YOUTUBE') -> TemplateChannel:
         SettingDict = {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs}

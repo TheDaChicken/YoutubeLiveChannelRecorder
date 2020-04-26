@@ -128,7 +128,7 @@ def is_live(channel_Class, CookieDict=None, globalVariables=None, json=None):
     except Exception:
         warning("Error occurred when doing Heartbeat.")
         error_warning(traceback.format_exc())
-        return 1
+        return -1
 
 
 # Getting Poll Delay from Heartbeat Json

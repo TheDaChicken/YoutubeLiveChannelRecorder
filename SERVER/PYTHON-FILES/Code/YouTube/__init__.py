@@ -51,9 +51,6 @@ class ChannelObject(TemplateChannel):
 
     thumbnail_location = None
 
-    # (USED FOR SERVER)
-    TestUpload = False
-
     # Scheduled Live Stream. [HEARTBEAT]
     live_scheduled = False
     live_scheduled_time = None  # type: datetime
@@ -159,7 +156,7 @@ class ChannelObject(TemplateChannel):
                                         return [False, "Unable to find HLS Manifest URL."]
                                     downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict)
                                     hls = downloadOBJECT.parse_m3u8_formats()
-                                    if len(hls.formats) is 0:
+                                    if len(hls.formats) == 0:
                                         return [False, "There were no formats found! Even when the streamer is live."]
                                     format_ = get_format_from_data(
                                         hls, self.cachedDataHandler.getValue('recordingResolution'))
@@ -343,7 +340,7 @@ class ChannelObject(TemplateChannel):
             if downloadOBJECT.status_code != 200:
                 return None
             hls = downloadOBJECT.parse_m3u8_formats()
-            if len(hls.formats) is 0:
+            if len(hls.formats) == 0:
                 warning("There were no formats found! Even when the streamer is live.")
                 return None
             return {
@@ -353,11 +350,9 @@ class ChannelObject(TemplateChannel):
             }
         return None
 
-    def channel_thread(self, args: dict):
-        enableDVR = args.get("enableDVR")
-
+    def channel_thread(self):
         if self.StreamFormat is not None:
-            if self.start_recording(self.StreamFormat, StartIndex0=enableDVR):
+            if self.start_recording(self.StreamFormat, StartIndex0=self.enableDVR):
                 if self.TestUpload is True:
                     sleep(10)
                     self.EncoderClass.stop_recording()
@@ -371,7 +366,7 @@ class ChannelObject(TemplateChannel):
                 # LOOP
                 self.live_streaming = self.is_live()
                 # HEARTBEAT ERROR
-                if self.live_streaming == 1:
+                if self.live_streaming == -1:
                     # IF CRASHED.
                     info("Error on Heartbeat on {0}! Trying again ...".format(self.channel_name))
                     sleep(1)
