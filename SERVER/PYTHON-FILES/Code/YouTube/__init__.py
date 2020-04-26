@@ -391,7 +391,6 @@ class ChannelObject(TemplateChannel):
                 # LIVE
                 elif self.live_streaming is True:
                     # IF FFMPEG IS NOT ALIVE THEN TURN ON RECORDING.
-                    print(self.EncoderClass.running)
                     if self.EncoderClass.running is not True:
                         video_details = self.get_video_info()
                         formats = video_details.get("formats")
