@@ -6,9 +6,6 @@
   This program is tested on PYTHON VERSION 3.7.2.
   This program does not work anything below PYTHON VERSION 3.
 
-### LIMITATIONS (AS OF RIGHT NOW)
-  Quick Resolution/fps in live streams that causes to lose the current quailty causes YouTube to reply with a blank [HLS](https://developer.apple.com/streaming/) playlist, waiting for the client (or whatever) to grab a new HLS manifest url since the quailty isn't available anymore. As FFmpeg is an external program, you cannot really see if this occured to then grab a new manifest url and start recording again.
-
 ### Inspiration
   
   This idea came from when I wanted to record livestreams from a YouTuber called [Skeppy](https://www.youtube.com/channel/UCzMjRlKVO9XIqH_crIFpi6w).
