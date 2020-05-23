@@ -126,14 +126,14 @@ def runQueue(youtube_api_handler, queue_holder):
             warning("Unable to upload stream to Youtube.")
             return [False, traceback]
 
-    if youtube_api_handler.isMissingPackages():
+    if youtube_api_handler.is_missing_packages():
         queue_holder.updateStatus(
-            "Missing Packages: {0}.".format(', '.join(youtube_api_handler.getMissingPackages())))
+            "Missing Packages: {0}.".format(', '.join(youtube_api_handler.get_missing_packages())))
     encoder = Encoder()
     youtube_api_quota = False
     try:
         while True:
-            if youtube_api_handler.isMissingPackages():
+            if youtube_api_handler.is_missing_packages():
                 continue
             if youtube_api_quota is True:
                 try:

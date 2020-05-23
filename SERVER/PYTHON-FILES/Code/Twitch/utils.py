@@ -53,7 +53,6 @@ class TwitchPubSubEdgeWebSocket:
 
     def on_close(self, ws: CustomWebSocketApp):
         warning("[TWITCH] Websocket Connection Closed..")
-        sleep(5)
 
     def on_open(self, ws):
         def run(*args):
@@ -81,7 +80,10 @@ class TwitchPubSubEdgeWebSocket:
                                 on_error=self.on_error,
                                 on_close=self.on_close, header=headers, on_open=self.on_open)
         # ws.on_open = self.on_open
-        self.ws.run_forever()
+        while True:
+            self.ws.run_forever()
+            warning("[TWITCH] Reconnecting Websocket in 5 seconds....")
+            sleep(5)
 
     def send(self, ws, object_: dict):
         # DUMPS IS JSON.DUMPS. OOF

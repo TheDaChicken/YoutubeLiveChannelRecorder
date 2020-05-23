@@ -4,7 +4,7 @@ import traceback
 from datetime import datetime
 from io import BytesIO
 from os import getcwd, walk
-from os.path import exists, join
+from os.path import exists, join, basename
 from threading import Thread
 from time import sleep
 from urllib.parse import urlencode
@@ -16,7 +16,8 @@ from multiprocessing import Process
 
 from werkzeug.datastructures import ImmutableMultiDict
 
-from Code.utils.other import try_get
+from Code import CacheDataHandler
+from Code.utils.other import try_get, translateTimezone
 from Code.YouTube import ChannelObject as ChannelYouTube
 from Code.YouTube import searchChannels as SearchChannelsYouTube
 from Code.Twitch import searchChannels as SearchChannelsTwitch
@@ -60,11 +61,10 @@ class Server(Flask):
                                              'Please update the client to the latest version!'
         return response
 
-    def __init__(self, import_name, process_Handler, cached_data_handler, youtube_api_handler):
+    def __init__(self, import_name, process_Handler, cached_data_handler: CacheDataHandler, youtube_api_handler):
         """
 
         :type process_Handler: ProcessHandler
-        :type cached_data_handler: CacheDataHandler
         """
         super().__init__(import_name)
 
@@ -101,24 +101,6 @@ class Server(Flask):
     def hello():
         return Response("Server is alive.")
 
-    @staticmethod
-    def translateTimezone(timezoneName, datetime):
-        """
-        :type datetime: datetime
-        """
-        if timezoneName is None:
-            return datetime
-        try:
-            from pytz import timezone
-            timezone = timezone(timezoneName)
-            return datetime.astimezone(timezone)
-        except ImportError:
-            print("Import Error when converting timezone. :p")
-            return datetime
-        except Exception as e:
-            error_warning(traceback.format_exc())
-            return datetime
-
     def ServerInfo(self):
         headers = request.headers  # type: ImmutableMultiDict
         timezoneName = headers.get("TimeZone")
@@ -140,7 +122,7 @@ class Server(Flask):
             if 'YOUTUBE' in channel_class.get('platform_name'):
                 last_heartbeat = None
                 if channel_class.get("last_heartbeat") is not None:
-                    last_heartbeat = self.translateTimezone(timezoneName, channel_class.get('last_heartbeat')).strftime(
+                    last_heartbeat = translateTimezone(timezoneName, channel_class.get('last_heartbeat')).strftime(
                         "%I:%M %p")
                 channel.update({
                     'video_id': channel_class.get('video_id'),
@@ -156,7 +138,7 @@ class Server(Flask):
                     time = channel_class.get('live_scheduled_timeString')
                     datetime_ = channel_class.get("live_scheduled_time")  # type: datetime
                     if datetime_ is not None:
-                        time = self.translateTimezone(timezoneName, datetime_).strftime("%B %d %Y, %I:%M %p")
+                        time = translateTimezone(timezoneName, datetime_).strftime("%B %d %Y, %I:%M %p")
                     live_scheduled.update({
                         'live_scheduled_time': time
                     })
@@ -205,10 +187,7 @@ class Server(Flask):
         channel_id = request.args.get('channel_id')
         return redirect(url_for('add_channel', platform_name="YOUTUBE", channel_id=channel_id))
 
-    def add_channel(self, platform_name):
-        """
-        :type platform_name: str
-        """
+    def add_channel(self, platform_name: str):
         if platform_name.upper() not in self.process_Handler.platforms:
             return Response("Unknown Platform: {0}.".format(platform_name), status="client-error", status_code=404)
         if request.method == 'GET':
@@ -457,11 +436,12 @@ class Server(Flask):
         # Check for client secret file...
         if not exists(self.youtube_api_handler.getClientSecretFile()):
             return Response("WARNING: Please configure OAuth 2.0. Information at the Developers Console "
-                            "https://console.developers.google.com/", status='server-error', status_code=500)
+                            "https://console.developers.google.com/. CLIENT SECRET FILE MUST BE NAMED {0}.".format(
+                basename(self.youtube_api_handler.getClientSecretFile())), status='server-error', status_code=500)
         if 'youtube_api_credentials' in self.cached_data_handler.getDict():
             return Response("Youtube account already logged-in", status='client-error', status_code=400)
-        if self.youtube_api_handler.isMissingPackages():
-            return Response("Missing Packages: {0}.".format(', '.join(self.youtube_api_handler.getMissingPackages())))
+        if self.youtube_api_handler.is_missing_packages():
+            return Response("Missing Packages: {0}.".format(', '.join(self.youtube_api_handler.get_missing_packages())))
         url = url_for('youtube_api_login_call_back', _external=True)
         link, session['state'] = self.youtube_api_handler.generate_login_link(url)
         return redirect(link)
@@ -475,7 +455,7 @@ class Server(Flask):
             if credentials is None:
                 return Response("Bad Request.", status='client-error', status_code=400)
             username = self.youtube_api_handler.get_youtube_account_user_name(
-                self.youtube_api_handler.get_youtube_api_credentials(credentials))
+                self.youtube_api_handler.get_api_client(credentials))
         except requests.exceptions.SSLError:
             return Response("The server encountered an SSL error and was unable to complete your request.",
                             status='server-error', status_code=500)
@@ -538,7 +518,7 @@ class Server(Flask):
                     return None
             start_time = recording.get("start_timeUTC")
             if start_time:
-                time = self.translateTimezone(timezoneName, datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S %Z"))
+                time = translateTimezone(timezoneName, datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S %Z"))
                 recording.update({'date': time.strftime("%Y-%m-%d")})
                 recording.update({'time': time.strftime("%H:%M:%S")})
             recording.update({'thumbnail': "{0}?{1}".format(url_for('generateThumbnail', _external=True),

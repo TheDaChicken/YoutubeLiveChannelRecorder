@@ -59,7 +59,7 @@ class MainMenu(Screen):
 
     def add_channel(self, SessionID, platform, dvr_recording):
         function_name = "addChannel/{0}".format(platform)
-        arguments = {'SessionID': SessionID, 'dvr_recording': dvr_recording}
+        arguments = {'SessionID': SessionID, 'dvr_recording': dvr_recording, "test_upload": True}
         return server_reply(self.ip, self.port, function_name, {}, data=arguments, RequestMethod='POST')
 
     def remove_channel(self, channel_identifier):

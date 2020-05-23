@@ -78,7 +78,6 @@ class ProcessHandler:
         self.shared_globalVariables = self.baseManagerGlobalVariables.GlobalVariables()  # type: GlobalVariables
 
     def run_channel(self, channel: str or ChannelYouTube or ChannelTwitch, platform='YOUTUBE', startup=False, **kwargs) -> List[Union[bool, str]]:
-        channel_holder_class = None
         if type(channel) is str:
             channel_holder_class = self.get_channel_class(channel, platform)
         else:

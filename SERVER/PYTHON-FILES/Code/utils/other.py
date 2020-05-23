@@ -1,5 +1,7 @@
+import traceback
+
 from .m3u8 import HLS
-from ..log import warning
+from ..log import warning, error_warning
 
 
 #
@@ -88,3 +90,20 @@ def get_utc_offset():
     from datetime import datetime
     utc_offset = int((round((datetime.now() - datetime.utcnow()).total_seconds())) / 60)
     return utc_offset
+
+
+def translateTimezone(timezoneName, datetime):
+    """
+    """
+    if timezoneName is None:
+        return datetime
+    try:
+        from pytz import timezone
+        timezone = timezone(timezoneName)
+        return datetime.astimezone(timezone)
+    except ImportError:
+        print("Import Error when converting timezone. :p")
+        return datetime
+    except Exception as e:
+        error_warning(traceback.format_exc())
+        return datetime
