@@ -59,6 +59,9 @@ class ChannelObject(TemplateChannel):
     # PER-CHANNEL YOUTUBE VARIABLES
     cpn = None
 
+    # speeds up heartbeat by the value
+    speed_up_heartbeat = 0
+
     def __init__(self, channel_id, SettingDict, SharedCookieDict=None, cachedDataHandler=None,
                  queue_holder=None, globalVariables=None):
         """
@@ -385,11 +388,10 @@ class ChannelObject(TemplateChannel):
                         x.start()
                     if self.privateStream is False:
                         info("{0} is not live!".format(self.channel_name))
-                        sleep(self.pollDelayMs / 1000)
                     else:
                         info("{0}'s channel live streaming is currently private/unlisted!".format(
                             self.channel_name))
-                        sleep(self.pollDelayMs / 1000)
+                    sleep(self.pollDelayMs / 1000 - self.speed_up_heartbeat)
                 # LIVE
                 elif self.live_streaming is True:
                     # IF FFMPEG IS NOT ALIVE THEN TURN ON RECORDING.
@@ -406,7 +408,7 @@ class ChannelObject(TemplateChannel):
                         x = Thread(target=self.start_recording, args=(format_,))
                         x.daemon = True
                         x.start()
-                    sleep(self.pollDelayMs / 1000)
+                    sleep(self.pollDelayMs / 1000 - self.speed_up_heartbeat)
                 # REPEAT (END OF LOOP)
         except:
             self.crashed_traceback = traceback.format_exc()
