@@ -2,7 +2,7 @@ import os
 import subprocess
 import traceback
 from datetime import datetime
-from io import BytesIO
+# from io import BytesIO
 from os import getcwd, walk
 from os.path import exists, join, basename
 from threading import Thread
@@ -13,8 +13,6 @@ from uuid import uuid4
 import requests
 from flask import jsonify, request, Flask, redirect, url_for, session, send_from_directory, make_response, send_file
 from multiprocessing import Process
-
-from werkzeug.datastructures import ImmutableMultiDict
 
 from Code import CacheDataHandler
 from Code.utils.other import try_get, translateTimezone
@@ -102,8 +100,8 @@ class Server(Flask):
         return Response("Server is alive.")
 
     def ServerInfo(self):
-        headers = request.headers  # type: ImmutableMultiDict
-        timezoneName = headers.get("TimeZone")
+        headers = request.headers  # type: dict
+        timezone_name = headers.get("TimeZone")
 
         def formatChannel(channel_id):
             channel_class = self.process_Handler.channels_dict.get(channel_id).get('class')  # type: ChannelYouTube
@@ -122,7 +120,7 @@ class Server(Flask):
             if 'YOUTUBE' in channel_class.get('platform_name'):
                 last_heartbeat = None
                 if channel_class.get("last_heartbeat") is not None:
-                    last_heartbeat = translateTimezone(timezoneName, channel_class.get('last_heartbeat')).strftime(
+                    last_heartbeat = translateTimezone(timezone_name, channel_class.get('last_heartbeat')).strftime(
                         "%I:%M %p")
                 channel.update({
                     'video_id': channel_class.get('video_id'),
@@ -138,7 +136,7 @@ class Server(Flask):
                     time = channel_class.get('live_scheduled_timeString')
                     datetime_ = channel_class.get("live_scheduled_time")  # type: datetime
                     if datetime_ is not None:
-                        time = translateTimezone(timezoneName, datetime_).strftime("%B %d %Y, %I:%M %p")
+                        time = translateTimezone(timezone_name, datetime_).strftime("%B %d %Y, %I:%M %p")
                     live_scheduled.update({
                         'live_scheduled_time': time
                     })
@@ -224,7 +222,8 @@ class Server(Flask):
 
                         if channel_holder_class is None:
                             channel_identifier = channel_holder_class
-                        ok, message = self.process_Handler.run_channel(channel_holder_class, platform=platform_name, enableDVR=dvr_recording,
+                        ok, message = self.process_Handler.run_channel(channel_holder_class, platform=platform_name,
+                                                                       enableDVR=dvr_recording,
                                                                        testUpload=test_upload)
 
                         if not ok:
@@ -348,9 +347,7 @@ class Server(Flask):
         if platform_name.upper() not in self.process_Handler.platforms:
             return Response("Unknown Platform: {0}.".format(platform_name), status="client-error", status_code=404)
         argument_name, name = get_channel_identifier_name()
-        channel_identifier = request.args.get(argument_name.lower())
-        if channel_identifier is None:
-            channel_identifier = request.args.get("channel_identifier")
+        channel_identifier = request.args.get(argument_name.lower()) or request.args.get("channel_identifier")
         if channel_identifier is None:
             return Response("You need {0} in args.".format(argument_name), status="client-error", status_code=400)
         if channel_identifier == '':
@@ -518,22 +515,22 @@ class Server(Flask):
                     return None
             start_time = recording.get("start_timeUTC")
             if start_time:
-                time = translateTimezone(timezoneName, datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S %Z"))
+                time = translateTimezone(timezone_name, datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S %Z"))
                 recording.update({'date': time.strftime("%Y-%m-%d")})
                 recording.update({'time': time.strftime("%H:%M:%S")})
             recording.update({'thumbnail': "{0}?{1}".format(url_for('generateThumbnail', _external=True),
                                                             urlencode({'stream_name': stream_name}))})
             return recording
 
-        headers = request.headers  # type: ImmutableMultiDict
-        timezoneName = headers.get("TimeZone")
+        headers = request.headers  # type: dict
+        timezone_name = headers.get("TimeZone")
 
-        recordingList = self.cached_data_handler.getValue("recordings")
-        if recordingList is None:
-            recordingList = []
-        recordingList = list(map(formatTime, recordingList))
-        recordingList = [recording for recording in recordingList if recording is not None]
-        return Response(recordingList)
+        recording_list = self.cached_data_handler.getValue("recordings")
+        if recording_list is None:
+            recording_list = []
+        recording_list = list(map(formatTime, recording_list))
+        recording_list = [recording for recording in recording_list if recording is not None]
+        return Response(recording_list)
 
     # Playback recordings / downloading them.
 
@@ -616,19 +613,19 @@ class Server(Flask):
                         status="client-error", status_code=404)
 
 
-def loadServer(process_Handler, cached_data_handler, port, youtube_api_handler, cert=None, key=None):
+def loadServer(process_handler, cached_data_handler, port, youtube_api_handler, cert=None, key=None):
     try:
-        from gevent.pywsgi import WSGIServer as WSGIServer
+        from gevent.pywsgi import WSGIServer as web_server
     except ImportError:
         error_warning("Get gevent package! Unable to run.")
-        WSGIServer = None
-    if WSGIServer:
+        web_server = None
+    if web_server:
         ssl_args = dict()
         if cert:
             ssl_args['certfile'] = cert
         if key:
             ssl_args['keyfile'] = key
-        app = Server(__name__, process_Handler, cached_data_handler, youtube_api_handler)
+        app = Server(__name__, process_handler, cached_data_handler, youtube_api_handler)
 
         @app.before_request
         def before_request():
@@ -641,7 +638,7 @@ def loadServer(process_Handler, cached_data_handler, port, youtube_api_handler, 
                     if not ('login' in url and request.args.get('unlockCode') is not None) and 'callback' not in url:
                         return '', 403
 
-        http_server = WSGIServer(('0.0.0.0', port), app, **ssl_args)
+        http_server = web_server(('0.0.0.0', port), app, **ssl_args)
 
         info("Starting server. Hosted on port: {0}!".format(port))
         http_server.serve_forever()

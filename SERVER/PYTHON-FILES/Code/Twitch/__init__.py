@@ -33,6 +33,7 @@ class ChannelObject(TemplateChannel):
     video_id = "UNKNOWN"
 
     stop_websockets = None
+    access_token = None
 
     _API_START_PATH = 'https://api.twitch.tv'
     _USHER_START_PATH = 'https://usher.ttvnw.net'
@@ -51,10 +52,10 @@ class ChannelObject(TemplateChannel):
 
     def __callAPI__(self, path):
         url_referer = 'https://www.twitch.tv/{0}'.format(self.channel_name)
-        downloadOBJECT = download_website('{0}/{1}'.format(self._API_START_PATH, path), headers={
+        download_object = download_website('{0}/{1}'.format(self._API_START_PATH, path), headers={
             'DNT': '1', 'Referer': url_referer, 'Sec-Fetch-Mode': 'cors',
             'Client-ID': self.globalVariables.get("client_id")}, CookieDict=self.sharedCookieDict)
-        return downloadOBJECT.parse_json()
+        return download_object.parse_json()
 
     def close(self):
         super().close()
@@ -63,24 +64,33 @@ class ChannelObject(TemplateChannel):
 
     def loadVideoData(self):
         url = "https://www.twitch.tv/{0}".format(self.channel_name)
-        downloadOBJECT = download_website(url, CookieDict=self.sharedCookieDict)
-        if downloadOBJECT.status_code == 404:
+        download_object = download_website(url, CookieDict=self.sharedCookieDict)
+        if download_object.status_code == 404:
             return [False, "Failed getting Twitch Data! \"{0}\" doesn't exist as a channel name!".format(
                 self.channel_name)]
-        if downloadOBJECT.text is None:
+        if download_object.text is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
         if self.globalVariables.get("client_id") is None:
             verbose("Getting Client ID. [TWITCH]")
-            okay, client_id = find_client_id(downloadOBJECT.text)
+            okay, client_id = find_client_id(download_object.text)
             if okay is False:
                 warning(client_id)
             self.globalVariables.set("client_id", client_id)
         verbose('Getting Channel ID. [TWITCH]')
-        website_dict = self.__callAPI__('kraken/channels/{0}'.format(
-            self.channel_name))
-        self.channel_image = try_get(website_dict, lambda x: x['logo'])
-        self.channel_id = try_get(website_dict, lambda x: x['_id'], int)
+
+        self.access_token = self.__callAPI__('api/channels/{0}/access_token?{1}&oauth_token'.format(
+            self.channel_name, urlencode({'need_https': 'true', 'platform': 'web',
+                                          'player_backend': 'mediaplayer',
+                                          'player_type': 'site'})))
+
+        token = parse_json(self.access_token['token'])
+        self.channel_id = try_get(token, lambda x: x['channel_id'])
+
+        # website_dict = self.__callAPI__('kraken/channels/{0}'.format(
+        #     self.channel_name))
+        # self.channel_image = try_get(website_dict, lambda x: x['logo'])
+        # self.channel_id = try_get(website_dict, lambda x: x['_id'], int)
 
         self.live_streaming, hls = self.getTwitchStreamInfo()
 
@@ -93,17 +103,13 @@ class ChannelObject(TemplateChannel):
         return [True, "OK"]
 
     def getTwitchStreamInfo(self) -> List[Union[bool, HLS]]:
-        access_token = self.__callAPI__('api/channels/{0}/access_token?{1}&oauth_token'.format(
-            self.channel_name, urlencode({'need_https': 'true', 'platform': 'web',
-                                          'player_backend': 'mediaplayer',
-                                          'player_type': 'site'})))
         arguments = {
             'allow_source': 'true',
             'allow_spectre': 'true',
             'p': randint(1000000, 10000000),
-            'sig': access_token['sig'].encode('utf-8'),
+            'sig': self.access_token['sig'].encode('utf-8'),
             'supported_codecs': 'avc1',
-            'token': access_token['token'].encode('utf-8'),
+            'token': self.access_token['token'].encode('utf-8'),
             'cdm': 'wv',
         }
         manifest_url = '{0}/api/channel/hls/{1}.m3u8?{2}'.format(self._USHER_START_PATH, self.channel_name,

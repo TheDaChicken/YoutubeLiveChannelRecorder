@@ -67,9 +67,9 @@ class ProcessHandler:
         # Cookies
         self.baseManagerCookieDictHolder = BaseManager()
         self.baseManagerCookieDictHolder.start()
-        cookieHandler = build_cookies()
-        cookieHandler.load()
-        cookies_ = cookieHandler.get_cookie_list()
+        cookie_handler = build_cookies()
+        cookie_handler.load()
+        cookies_ = cookie_handler.get_cookie_list()
         self.shared_cookieDictHolder = self.baseManagerCookieDictHolder.Dict(cookies_)  # type: dict
 
         # Global Variables
@@ -201,6 +201,6 @@ class ProcessHandler:
     def is_google_account_login_in(self):
         cj = self.shared_cookieDictHolder.copy()
         cookie = [cookies for cookies in cj if 'SSID' in cookies]
-        if cookie is None or len(cookie) is 0:
+        if cookie is None or len(cookie) == 0:
             return False
         return True

@@ -4,7 +4,7 @@ import sys
 Verbose = True  # Enables Debug Logs
 Reply = True
 
-init(autoreset=True)
+init()
 
 
 # Sys.stdout.write is used to fix overlapping in printing.
@@ -56,4 +56,3 @@ def stopped(text):
 
 def note(text):
     sys.stdout.write("{0}[NOTE] {1}\n".format(Fore.LIGHTCYAN_EX, text))
-

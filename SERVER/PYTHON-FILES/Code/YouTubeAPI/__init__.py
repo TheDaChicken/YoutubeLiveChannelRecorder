@@ -1,11 +1,10 @@
 import os
 import random
-import traceback
 from http import client
 from time import sleep
 
 from Code import CacheDataHandler
-from Code.log import error_warning, warning, info
+from Code.log import warning, info
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -19,6 +18,7 @@ try:
     from googleapiclient.http import MediaFileUpload
     from google.oauth2.credentials import Credentials
 except ImportError as e:
+    Resource = object
     missing_packages.append("google-auth-oauthlib")
 
 
@@ -43,7 +43,7 @@ class YouTubeAPIHandler:
     def get_missing_packages():
         return missing_packages
 
-    def getClientSecretFile(self):
+    def getClientSecretFile(self) -> str:
         return self.CLIENT_SECRETS_FILE
 
     def __build__(self, credentials_dict):
@@ -98,9 +98,8 @@ class YouTubeAPIHandler:
     def getCacheDataHandler(self):
         return self.cached_data_handler
 
-
     def initialize_upload(self, file_location, title, description, keywords, category, privacyStatus):
-        youtubeClient = self.get_api_client()
+        youtube_client = self.get_api_client()
         if keywords:
             tags = keywords.split(",")
         else:
@@ -117,7 +116,7 @@ class YouTubeAPIHandler:
             )
         )
         # Call the API's videos.insert method to create and upload the video.
-        insert_request = youtubeClient.videos().insert(
+        insert_request = youtube_client.videos().insert(
             part=",".join(body.keys()),
             body=body,
             # The chunksize parameter specifies the size of each chunk of data, in
@@ -177,16 +176,16 @@ class YouTubeAPIHandler:
                     sleep(sleep_seconds)
 
     def upload_thumbnail(self, video_id, file_location):
-        youtubeClient = self.get_api_client()
-        youtubeClient.thumbnails().set(
+        youtube_client = self.get_api_client()
+        youtube_client.thumbnails().set(
             videoId=video_id,
             media_body=file_location
         ).execute()
 
-    def get_youtube_account_user_name(self, youtubeClient=None):
-        if youtubeClient is None:
-            youtubeClient = self.get_api_client()
-        channels_list = youtubeClient.channels().list(
+    def get_youtube_account_user_name(self, youtube_client=None):
+        if youtube_client is None:
+            youtube_client = self.get_api_client()
+        channels_list = youtube_client.channels().list(
             part="snippet,contentDetails,statistics",
             mine=True
         ).execute()

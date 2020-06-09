@@ -11,7 +11,7 @@ class CacheDataHandler:
     yml_name = "data.yml"
     _cache = None
     defaults = {
-        'channel_ids': [],
+        'channels': {},
         'DownloadThumbnail': True,
         'recordingResolution': 'original',
         'UploadLiveStreams': False,

@@ -81,11 +81,11 @@ class TemplateChannel(SharableHandler, ABC):
         if 'enableDVR' in SettingDict:
             self.enableDVR = SettingDict.get("enableDVR")
 
-    def send_updated_setting_dict(self, SettingDict: dict):
-        if 'testUpload' in SettingDict:
-            self.TestUpload = SettingDict.get("testUpload")
-        if 'enableDVR' in SettingDict:
-            self.enableDVR = SettingDict.get("enableDVR")
+    def send_updated_setting_dict(self, setting_dict: dict):
+        if 'testUpload' in setting_dict:
+            self.TestUpload = setting_dict.get("testUpload")
+        if 'enableDVR' in setting_dict:
+            self.enableDVR = setting_dict.get("enableDVR")
 
     def close(self):
         self.EncoderClass.stop_recording()
@@ -111,16 +111,16 @@ class TemplateChannel(SharableHandler, ABC):
                 'video_id': self.video_id, 'title': self.title, 'start_date': self.start_date,
                 'file_location': self.video_location, 'channel_name': self.channel_name,
                 'channel_id': self.channel_id, 'description': self.description})
-            recordingList = self.cachedDataHandler.getValue("recordings")
-            if recordingList is None:
-                recordingList = []
-            recordingList.append({
+            recording_list = self.cachedDataHandler.getValue("recordings")
+            if recording_list is None:
+                recording_list = []
+            recording_list.append({
                 'video_id': self.video_id,
                 'channel_name': self.channel_name,
                 'start_timeUTC': self.start_dateUTC.strftime("%Y-%m-%d %H:%M:%S %Z"),
                 'stream_name': basename(self.video_location),
             })
-            self.cachedDataHandler.setValue("recordings", recordingList)
+            self.cachedDataHandler.setValue("recordings", recording_list)
             return True
 
     def stop_recording(self):
@@ -156,17 +156,11 @@ class TemplateChannel(SharableHandler, ABC):
         if not os.path.exists(recording_dir):
             os.mkdir(recording_dir)
 
-
-    def isVideoIDinTemp(self, video_id):
+    def isVideoIDinTemp(self, video_id: str):
         video_list = list(map(lambda x: self.video_list.get(x).get('video_id'), self.video_list.keys()))
         return video_id in video_list
 
-    def addTemp(self, video_data):
-        """
-
-        :type video_data: dict
-        :return:
-        """
+    def addTemp(self, video_data: dict):
         if self.video_list is None:
             self.video_list = {}
         video_id = video_data.get('video_id')
@@ -197,5 +191,8 @@ class TemplateChannel(SharableHandler, ABC):
 
     @abstractmethod
     def channel_thread(self):
+        """
+        Thread Handles Channels.
+        Doesn't End.
+        """
         pass
-
