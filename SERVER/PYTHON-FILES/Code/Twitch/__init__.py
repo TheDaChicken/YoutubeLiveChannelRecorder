@@ -1,15 +1,6 @@
-import hashlib
-import json
-import os
-import re
-
 # from Code import GlobalVariables
 import traceback
-from _sha256 import sha256
-from datetime import datetime
 from random import randint
-from threading import Thread
-from time import sleep
 from typing import Union, List
 from urllib.parse import urlencode
 
@@ -17,10 +8,8 @@ from Code.log import warning, verbose, crash_warning, reply
 from Code.utils.other import try_get, get_format_from_data
 from Code.Templates.ChannelObject import TemplateChannel
 from Code.utils.web import download_website
-from Code.encoder import Encoder
 from Code.utils.parser import parse_json
 from Code.Twitch.utils import TwitchPubSubEdgeWebSocket, find_client_id
-from Code.utils.windows import show_windows_toast_notification
 from Code.utils.m3u8 import HLS
 
 
@@ -114,22 +103,22 @@ class ChannelObject(TemplateChannel):
         }
         manifest_url = '{0}/api/channel/hls/{1}.m3u8?{2}'.format(self._USHER_START_PATH, self.channel_name,
                                                                  urlencode(arguments))
-        downloadOBJECT = download_website(manifest_url, CookieDict=self.sharedCookieDict, headers={
+        download_object = download_website(manifest_url, CookieDict=self.sharedCookieDict, headers={
             'Accept': 'application/x-mpegURL, application/vnd.apple.mpegurl, application/json, text/plain'
         })
-        if downloadOBJECT.status_code == 404:
+        if download_object.status_code == 404:
             # TRANSCODE DOESNT EXIST. THAT IS NORMAL. SO NOT LIVE
             return [False, None]
-        elif downloadOBJECT.response_headers['Content-Type'] == "application/vnd.apple.mpegurl":
-            return [True, downloadOBJECT.parse_m3u8_formats()]
-        print("Unable To Handle Status: {0} For Twitch.".format(downloadOBJECT.status_code))
+        elif download_object.response_headers['Content-Type'] == "application/vnd.apple.mpegurl":
+            return [True, download_object.parse_m3u8_formats()]
+        print("Unable To Handle Status: {0} For Twitch.".format(download_object.status_code))
         return [False, None]
 
-    def on_message(self, json: dict):
-        if json:
-            reply('FROM TWITCH -> {0}'.format(json))
-            message_type = try_get(json, lambda x: x['type'], str) or ''
-            message_data = parse_json(try_get(json, lambda x: x['data']['message'], str))
+    def on_message(self, reply_: dict):
+        if reply_:
+            reply('FROM TWITCH -> {0}'.format(reply_))
+            message_type = try_get(reply_, lambda x: x['type'], str) or ''
+            message_data = parse_json(try_get(reply_, lambda x: x['data']['message'], str)) or {}
             if "MESSAGE" in message_type:
                 data_message_type = try_get(message_data, lambda x: x['type']) or ''
                 if 'stream-up' in data_message_type:

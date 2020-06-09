@@ -72,21 +72,21 @@ class ChannelObject(TemplateChannel):
         super().__init__(channel_id, SettingDict, SharedCookieDict, cachedDataHandler, queue_holder, globalVariables)
 
     def loadVideoData(self, video_id=None):
-        if video_id is not None:
-            websiteClass = download_website("https://www.youtube.com/watch?v={0}".
-                                            format(video_id), CookieDict=self.sharedCookieDict)
-            self.video_id = video_id
+        self.video_id = video_id
+        if video_id:
+            url = "https://www.youtube.com/watch?v={0}".format(video_id)
         else:
-            websiteClass = download_website("https://www.youtube.com/channel/{0}/live".
-                                            format(self.channel_id), CookieDict=self.sharedCookieDict)
+            url = "https://www.youtube.com/channel/{0}/live".format(self.channel_id)
+
+        website_object = download_website(url, CookieDict=self.sharedCookieDict)
         # self.sharedCookieDict.update(websiteClass.cookies)
-        if websiteClass.text is None:
+        if website_object.text is None:
             return [False, "Failed getting Youtube Data from the internet! "
                            "This means there is no good internet available!"]
-        if websiteClass.status_code == 404:
+        if website_object.status_code == 404:
             return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
                 self.channel_id)]
-        website_string = websiteClass.text
+        website_string = website_object.text
 
         endpoint_type = get_endpoint_type(website_string)
         if endpoint_type:
@@ -194,7 +194,8 @@ class ChannelObject(TemplateChannel):
                                         return service
                             return None
 
-                        if self.globalVariables.get("alreadyChecked") is False or self.globalVariables.get("alreadyChecked") is None:
+                        if self.globalVariables.get("alreadyChecked") is False or self.globalVariables.get(
+                                "alreadyChecked") is None:
                             verbose("Getting Global YouTube Variables.")
                             e_catcher = getServiceSettings(try_get(youtube_initial_data, lambda x: x['responseContext'][
                                 'serviceTrackingParams'], list), "ECATCHER")

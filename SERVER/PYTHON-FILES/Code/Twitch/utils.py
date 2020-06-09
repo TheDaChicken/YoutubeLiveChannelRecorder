@@ -2,17 +2,18 @@ import re
 import sys
 import traceback
 from json import dumps
-from random import choice, randint
+from random import choice
 from string import ascii_uppercase
 from threading import Thread
 from time import sleep
 
-from websocket import create_connection, WebSocketApp, enableTrace, _logging
+from websocket import WebSocketApp, _logging
 
 from Code.utils.other import try_get
 from Code.utils.web import UserAgent
 from Code.log import TwitchSent, warning
 from Code.utils.parser import parse_json
+
 
 class CustomWebSocketApp(WebSocketApp):
     def _callback(self, callback, *args):
@@ -76,9 +77,9 @@ class TwitchPubSubEdgeWebSocket:
             'User-Agent': UserAgent}
         # enableTrace(True)
         self.ws = CustomWebSocketApp("wss://pubsub-edge.twitch.tv/v1",
-                                on_message=self.on_message,
-                                on_error=self.on_error,
-                                on_close=self.on_close, header=headers, on_open=self.on_open)
+                                     on_message=self.on_message,
+                                     on_error=self.on_error,
+                                     on_close=self.on_close, header=headers, on_open=self.on_open)
         # ws.on_open = self.on_open
         while True:
             self.ws.run_forever()

@@ -1,5 +1,5 @@
-import re
 import traceback
+
 from Code.log import warning, error_warning, stopped
 
 try:
@@ -18,12 +18,11 @@ def parse_json(json_string, transform_source=None):
             json_string = transform_source(json_string)
         try:
             return json.loads(json_string)
-        except Exception:
+        except ValueError:
             warning("Failed to parse JSON.")
             error_warning(traceback.format_exc())
             return None
     return None
-
 
 
 def parse_html_attributes(html_element):

@@ -103,7 +103,8 @@ class download_website:
                 pass
         else:
             opener = build_opener(HTTPCookieProcessor(self.cj))
-            request = Request(url, headers=headers, data=urlencode(data).encode("utf-8") if 'POST' in RequestMethod else None)
+            request = Request(url, headers=headers,
+                              data=urlencode(data).encode("utf-8") if 'POST' in RequestMethod else None)
             try:
                 response = opener.open(request)  # type: HTTPResponse
                 self.status_code = response.getcode()
