@@ -8,7 +8,7 @@ except ImportError:
     import json
 
 
-def parse_json(json_string, transform_source=None):
+def parse_json(json_string, transform_source=None) -> dict or None:
     """
     Taken and have been edited from:
         https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/common.py#L895

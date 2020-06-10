@@ -1,6 +1,7 @@
 import os
 from time import sleep
 
+from Code.utils.other import try_get
 from Code.utils.parser import parse_json
 from Code.utils.m3u8 import parse_formats as parse_m3u8_formats
 from Code.log import stopped, warning
@@ -124,14 +125,18 @@ class download_website:
         else:
             warning("No CookieDict")
 
-    def parse_json(self):
+    def parse_json(self) -> dict or None:
         """
 
         Parses Response As JSON DICT
 
-        :return: dict
         """
-        return parse_json(self.text)
+        content_type = self.get_content_type() or ''
+        if 'application/json' in content_type:
+            return parse_json(self.text)
+        else:
+            warning("{0} -> parse_json()".format(content_type))
+            return parse_json(self.text)
 
     def parse_m3u8_formats(self):
         """
@@ -139,3 +144,6 @@ class download_website:
         Parses Response As JSON DICT
         """
         return parse_m3u8_formats(self.text)
+
+    def get_content_type(self):
+        return try_get(self.response_headers, lambda x: x['content-type'], str)

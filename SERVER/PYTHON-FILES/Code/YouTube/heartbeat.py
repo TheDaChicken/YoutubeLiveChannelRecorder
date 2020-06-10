@@ -4,12 +4,18 @@ from datetime import datetime
 from Code.log import warning, reply, stopped, error_warning
 from Code.utils.other import get_highest_thumbnail, try_get
 from Code.utils.web import download_website
+from Code.Templates.ChannelObject import TemplateChannel
 
 try:
     from urllib.parse import urlencode
 except ImportError:
     urlencode = None
     stopped("Unsupported version of Python. You need Version 3 :<")
+
+
+class TempGlobalVariables:
+    def get(self, variable: str) -> None:
+        return None
 
 
 def is_live(channel_Class, CookieDict=None, globalVariables=None, json=None):
@@ -19,18 +25,13 @@ def is_live(channel_Class, CookieDict=None, globalVariables=None, json=None):
     Also sets heartbeat related variables.
 
     :type CookieDict: dict
-    :type alreadyChecked: bool
-    :type channel_Class: ChannelYouTube
+    :type channel_Class: TemplateChannel
     :type globalVariables: GlobalVariables
 
     """
 
     if globalVariables is None:
-        class GlobalVariables:
-            def get(self, variable):
-                return None
-
-        globalVariables = GlobalVariables()
+        globalVariables = TempGlobalVariables()
 
     try:
         if json is None:
@@ -170,7 +171,7 @@ def get_video_id(liveStreamAbilityRenderer):
     return videoID
 
 
-def get_unix_schedule_time(liveStreamAbilityRenderer):
+def get_unix_schedule_time(liveStreamAbilityRenderer) -> int or None:
     offlineSlate = try_get(liveStreamAbilityRenderer, lambda x: x['offlineSlate'], dict)
     liveStreamOfflineSlateRenderer = try_get(offlineSlate, lambda x: x['liveStreamOfflineSlateRenderer'],
                                              dict)  # type: dict
