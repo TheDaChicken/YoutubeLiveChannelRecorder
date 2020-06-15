@@ -4,7 +4,7 @@ import sys
 Verbose = True  # Enables Debug Logs
 Reply = True
 
-init(autoreset=True)
+init()
 
 
 # Sys.stdout.write is used to fix overlapping in printing.

@@ -1,63 +1,65 @@
 import os
-import traceback
 from time import sleep
 
-from .parser import parse_json, parse_m3u8_formats
+from Code.utils.other import try_get
+from Code.utils.parser import parse_json
+from Code.utils.m3u8 import parse_formats as parse_m3u8_formats
+from Code.log import stopped, warning
 
-from ..log import stopped, warning, error_warning
-
-import httplib2
-from urllib3.exceptions import TimeoutError
-
-#
-#
-# LITTLE BIT OF THIS CODE IN THIS FILE IS IN YOUTUBE-DL.
-# Credit to them!
-#
-
+UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
+            'Chrome/75.0.3770.100 Safari/537.36'
 
 try:
-    from urllib.request import urlopen, Request
-    from urllib.error import URLError
-    from urllib.request import HTTPCookieProcessor, build_opener
+    import requests
+
+    requestSession = requests.Session()
+except ImportError:
+    requests = None
+    try:
+        from http.client import HTTPResponse
+        from urllib.request import urlopen, Request
+        from urllib.error import URLError, HTTPError
+        from urllib.parse import urlencode
+        from urllib.request import HTTPCookieProcessor, build_opener
+    except ImportError:
+        urlencode = None
+        Request = None
+        HTTPResponse = None
+        URLError = None
+        HTTPError = None
+        HTTPCookieProcessor = None
+        build_opener = None
+        stopped("Unsupported version of Python.")
+
+try:
     from http.cookiejar import MozillaCookieJar, LoadError, Cookie
 except ImportError:
-    Request = None
-    URLError = None
-    HTTPCookieProcessor = None
-    build_opener = None
     MozillaCookieJar = None
     LoadError = None
-    stopped("Unsupported version of Python. You need Version 3 :<")
+    stopped("Unsupported version of Python.")
 
 
-def __build_opener(cj):
-    """
-    :type cj: MozillaCookieJar
-    """
-    # BUILD OPENER
-    opener = build_opener(HTTPCookieProcessor(cj))
-    return opener
-
-
-def __build__cookies(cookies=None):
+def build_cookies(cookies=None):
     class CustomCookieJar(MozillaCookieJar):
         _cookies = None
 
         def load(self, custom_list=None, **kwargs):
             """
             Allows to load list of Cookies instead of keep loading a cookie file, if needed.
+            :type custom_list: dict
             """
             if custom_list:
+                custom_list = custom_list.copy()
                 self._cookies = custom_list
             else:
-                super().load(**kwargs)
+                if os.path.exists(self.filename):
+                    super().load(**kwargs)
 
-        def save(self, **kwargs):
+        def save(self, **kwargs) -> dict:
             super().save(**kwargs)
             return self._cookies
 
-        def get_cookie_list(self):
+        def get_cookie_list(self) -> dict:
             return self._cookies
 
     cj = CustomCookieJar(filename="cookies.txt")
@@ -74,96 +76,74 @@ def __build__cookies(cookies=None):
     return cj
 
 
-def download_website(url, headers=None, data=None, SharedVariables=None):
-    """
+class download_website:
+    use_requests = requests is not None
+    text = None
+    response_headers = {}
 
-    Downloads website from url.
-
-    :param SharedVariables: Contains Shared Variables between different processes.
-    :param url: url to open request to.
-    :param headers: Form data sent to website.
-    :param data: Form data sent to website.
-    :return: str, int, None
-    """
-
-    if headers is None:
-        headers = {}
-    cj = __build__cookies(SharedVariables.CachedCookieList if SharedVariables is not None else None)
-    opener = __build_opener(cj)
-
-    from .. import UserAgent
-    if "User-Agent" not in headers:
-        headers.update({"User-Agent": UserAgent})
-
-    try:
-        request = Request(url, headers=headers, data=data)
-    except Exception:
-        error_warning(traceback.format_exc())
-        return None
-    try:
-        response = opener.open(request)
-    except (URLError, TimeoutError, OSError) as e2:
-        try:
-            return e2.code
-        except AttributeError:
-            return None
-    except Exception:
-        warning("Unable to request HTTP website.")
-        error_warning(traceback.format_exc())
-        return None
-
-    try:
-        if SharedVariables:
-            SharedVariables.CachedCookieList = cj.save()  # Saves Cookies
+    def __init__(self, url, headers=None, data=None, CookieDict=None, RequestMethod='GET'):
+        if not headers:
+            headers = {}
+        if not data:
+            data = {}
+        if 'User-Agent' not in headers:
+            headers.update({'User-Agent': UserAgent})
+        self.headers = headers
+        self.cj = build_cookies(CookieDict if CookieDict is not None else None)
+        if self.use_requests:
+            requestSession.cookies = self.cj
+            try:
+                if RequestMethod == 'GET':
+                    r = requestSession.get(url, headers=headers, stream=True)
+                if RequestMethod == 'POST':
+                    r = requestSession.post(url, headers=headers, json=data)
+                self.status_code = r.status_code
+                self.text = r.text
+                self.response_headers = r.headers
+            except requests.exceptions.ConnectionError:
+                pass
         else:
-            cj.save()  # Saves Cookies
-    except Exception as e1:
-        if 'Permission denied' in str(e1):
-            print("")
-            stopped("Permission denied Saving Cookies!\n"
-                    "You can allow access by running sudo if you are on Linux.")
+            opener = build_opener(HTTPCookieProcessor(self.cj))
+            request = Request(url, headers=headers,
+                              data=urlencode(data).encode("utf-8") if 'POST' in RequestMethod else None)
+            try:
+                response = opener.open(request)  # type: HTTPResponse
+                self.status_code = response.getcode()
+                self.response_headers = response.getheaders()
+                self.text = response.read().decode('utf-8')
+            except HTTPError as e:
+                self.status_code = e.code
+                self.response_headers = response.getheaders()
+                self.text = response.read().decode('utf-8')
+            except URLError:
+                pass
+            except (OSError, TimeoutError):
+                pass
+        self.cookies = self.cj.save()
+        if CookieDict is not None:
+            CookieDict.update(self.cookies)
         else:
-            error_warning(traceback.format_exc())
-            warning("Unable to save cookies.")
-    try:
-        website_bytes = response.read()
-    except OSError as e2:
-        error_warning(traceback.format_exc())
-        warning("Unable to read website bytes.")
-        return None
-    try:
-        decoded_bytes = website_bytes.decode('utf-8')
-    except Exception:
-        error_warning(traceback.format_exc())
-        warning("Unable to decode website bytes.")
-        return None
-    return decoded_bytes
+            warning("No CookieDict")
 
+    def parse_json(self) -> dict or None:
+        """
 
-def download_image(image_url, file_name):
-    try:
-        from urllib.request import urlretrieve
-        from urllib.error import URLError
-    except ImportError:
-        URLError = None
-        urlretrieve = None
-        stopped("Unsupported version of Python. You need Version 3 :<")
-    try:
-        urlretrieve(image_url, file_name)
-        return True
-    except (httplib2.ServerNotFoundError, TimeoutError, URLError):
-        return False
+        Parses Response As JSON DICT
 
+        """
+        content_type = self.get_content_type() or ''
+        if 'application/json' in content_type:
+            return parse_json(self.text)
+        else:
+            warning("{0} -> parse_json()".format(content_type))
+            return parse_json(self.text)
 
-def download_json(url, headers=None, data=None, transform_source=None, SharedVariables=None):
-    json_string = download_website(url, headers=headers, data=data, SharedVariables=SharedVariables)
-    if type(json_string) is str:
-        return parse_json(json_string, transform_source=transform_source)
-    return json_string
+    def parse_m3u8_formats(self):
+        """
 
+        Parses Response As JSON DICT
+        """
+        return parse_m3u8_formats(self.text)
 
-def download_m3u8_formats(m3u8_url, headers=None):
-    m3u8_doc = download_website(m3u8_url, headers)
-    if type(m3u8_doc) is str:
-        return parse_m3u8_formats(m3u8_doc)
-    return m3u8_doc
+    def get_content_type(self):
+        return try_get(self.response_headers, lambda x: x['content-type'], str)

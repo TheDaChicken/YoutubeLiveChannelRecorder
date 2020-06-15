@@ -1,230 +1,206 @@
-import os
 from multiprocessing import Process
-from multiprocessing.managers import BaseManager, Namespace
+from multiprocessing.managers import BaseManager
+from typing import Tuple, List, Union
 
-from .dataHandler import CacheDataHandler
-from .log import verbose
-from .twitch.channelClass import ChannelInfoTwitch
-from .utils.web import download_website, __build__cookies
-from .youtube.channelClass import ChannelInfo
-from .youtubeAPI.uploadQueue import uploadQueue, QueueHandler
-
-UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
-            'Chrome/75.0.3770.100 Safari/537.36'
-
-# Probably not the right type of class to put this stuff but I mean, there is public functions and variables in here.
-
-channel_main_array = []
-ServerClass = None
-
-baseManagerChannelInfo = None
-baseManagerDataHandler = None
-
-shareable_variables = None
-cached_data_handler = None
-queue_holder = None
-uploadThread = None
+from Code.utils.web import build_cookies
+from Code.YouTube import ChannelObject as ChannelYouTube
+from Code.Twitch import ChannelObject as ChannelTwitch, TemplateChannel
+from Code.dataHandler import CacheDataHandler
+from Code.log import warning
+from Code.YouTubeAPI.uploadQueue import QueueHandler, runQueue
+from Code.serverHandler import loadServer
+from Code.utils.other import try_get
+from Code.YouTubeAPI import YouTubeAPIHandler
 
 
-def setupSharedVariables():
-    global baseManagerChannelInfo
-    global baseManagerDataHandler
-    global shareable_variables
-    global cached_data_handler
-    global queue_holder
+class GlobalVariables:
+    holder = {}
 
-    BaseManager.register('ChannelInfo', ChannelInfo)
-    BaseManager.register('ChannelInfoTwitch', ChannelInfoTwitch)
-    BaseManager.register('CacheDataHandler', CacheDataHandler)
-    BaseManager.register('QueueHandler', QueueHandler)
+    def set(self, variable, value):
+        self.holder.update({variable: value})
 
-    # Regular Shared Variables
-    shareable_variables = Namespace()
-    shareable_variables.DebugMode = False
+    def get(self, variable):
+        return self.holder.get(variable)
 
-    # start baseManager for channelInfo.
-    baseManagerChannelInfo = BaseManager()
-    baseManagerChannelInfo.start()
-
-    # Cache Data File. (Data Cache is in a class)
-    baseManagerDataHandlers = BaseManager()
-    baseManagerDataHandlers.start()
-    cached_data_handler = baseManagerDataHandlers.CacheDataHandler()
-
-    # Global Queue Holder.
-    queue_holder = baseManagerDataHandlers.QueueHandler()
-
-    # Cache Cookies in shareable_variables. (Cookies are cached in a list)
-    # Cannot make into global class due to problems.
-    from .utils.web import __build__cookies
-    cookieHandler = __build__cookies()
-    cookies_ = cookieHandler.get_cookie_list()
-    if cookies_:
-        shareable_variables.CachedCookieList = cookies_
+    def getHolder(self):
+        return self.holder
 
 
-class HandlerChannelList:
-    list_ = []
+class ProcessHandler:
+    channels_dict = {}
+    platforms = ['YOUTUBE', 'TWITCH']
 
-    def add(self, object_):
-        self.list_.append(object_)
+    debug_mode = False
+    serverPort = 31311
+    enable_ffmpeg_logs = False
 
-    def remove(self, object_):
-        self.list_.remove(object_)
+    # YouTube Queue Stuff
+    YouTubeQueueThread = None
 
+    def __init__(self):
+        # Create Shared Variables
+        BaseManager.register('CacheDataHandler', CacheDataHandler)
+        BaseManager.register('ChannelYouTube', ChannelYouTube)
+        BaseManager.register("ChannelTwitch", ChannelTwitch)
+        BaseManager.register("Dict", dict)
+        BaseManager.register("QueueHandler", QueueHandler)
+        BaseManager.register("YouTubeAPIHandler", YouTubeAPIHandler)
+        BaseManager.register("GlobalVariables", GlobalVariables)
 
-def run_channel(channel_identifier, platform='YOUTUBE', startup=False, addToData=False):
-    """
-    :param channel_identifier: Different per platform. Youtube is Channel_id, Twitch is channel_name. :P
-    :type channel_identifier: str
-    :param platform: What platform to run.
-    :param startup: If running in main __main__.py script.
-    :param addToData: Add to data file, if channel runs correctly.
-    """
-    if 'YOUTUBE' in platform:
-        channel_holder_class = baseManagerChannelInfo.ChannelInfo(channel_identifier, shareable_variables,
-                                                                  cached_data_handler, queue_holder)
-    if 'TWITCH' in platform:
-        channel_holder_class = baseManagerChannelInfo.ChannelInfoTwitch(channel_identifier, shareable_variables,
-                                                                        cached_data_handler, queue_holder)
-    if channel_holder_class:
+        # Channel Class
+        self.baseManagerChannelInfo = BaseManager()
+        self.baseManagerChannelInfo.start()
+
+        # Data Handler
+        self.baseManagerNormalHandlers = BaseManager()
+        self.baseManagerNormalHandlers.start()
+        self.cachedDataHandler = self.baseManagerNormalHandlers.CacheDataHandler()
+
+        # Global Queue Holder.
+        self.queue_holder = self.baseManagerNormalHandlers.QueueHandler()
+
+        # YouTube API Handler
+        self.baseManagerAPIHandlers = BaseManager()
+        self.baseManagerAPIHandlers.start()
+        self.youtube_api_handler = self.baseManagerAPIHandlers.YouTubeAPIHandler(self.cachedDataHandler)
+
+        # Cookies
+        self.baseManagerCookieDictHolder = BaseManager()
+        self.baseManagerCookieDictHolder.start()
+        cookie_handler = build_cookies()
+        cookie_handler.load()
+        cookies_ = cookie_handler.get_cookie_list()
+        self.shared_cookieDictHolder = self.baseManagerCookieDictHolder.Dict(cookies_)  # type: dict
+
+        # Global Variables
+        self.baseManagerGlobalVariables = BaseManager()
+        self.baseManagerGlobalVariables.start()
+        self.shared_globalVariables = self.baseManagerGlobalVariables.GlobalVariables()  # type: GlobalVariables
+
+    def run_channel(self, channel: str or ChannelYouTube or ChannelTwitch, platform='YOUTUBE', startup=False, **kwargs) -> List[Union[bool, str]]:
+        if type(channel) is str:
+            channel_holder_class = self.get_channel_class(channel, platform)
+        else:
+            channel_holder_class = channel
+
+        if channel_holder_class:
+            channel_holder_class.send_updated_setting_dict(kwargs)
+
+            channel_identifier = channel_holder_class.get("channel_identifier")
+            ok_bool, error_message = channel_holder_class.loadVideoData()
+            if ok_bool:
+                channel_holder_class.registerCloseEvent()
+
+                channel_name = channel_holder_class.get("channel_name")
+                check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                         name="{0} - Channel Process".format(channel_name))
+                check_streaming_channel_thread.start()
+                self.channels_dict.update({
+                    channel_identifier: {
+                        'class': channel_holder_class,
+                        'thread_class': check_streaming_channel_thread}
+                })
+                return [True, "OK"]
+            else:
+                if startup:
+                    self.channels_dict.update({
+                        channel_identifier: {
+                            'class': channel_holder_class,
+                            'error': error_message,
+                            'thread_class': None}
+                    })
+                return [False, error_message]
+
+    def get_channel_class(self, channel_identifier, platform='YOUTUBE') -> TemplateChannel:
+        SettingDict = {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs}
+        channel_holder_class = None
+        if 'YOUTUBE' in platform.upper():
+            channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
+                channel_identifier, SettingDict, self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder, self.shared_globalVariables)
+        if 'TWITCH' in platform.upper():
+            channel_holder_class = self.baseManagerChannelInfo.ChannelTwitch(
+                channel_identifier, SettingDict, self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder, self.shared_globalVariables)
+        return channel_holder_class
+
+    def run_channel_video_id(self, video_id):
+        """
+
+        Runs a Channel Instance without a channel id. Uses a Video ID to get channel id etc
+
+        """
+        channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
+            None, {'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
+            self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
+        ok_bool, error_message = channel_holder_class.loadVideoData(video_id=video_id)
+        if ok_bool:
+            channel_holder_class.registerCloseEvent()
+            channel_id = channel_holder_class.get("channel_id")
+            channel_name = channel_holder_class.get("channel_name")
+            check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
+                                                     name="{0} - Channel Process".format(channel_name))
+            check_streaming_channel_thread.start()
+            self.channels_dict.update({
+                channel_id: {
+                    'class': channel_holder_class,
+                    'thread_class': check_streaming_channel_thread}
+            })
+            return [True, "OK"]
+        else:
+            return [False, error_message]
+
+    def upload_test_run(self, channel_id):
+        channel_holder_class = self.baseManagerChannelInfo.ChannelYouTube(
+            channel_id, {'testUpload': True, 'debug_mode': self.debug_mode, 'ffmpeg_logs': self.enable_ffmpeg_logs},
+            self.shared_cookieDictHolder, self.cachedDataHandler, self.queue_holder)
         ok_bool, error_message = channel_holder_class.loadVideoData()
         if ok_bool:
             del ok_bool
             del error_message
+            if not channel_holder_class.is_live():
+                return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
+
             channel_holder_class.registerCloseEvent()
             channel_name = channel_holder_class.get("channel_name")
             check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
                                                      name="{0} - Channel Process".format(channel_name))
             check_streaming_channel_thread.start()
-            channel_main_array.append(
-                {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
-            if addToData:
-                cached_data_handler.addValueList('channels_{0}'.format(platform), channel_identifier)
+            self.channels_dict.update({
+                channel_id: {
+                    'class': channel_holder_class,
+                    'thread_class': check_streaming_channel_thread}
+            })
             return [True, "OK"]
         else:
-            if startup:
-                channel_main_array.append(
-                    {'class': channel_holder_class, "error": error_message, 'thread_class': None})
             return [False, error_message]
-    return [False, "UNKNOWN PLATFORM GIVEN TO RUN_CHANNEL."]
 
+    def loadChannels(self):
+        channels = self.cachedDataHandler.getValue('channels')
+        if channels:
+            for platform in channels:
+                channel_list = channels.get(platform)
+                for channel_id in channel_list:
+                    ok, error_message = self.run_channel(channel_id, startup=True,
+                                                         platform=platform)
+                    if not ok:
+                        warning(error_message)
 
-def upload_test_run(channel_id, startup=False):
-    channel_holder_class = baseManagerChannelInfo.ChannelInfo(channel_id, shareable_variables,
-                                                              cached_data_handler, queue_holder)
-    ok_bool, error_message = channel_holder_class.loadVideoData()
-    if ok_bool:
-        del ok_bool
-        del error_message
+    def run_youtube_queue(self):
+        if self.cachedDataHandler.getValue('UploadLiveStreams'):
+            self.YouTubeQueueThread = Process(target=runQueue,
+                                              name="YouTube Upload Queue",
+                                              args=(self.youtube_api_handler, self.queue_holder,))
+            self.YouTubeQueueThread.start()
 
-        if not channel_holder_class.is_live():
-            return [False, "Channel is not live streaming! The channel needs to be live streaming!"]
+    def run_server(self, cert=None, key=None):
+        key = try_get(self.cachedDataHandler, lambda x: x.getValue('ssl_key'), str) if not None else key
+        cert = try_get(self.cachedDataHandler, lambda x: x.getValue('ssl_cert'), str) if not None else cert
 
-        channel_holder_class.registerCloseEvent()
-        channel_name = channel_holder_class.get("channel_name")
-        check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
-                                                 name="{0} - Channel Process".format(channel_name), args=(True,))
-        check_streaming_channel_thread.start()
-        channel_main_array.append(
-            {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
-        return [True, "OK"]
-    else:
-        if startup:
-            channel_main_array.append(
-                {'class': channel_holder_class, "error": error_message, 'thread_class': None})
-        return [False, error_message]
+        loadServer(self, self.cachedDataHandler, self.serverPort, self.youtube_api_handler,
+                   cert=cert, key=key)
 
-
-def run_channel_with_video_id(video_id, startup=False, addToData=False):
-    channel_holder_class = baseManagerChannelInfo.ChannelInfo(None, shareable_variables,
-                                                              cached_data_handler, queue_holder)
-    ok_bool, error_message = channel_holder_class.loadVideoData(video_id=video_id)
-    if ok_bool:
-        del ok_bool
-        del error_message
-        channel_id = channel_holder_class.get('channel_id')
-
-        channel_holder_class.registerCloseEvent()
-        channel_name = channel_holder_class.get("channel_name")
-        check_streaming_channel_thread = Process(target=channel_holder_class.channel_thread,
-                                                 name="{0} - Channel Process".format(channel_name))
-        check_streaming_channel_thread.start()
-        channel_main_array.append(
-            {'class': channel_holder_class, 'thread_class': check_streaming_channel_thread})
-        if addToData:
-            cached_data_handler.addValueList('channels_{0}'.format('YOUTUBE'), channel_id)
-        return [True, "OK"]
-    else:
-        if startup:
-            channel_main_array.append(
-                {'class': channel_holder_class, "error": error_message, 'thread_class': None})
-        return [False, error_message]
-
-
-def run_server(port, cert=None, key=None):
-    from .serverHandler import loadServer
-    loadServer(
-        cached_data_handler, port, cert=cert, key=key)
-
-
-def run_youtube_queue_thread(skipValueCheck=False):
-    global uploadThread
-    if not uploadThread:
-        if skipValueCheck or cached_data_handler.getValue('UploadLiveStreams'):
-            uploadThread = Process(target=uploadQueue,
-                                   name="Upload Thread.", args=(cached_data_handler, queue_holder,))
-            uploadThread.start()
-            return [True, "OK"]
-    return [False, "Already started."]
-
-
-def stop_youtube_queue_thread():
-    global uploadThread
-    if uploadThread:
-        uploadThread.terminate()
-        uploadThread.join()  # wait until done.
-        # uploadThread.close() (ERROR IDK LOL)
-        uploadThread = None
-        return [True, "OK"]
-    return [False, "Welp, already stopped."]
-
-
-# VERY BETA
-def google_account_login(username, password):
-    from .youtube.login import login
-    return login(username, password)
-
-
-def google_account_logout():
-    # STOP HEARTBEAT
-    download_website("https://www.youtube.com/logout")
-    if is_google_account_login_in() is True:
-        return [False, "Failed to logout. :/"]
-    return [True, "OK"]
-
-
-def is_google_account_login_in():
-    cj = __build__cookies()
-    cookie = [cookies for cookies in cj if 'SSID' in cookies.name]
-    if cookie is None or len(cookie) is 0:
-        return False
-    return True
-
-
-def check_internet():
-    verbose("Checking Internet Connection.")
-    youtube = download_website("https://www.youtube.com")
-    return youtube is not None
-
-
-def enable_debug():
-    global shareable_variables
-    shareable_variables.DebugMode = True
-
-
-def setupStreamsFolder():
-    # RecordedStreams
-    recorded_streams_dir = os.path.join(os.getcwd(), "RecordedStreams")
-    if os.path.exists(recorded_streams_dir) is False:
-        os.mkdir(recorded_streams_dir)
+    def is_google_account_login_in(self):
+        cj = self.shared_cookieDictHolder.copy()
+        cookie = [cookies for cookies in cj if 'SSID' in cookies]
+        if cookie is None or len(cookie) == 0:
+            return False
+        return True
