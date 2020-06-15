@@ -46,7 +46,7 @@
   
   Extract Server files.
   
-  run _main_.py in the server files folder with argument -p <port_name> to specify port.
+  run main.py in the server files folder with argument -p <port_name> to specify port.
 
 ### SETUP CLIENT
   To use the client, you need the required packages:
@@ -61,4 +61,4 @@
   
   Extract Client files.
   
-  run _main_.py in the client files folder. The client will then ask for ip and port.
+  run main.py in the client files folder. The client will then ask for ip and port.
