@@ -1,5 +1,9 @@
+
+YouTube Changed URLs and other things a bit ago. Check Recode branch for a recoded version. Currectly being worked on. (There isn't a recoded client yet)
+
+
 # YoutubeLiveChannelRecorder
-  Downloads Youtube Livestreams (and now sometimes working Twitch. Twitch isn't the priority) streams for given specific channels automatically!
+  Downloads Youtube Livestreams (and now sometimes working Twitch. Twitch isn't the priority) streams for given specific channels automatically.
 
 ### NOTE
   This is a server program. You will need to use the client in order to control this program.
