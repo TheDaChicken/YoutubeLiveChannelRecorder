@@ -401,8 +401,7 @@ class YouTubeBase(Channel, ABC):
             }
 
             heartbeat.live_int, stream_over = status_handle.get(status, (0, False))
-            if stream_over is True:
-                heartbeat.stream_over = True
+            heartbeat.stream_over = stream_over if stream_over is True else heartbeat.stream_over
             return heartbeat
 
         def get_status_code(self) -> int or None:
