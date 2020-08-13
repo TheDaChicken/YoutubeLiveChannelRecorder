@@ -209,22 +209,19 @@ class YouTubeChannel(YouTubeBase):
         return [True, "a"]
 
     def get_youtube_variables(self, website_string: str):
-        def add(name: str, value: str or None):
-            if not value:
-                self.get_logger().warning("Unable to find {0}.".format(name))
-            self.variables.update({name: value})
-
         yt_cfg = get_yt_cfg(website_string)
         # Get YouTube variables page build label etc
-        add("page_build_label", try_get(yt_cfg, lambda x: x['PAGE_BUILD_LABEL'], str))
-        add("identity_token", try_get(yt_cfg, lambda x: x['XSRF_TOKEN'], str))
-        add("client_name", try_get(yt_cfg, lambda x: x['INNERTUBE_CONTEXT_CLIENT_NAME'], int))
-        add("client_version", try_get(yt_cfg, lambda x: x['INNERTUBE_CONTEXT_CLIENT_VERSION'], str))
-        add("visitor_id", try_get(yt_cfg, lambda x: x['VISITOR_DATA'], str))
-        add("page_cl", try_get(yt_cfg, lambda x: x['PAGE_CL'], int))
-        add("variants_checksum", try_get(yt_cfg, lambda x: x['VARIANTS_CHECKSUM'], str))
-        add("device", "cbr=Chrome&cbrver=83.0.4103.116&ceng=WebKit&cengver=537.36&cos=Windows&cosver=10.0")
-        # TODO CHANGE THIS WHEN BROWSER IS CHANGED OR FIND A WAY TO GET THAT FROM GOOGLE ^^^
+
+        self.variables.update({
+            "page_build_label": try_get(yt_cfg, lambda x: x['PAGE_BUILD_LABEL'], str),
+            "identity_token": try_get(yt_cfg, lambda x: x['XSRF_TOKEN'], str),
+            "client_name": try_get(yt_cfg, lambda x: x['INNERTUBE_CONTEXT_CLIENT_NAME'], int),
+            "client_version": try_get(yt_cfg, lambda x: x['INNERTUBE_CONTEXT_CLIENT_VERSION'], str),
+            "visitor_id": try_get(yt_cfg, lambda x: x['VISITOR_DATA'], str),
+            "variants_checksum": try_get(yt_cfg, lambda x: x['VARIANTS_CHECKSUM'], str),
+            "device": "cbr=Chrome&cbrver=83.0.4103.116&ceng=WebKit&cengver=537.36&cos=Windows&cosver=10.0"
+            # TODO CHANGE THIS WHEN BROWSER IS CHANGED OR FIND A WAY TO GET THAT FROM GOOGLE ^^^
+        })
         yt_web_config = get_yt_web_player_config(website_string)
         expremients_ids_strings = try_get(yt_web_config, lambda x: x['serializedExperimentIds'], str)
         if not expremients_ids_strings:
@@ -253,15 +250,17 @@ class YouTubeChannel(YouTubeBase):
         sleep(self.poll_delay_ms / 1000)
 
     def handle_status_one(self):
-        if self.heartbeat_class.is_live_scheduled():
-            time_obj = self.heartbeat_class.get_live_scheduled_time()
-            self.get_logger().info("Scheduled For: {0}.".format(time_obj.strftime("%x %I:%M %p")))
-        elif self.heartbeat_class.is_stream_over():
+        if self.heartbeat_class.is_stream_over():
             self.get_logger().info("Live stream is now over! Getting New Video ID.")
             self.load_channel_data()
             self.poll_delay_ms = 1000
         else:
-            self.get_logger().info("{0} is not live!".format(self.channel_name))
+            if self.heartbeat_class.is_live_scheduled():
+                time_obj = self.heartbeat_class.get_live_scheduled_time()
+                self.get_logger().info("Scheduled For: {0}.".format(time_obj.strftime("%x %I:%M %p")))
+            else:
+                self.get_logger().info("{0} is not live!".format(self.channel_name))
+            self.poll_delay_ms = self.heartbeat_class.get_poll_delay()
 
     def handle_status_second(self):
         if self.encoder_class.is_running() is False:

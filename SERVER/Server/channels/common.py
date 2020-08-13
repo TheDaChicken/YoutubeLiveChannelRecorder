@@ -351,18 +351,62 @@ class YouTubeBase(Channel, ABC):
         Holds information from YouTube's Heartbeat
         """
 
-        def __init__(self, code=None, status=None, reason=None, live_scheduled=False, scheduled_time=None,
-                     stream_over=False):
-            self.status_code = code
+        status = None
+        reason = None
+
+        poll_delay = None  # description: Poll Delay in milliseconds
+        video_id = None
+
+        live_scheduled = None
+
+        stream_over = False
+
+        live_int = 0
+
+        def __init__(self, status=None, reason=None, code=None):
+            self.heartbeat_time = datetime.now()
             self.status = status
             self.reason = reason
-            self.live_scheduled = live_scheduled
-            self.scheduled_time = scheduled_time
-            self.stream_over = stream_over
-            self.heartbeat_time = datetime.now()
+            self.live_int = code
+            self.stream_over = False
+
+        @classmethod
+        def create_class(cls, playability_status: dict):
+            status = try_get(playability_status, lambda x: x['status'], str)  # type: str
+            reason = try_get(playability_status, lambda x: x['reason'], str)  # type: str
+            heartbeat = cls(status, reason)
+
+            live_stream_renderer = try_get(
+                playability_status, lambda x: x['liveStreamability']['liveStreamabilityRenderer'], dict)
+            if live_stream_renderer:
+                heartbeat.poll_delay = str_to_int(
+                    try_get(live_stream_renderer, lambda x: x['pollDelayMs'], str)) or 9500
+                heartbeat.video_id = try_get(live_stream_renderer, lambda x: x['videoId'], str)
+            offline_renderer = try_get(live_stream_renderer,
+                                       lambda x: x['offlineSlate']['liveStreamOfflineSlateRenderer'], dict)  # type: dict
+            if offline_renderer:
+                live_scheduled = try_get(offline_renderer, lambda x: x['scheduledStartTime'], str)
+                if heartbeat.live_scheduled:
+                    heartbeat.live_scheduled = str_to_int(live_scheduled)
+
+            if try_get(live_stream_renderer, lambda x: x['displayEndscreen'], bool):
+                heartbeat.stream_over = True
+
+            status_handle = {
+                "OK": (2, False),
+                "STOP": (1, True),
+                "ERROR": (0, False),
+                "LIVE_STREAM_OFFLINE": (1, False),
+                "UNPLAYABLE": (1, True),
+            }
+
+            heartbeat.live_int, stream_over = status_handle.get(status, (0, False))
+            if stream_over is True:
+                heartbeat.stream_over = True
+            return heartbeat
 
         def get_status_code(self) -> int or None:
-            return self.status_code
+            return self.live_int
 
         def get_status(self) -> str or None:
             return self.status
@@ -371,21 +415,24 @@ class YouTubeBase(Channel, ABC):
             return self.reason
 
         def is_live_scheduled(self) -> bool:
-            return self.live_scheduled
+            return self.live_scheduled is not None
 
         def get_live_scheduled_time(self) -> datetime:
             """
             Linux Epoch (From Heartbeat) -> datetime
             """
-            if self.scheduled_time is None:
+            if self.live_scheduled is None:
                 return None
-            return datetime.fromtimestamp(self.scheduled_time)
+            return datetime.fromtimestamp(self.live_scheduled)
 
         def is_stream_over(self) -> bool:
             return self.stream_over
 
         def get_heartbeat_time(self):
             return self.heartbeat_time
+
+        def get_poll_delay(self):
+            return self.poll_delay
 
     class PrivateStream:
         def __init__(self):
@@ -452,64 +499,6 @@ class YouTubeBase(Channel, ABC):
 
         return self._playability_status(playability_status)
 
-    def _playability_status(self, playability_status) -> Heartbeat:
-        def get_poll_delay_ms() -> int:
-            poll_delay_ms = try_get(
-                live_stream_renderer, lambda x: x['pollDelayMs'], str)
-            if poll_delay_ms:
-                return int(poll_delay_ms)
-            elif self.poll_delay_ms:
-                return self.poll_delay_ms
-            else:
-                return 9500
-
-        def create_object():
-            return self.Heartbeat(code=code, status=status, reason=reason, live_scheduled=live_scheduled,
-                                  scheduled_time=scheduled_start_time, stream_over=stream_over)
-
-        code = 0
-        live_scheduled = False
-        scheduled_start_time = None
-        stream_over = None
-
-        live_stream_renderer = try_get(
-            playability_status, lambda x: x['liveStreamability']['liveStreamabilityRenderer'], dict)
-        if live_stream_renderer:
-            self.poll_delay_ms = get_poll_delay_ms()
-            video_id = try_get(live_stream_renderer, lambda x: x['videoId'], str)
-            if video_id is not None and video_id != self.video_id:
-                self.add_youtube_queue()  # just in case something happens.
-                self.video_id = video_id
-        offline_renderer = try_get(live_stream_renderer, lambda x: x['offlineSlate']['liveStreamOfflineSlateRenderer'],
-                                   dict)  # type: dict
-        if offline_renderer:
-            scheduled_start_time = try_get(offline_renderer, lambda x: x['scheduledStartTime'], str)
-            if scheduled_start_time:
-                live_scheduled = True
-                scheduled_start_time = str_to_int(scheduled_start_time)
-
-        if try_get(live_stream_renderer, lambda x: x['displayEndscreen'], bool):
-            stream_over = True
-
-        status = try_get(playability_status, lambda x: x['status'], str)  # type: str
-        reason = try_get(playability_status, lambda x: x['reason'], str)  # type: str
-        if status:  # Sometimes status is removed and causes an error.
-            if "OK" == status.upper():
-                code = 2
-                return create_object()
-            if "STOP" == status.upper():
-                stream_over = True
-                code = 1
-                return create_object()
-            if "ERROR" == status.upper():
-                code = 0
-                return create_object()
-            if "LIVE_STREAM_OFFLINE" in status.upper():
-                code = 1
-                return create_object()
-            if "UNPLAYABLE" in status.upper():
-                code = 1
-                stream_over = True
-                return create_object()
-        code = 0
-        return create_object()
+    @staticmethod
+    def _playability_status(playability_status) -> Heartbeat:
+        return YouTubeBase.Heartbeat.create_class(playability_status)

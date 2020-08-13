@@ -50,11 +50,11 @@ def parse_url_query(url: str) -> dict:
     return dict_
 
 
-def str_to_int(string: str):
+def str_to_int(string: str, default=None):
     try:
         return int(string)
     except ValueError:
-        return None
+        return default
 
 
 def parse_width_height(full_res: str):
