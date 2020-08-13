@@ -471,32 +471,31 @@ class YouTubeBase(Channel, ABC):
                 "heartbeatChecks":
                     ["HEARTBEAT_CHECK_TYPE_LIVE_STREAM_STATUS"]
             }
-        }).replace(' ', '').encode('utf-8')
+        }, separators=(',', ':'))
 
         headers = self._get_youtube_headers()
         headers.update({"Content-Type": "application/json"})
 
-        response = self.request("https://www.youtube.com/youtubei/v1/player/heartbeat?{0}".format(urlencode({
+        with self.request("https://www.youtube.com/youtubei/v1/player/heartbeat?{0}".format(urlencode({
             'alt': 'json',
             'key': self.youtube_api_key,
-        })), request_method='POST', headers=headers, data=post_data)
+        })), request_method='POST', headers=headers, data=post_data) as response:
+            if response.text is None:
+                return YouTubeBase.Heartbeat(code=0)
 
-        if response.text is None:
-            return YouTubeBase.Heartbeat(code=0)
+            json_reply = response.json()
+            playability_status = try_get(json_reply, lambda x: x['playabilityStatus'], dict)
+            if playability_status is None and response.status_code == 200:
+                self.get_logger().debug("Unable to find playability status in heartbeat!")
+                return YouTubeBase.Heartbeat(code=-1)
 
-        json_reply = response.json()
-        playability_status = try_get(json_reply, lambda x: x['playabilityStatus'], dict)
-        if playability_status is None and response.status_code == 200:
-            self.get_logger().debug("Unable to find playability status in heartbeat!")
-            return YouTubeBase.Heartbeat(code=-1)
+            self.get_logger().debug('FROM YOUTUBE -> {0}'.format(
+                playability_status or json_reply or response.text))
 
-        self.get_logger().debug('FROM YOUTUBE -> {0}'.format(
-            playability_status or json_reply or response.text))
+            if response.status_code != 200:
+                return YouTubeBase.Heartbeat(code=-1)
 
-        if response.status_code != 200:
-            return YouTubeBase.Heartbeat(code=-1)
-
-        return self._playability_status(playability_status)
+            return self._playability_status(playability_status)
 
     @staticmethod
     def _playability_status(playability_status) -> Heartbeat:

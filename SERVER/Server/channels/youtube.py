@@ -116,6 +116,8 @@ class YouTubeChannel(YouTubeBase):
 
     live_status = None
 
+    last_heartbeat = None
+
     def __init__(self, channel_identifier: str, global_handler, queue):
         super().__init__(channel_identifier, global_handler, queue)
         self.private_live = False
@@ -125,88 +127,88 @@ class YouTubeChannel(YouTubeBase):
 
     def load_channel_data(self) -> List[Union[bool, str]]:
         url = "https://www.youtube.com/channel/{0}/live".format(self.channel_identifier)
-
-        website_object = self.request(url, headers={
-            "sec-fetch-dest": "document", "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "same-origin", "sec-fetch-user": "?1",
-            "upgrade-insecure-requests": "1", "accept": "text/html"})
-        if website_object.text is None:
-            return [False, "Failed getting Youtube Data from the internet! "
-                           "This means there is no good internet available!"]
-        elif website_object.status_code == 404:
-            return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
-                self.channel_identifier)]
-        website_string = website_object.text
-        with open('html.html', 'w', encoding='utf-8') as f:
-            f.write(website_string)
-        endpoint_type = get_endpoint_type(website_string)
-        if endpoint_type and endpoint_type == 'browse':
-            channel_name = try_get(re.findall(r'property="og:title" content="(.+?)"', website_string), lambda x: x[0],
-                                   str)
-            if channel_name:
-                self.get_logger().warning(
-                    "{0} has the live stream currently unlisted or private. "
-                    "Using safeguard. This may not be the best to leave on.\n".format(
-                        channel_name))
-                self.channel_name = channel_name
-                self.video_id = None
-                self.private_live = True
-                self.live_status = 0
-        else:
-            if not endpoint_type == 'watch':
-                if endpoint_type is None:
-                    self.get_logger().warning("Unable to find endpoint type.")
-                else:
-                    self.get_logger().warning("Unrecognized endpoint type. Endpoint Type: {0}.".format(endpoint_type))
-            self.get_logger().debug("Getting Video ID.")
-            yt_player_config = get_yt_player_config(website_string)
-            self.youtube_api_key = try_get(yt_player_config, lambda x: x['args']['innertube_api_key'], str)
-            player_response = parse_json(try_get(yt_player_config, lambda x: x['args']['player_response'], str))
-            video_details = try_get(player_response, lambda x: x['videoDetails'], dict)
-            if yt_player_config and video_details:
-                if "isLiveContent" in video_details and \
-                        video_details['isLiveContent'] and \
-                        ("isLive" in video_details or "isUpcoming" in video_details):
-                    self.channel_name = try_get(video_details, lambda x: x['author'], str)
-                    self.video_id = try_get(video_details, lambda x: x['videoId'], str)
-                    self.private_live = False
-                    if not self.channel_identifier:
-                        self.channel_identifier = try_get(video_details, lambda x: x['channelId'], str)
-                else:
-                    return [False, "Found a watchable YouTube content, the stream seemed to be a non-live stream."]
+        headers = {"sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "same-origin",
+                   "sec-fetch-user": "?1", "upgrade-insecure-requests": "1", "accept": "text/html"}
+        with self.request(url, headers=headers) as website_object:
+            if website_object.status_code == 404:
+                return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
+                    self.channel_identifier)]
+            elif website_object.text is None:
+                return [False, "Failed getting Youtube Data from the internet! "
+                               "This means there is no good internet available!"]
+            website_string = website_object.text
+            with open('html.html', 'w', encoding='utf-8') as f:
+                f.write(website_string)
+            endpoint_type = get_endpoint_type(website_string)
+            if endpoint_type and endpoint_type == 'browse':
+                channel_name = try_get(re.findall(r'property="og:title" content="(.+?)"', website_string),
+                                       lambda x: x[0],
+                                       str)
+                if channel_name:
+                    self.get_logger().warning(
+                        "{0} has the live stream currently unlisted or private. "
+                        "Using safeguard. This may not be the best to leave on.\n".format(
+                            channel_name))
+                    self.channel_name = channel_name
+                    self.video_id = None
+                    self.private_live = True
+                    self.live_status = 0
             else:
-                return [False, "Unable to get yt player config, and videoDetails."]
-            contents = try_get(get_yt_initial_data(website_string),
-                               lambda x: x['contents']['twoColumnWatchNextResults']['results']['results'][
-                                   'contents'], list)
-            video_secondary_info = try_get(
-                [content for content in contents if content.get("videoSecondaryInfoRenderer") is not None],
-                lambda x: x[0], dict).get("videoSecondaryInfoRenderer")
-            channel_image_formats = try_get(
-                video_secondary_info, lambda x: x['owner']['videoOwnerRenderer']['thumbnail']['thumbnails'], list)
-            if channel_image_formats is not None:
-                self.channel_image = max(channel_image_formats, key=lambda x: x.get("height")).get("url")
-            self.get_youtube_variables(website_string)
-            if not self.private_live and player_response:
-                # TO AVOID REPEATING REQUESTS.
-                playability_status = try_get(player_response, lambda x: x['playabilityStatus'], dict)
-                status = try_get(playability_status, lambda x: x['status'], str)  # type: str
-                reason = try_get(playability_status, lambda x: x['reason'], str)  # type: str
-                if playability_status and status:
-                    self.get_logger().debug('FROM YOUTUBE -> {0}'.format(playability_status))
-                    if 'OK' in status.upper():
-                        if reason and 'ended' in reason:
-                            return [False, reason]
-                        result, message = self._parse_player_response(player_response)
-                        if isinstance(message, Media):
-                            self.video_media = message
-                    self.player_context_params = try_get(playability_status, lambda x: x['contextParams'], str)
-                    self.heartbeat_class = self._playability_status(playability_status)
-                    self.live_status = self.heartbeat_class.get_status_code()
+                if not endpoint_type == 'watch':
+                    if endpoint_type is None:
+                        self.get_logger().warning("Unable to find endpoint type.")
+                    else:
+                        self.get_logger().warning(
+                            "Unrecognized endpoint type. Endpoint Type: {0}.".format(endpoint_type))
+                self.get_logger().debug("Getting Video ID.")
+                yt_player_config = get_yt_player_config(website_string)
+                self.youtube_api_key = try_get(yt_player_config, lambda x: x['args']['innertube_api_key'], str)
+                player_response = parse_json(try_get(yt_player_config, lambda x: x['args']['player_response'], str))
+                video_details = try_get(player_response, lambda x: x['videoDetails'], dict)
+                if yt_player_config and video_details:
+                    if "isLiveContent" in video_details and \
+                            video_details['isLiveContent'] and \
+                            ("isLive" in video_details or "isUpcoming" in video_details):
+                        self.channel_name = try_get(video_details, lambda x: x['author'], str)
+                        self.video_id = try_get(video_details, lambda x: x['videoId'], str)
+                        self.private_live = False
+                        if not self.channel_identifier:
+                            self.channel_identifier = try_get(video_details, lambda x: x['channelId'], str)
+                    else:
+                        return [False, "Found a watchable YouTube content, the stream seemed to be a non-live stream."]
+                else:
+                    return [False, "Unable to get yt player config, and videoDetails."]
+                contents = try_get(get_yt_initial_data(website_string),
+                                   lambda x: x['contents']['twoColumnWatchNextResults']['results']['results'][
+                                       'contents'], list)
+                video_secondary_info = try_get(
+                    [content for content in contents if content.get("videoSecondaryInfoRenderer") is not None],
+                    lambda x: x[0], dict).get("videoSecondaryInfoRenderer")
+                channel_image_formats = try_get(
+                    video_secondary_info, lambda x: x['owner']['videoOwnerRenderer']['thumbnail']['thumbnails'], list)
+                if channel_image_formats is not None:
+                    self.channel_image = max(channel_image_formats, key=lambda x: x.get("height")).get("url")
+                self.get_youtube_variables(website_string)
+                if not self.private_live and player_response:
+                    # TO AVOID REPEATING REQUESTS.
+                    playability_status = try_get(player_response, lambda x: x['playabilityStatus'], dict)
+                    status = try_get(playability_status, lambda x: x['status'], str)  # type: str
+                    reason = try_get(playability_status, lambda x: x['reason'], str)  # type: str
+                    if playability_status and status:
+                        self.get_logger().debug('FROM YOUTUBE -> {0}'.format(playability_status))
+                        if 'OK' in status.upper():
+                            if reason and 'ended' in reason:
+                                return [False, reason]
+                            result, message = self._parse_player_response(player_response)
+                            if isinstance(message, Media):
+                                self.video_media = message
+                        self.player_context_params = try_get(playability_status, lambda x: x['contextParams'], str)
+                        self.heartbeat_class = self._playability_status(playability_status)
+                        self.live_status = self.heartbeat_class.get_status_code()
 
-        self.cpn = generate_cpn()
-        self.sequence_number = 0
-        return [True, "a"]
+            self.cpn = generate_cpn()
+            self.sequence_number = 0
+            return [True, "a"]
 
     def get_youtube_variables(self, website_string: str):
         yt_cfg = get_yt_cfg(website_string)
@@ -227,9 +229,7 @@ class YouTubeChannel(YouTubeBase):
         if not expremients_ids_strings:
             self.get_logger().warning("Unable to find {0}.".format("serializedExperimentIds"))
         else:
-            self.variables.update({
-                "experiment_ids": list(map(lambda x: int(x), expremients_ids_strings.split(',')))
-            })
+            self.variables['experiment_ids'] = list(map(lambda x: int(x), expremients_ids_strings.split(',')))
 
     def is_live(self) -> YouTubeBase.Heartbeat or YouTubeBase.PrivateStream:
         if self.private_live:
