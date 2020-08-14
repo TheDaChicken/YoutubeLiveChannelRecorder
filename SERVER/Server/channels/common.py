@@ -164,13 +164,13 @@ class Channel(ABC):
         return dict_
 
     def _get_hls_format_(self, manifest_url) -> Media or None:
-        download_object = self.request(manifest_url)
-        hls = download_object.m3u8()
-        if len(hls) == 0:
-            self.get_logger().critical("Unable to Parse M3U8 MANIFEST.")
-            return None
-        return hls.get_best_format(
-            self.get_cache_yml().get_cache().get("RecordingResolution"))
+        with self.request(manifest_url) as download_object:
+            hls = download_object.m3u8()
+            if len(hls) == 0:
+                self.get_logger().critical("Unable to Parse M3U8 MANIFEST.")
+                return None
+            return hls.get_best_format(
+                self.get_cache_yml().get_cache().get("RecordingResolution"))
 
     def start_recording(self, media: Media, **kwargs):
         self.start_date = datetime.now()

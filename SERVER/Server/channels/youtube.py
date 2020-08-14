@@ -291,7 +291,8 @@ class YouTubeChannel(YouTubeBase):
                 self.start_recording(self.video_media, cpn=self.cpn)
         self.wait_poll()
 
-        self.poll_delay_ms = self.heartbeat_class.get_poll_delay()
+        if self.heartbeat_class:
+            self.poll_delay_ms = self.heartbeat_class.get_poll_delay()
 
         while True:
             result = self.is_live()
