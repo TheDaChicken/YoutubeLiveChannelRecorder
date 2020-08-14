@@ -1,3 +1,4 @@
+import json
 import re
 import traceback
 from datetime import datetime
@@ -128,7 +129,8 @@ class YouTubeChannel(YouTubeBase):
     def load_channel_data(self) -> List[Union[bool, str]]:
         url = "https://www.youtube.com/channel/{0}/live".format(self.channel_identifier)
         headers = {"sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "same-origin",
-                   "sec-fetch-user": "?1", "upgrade-insecure-requests": "1", "accept": "text/html"}
+                   "sec-fetch-user": "?1"}
+
         with self.request(url, headers=headers) as website_object:
             if website_object.status_code == 404:
                 return [False, "Failed getting Youtube Data! \"{0}\" doesn't exist as a channel id!".format(
@@ -260,7 +262,6 @@ class YouTubeChannel(YouTubeBase):
                 self.get_logger().info("Scheduled For: {0}.".format(time_obj.strftime("%x %I:%M %p")))
             else:
                 self.get_logger().info("{0} is not live!".format(self.channel_name))
-            self.poll_delay_ms = self.heartbeat_class.get_poll_delay()
 
     def handle_status_second(self):
         if self.encoder_class.is_running() is False:
@@ -272,18 +273,25 @@ class YouTubeChannel(YouTubeBase):
                 self.get_logger().warning(message)
 
     def handle_status_zero(self):
-        self.get_logger().warning("No Data from YouTube. This could be because there is no internet!")
         self.poll_delay_ms = 3500
+        self.get_logger().warning("No Data from YouTube. This could be because there is no internet!")
 
     def handle_status_negative(self):
-        self.get_logger().critical("Error on Heartbeat.")
         self.poll_delay_ms = 3500
+        self.get_logger().critical("Error on Heartbeat.")
+
+    def handle_no_internet(self):
+        self.poll_delay_ms = 3500
+        self.get_logger().critical(
+            "Unable to reach youtube.com. Retrying in {0} seconds.".format(self.poll_delay_ms / 1000))
 
     def channel_thread(self):
         if self.live_status == 2:
             if self.video_media:
                 self.start_recording(self.video_media, cpn=self.cpn)
         self.wait_poll()
+
+        self.poll_delay_ms = self.heartbeat_class.get_poll_delay()
 
         while True:
             result = self.is_live()
@@ -295,6 +303,7 @@ class YouTubeChannel(YouTubeBase):
                 self.heartbeat_class = result
                 self.live_status = self.heartbeat_class.get_status_code()
                 function_list = {
+                    -2: self.handle_no_internet,
                     -1: self.handle_status_negative,
                     0: self.handle_status_zero,
                     1: self.handle_status_one,

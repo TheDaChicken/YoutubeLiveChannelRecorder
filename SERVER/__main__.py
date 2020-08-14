@@ -27,8 +27,8 @@ if __name__ == '__main__':
     processHandler.initialize_logger_listener()
     processHandler.initialize_logger()  # initialize logger in this current thread.
     processHandler.load_channels()
-    result, message = processHandler.run_channel("UCF3KMM3QLVEfnFPI8AbLUJA")
-    processHandler.run_channel('UCzMjRlKVO9XIqH_crIFpi6w')
+    # result, message = processHandler.run_channel("UCF3KMM3QLVEfnFPI8AbLUJA")
+    # processHandler.run_channel('UCbyS9AQt6KE0XUuGqXya90A')
     # a = processHandler.create_proxy_dict({"channel_identifier": "UC-SK9mJ7TCw_zjdi5AQJoEQ"})
     # a.load_channel_data()
     run_server(processHandler, 31311)

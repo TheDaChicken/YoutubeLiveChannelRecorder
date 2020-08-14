@@ -4,7 +4,7 @@ from os import mkdir
 from typing import Any
 
 import yaml
-from flask import Request
+from requests.cookies import create_cookie
 
 from Server.logger import get_logger
 from os.path import join, exists
@@ -173,7 +173,11 @@ class GlobalHandler:
             headers = {}
         if 'User-Agent' not in headers:
             headers["User-Agent"] = UserAgent
-        return self.session.request(request_method, url, stream=True, **kwargs)
+        return self.session.request(request_method, url, stream=True, headers=headers, **kwargs)
+
+    def create_cookie(self, key: str, value: str, domain: str):
+        cookie_obj = create_cookie(domain=domain, name=key, value=value)
+        self.session.cookies.set_cookie(cookie_obj)
 
     def get_cache_yml(self) -> DataHandler:
         return self.data
