@@ -1,6 +1,9 @@
 
 YouTube Changed URLs and other things a bit ago. Check Recode branch for a recoded version. Currectly being worked on. (There isn't a recoded client yet)
 
+This project is currectly dead. After I am done working on other projects, I will continue working on this. It broke because YouTube changed something else.
+
+
 
 # YoutubeLiveChannelRecorder
   Downloads Youtube Livestreams (and now sometimes working Twitch. Twitch isn't the priority) streams for given specific channels automatically.
